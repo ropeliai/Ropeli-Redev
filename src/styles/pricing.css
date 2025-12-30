@@ -1,0 +1,188 @@
+.pricing {
+    width: 100%;
+    background: radial-gradient(circle at top, #1a1a1a, #000);
+    padding: 2rem 2rem;
+    color: white;
+}
+
+
+/* HEADER */
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.pricing-subtitle {
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+
+/* TOGGLE */
+
+.billing-toggle {
+    display: inline-flex;
+    background: #111;
+    height: 50px;
+    border-radius: 999px;
+}
+
+.billing-toggle button {
+    flex: 1;
+    min-width: 110px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    margin: 0px;
+    color: #aaa;
+    padding: 10px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.25s ease;
+}
+
+.billing-toggle .active {
+    background: white;
+    color: black;
+}
+
+
+/* GRID */
+
+.pricing-grid {
+    max-width: 1450px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+}
+
+
+/* CARD */
+
+.pricing-card {
+    background: rgba(15, 15, 15, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid #222;
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card h3 {
+    margin-top: 0.5rem;
+    font-size: 1.4rem;
+}
+
+.pricing-card h2 {
+    margin: 1rem 0;
+    font-size: 2rem;
+}
+
+.pricing-card h2 span {
+    font-size: 0.9rem;
+    color: #9ca3af;
+}
+
+.pricing-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-8px);
+    border-color: #e3e7ed63;
+    box-shadow: 0 0 40px rgba(138, 180, 248, 0.25);
+}
+
+.badge {
+    align-self: flex-start;
+    background: #222;
+    border: 1px solid #333;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    color: #d1d5db;
+}
+
+
+/* FEATURED */
+
+.pricing-card.featured {
+    border-color: #8ab4f8;
+    box-shadow: 0 0 40px rgba(138, 180, 248, 0.25);
+}
+
+
+/* LIST */
+
+.pricing-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+    flex: 1;
+}
+
+.pricing-card li {
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
+    color: #cbd5f5;
+}
+
+
+/* SELECT */
+
+.token-select {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 10px;
+    color: white;
+    padding: 0.4rem;
+}
+
+
+/* BUTTONS */
+
+.primary-btn {
+    background: white;
+    color: black;
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.secondary-btn {
+    background: #1f1f1f;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 999px;
+    padding: 0.6rem;
+    cursor: pointer;
+}
+
+
+/* CUSTOM */
+
+.custom-text {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin: 1rem 0 2rem;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1200px) {
+    .pricing-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+}

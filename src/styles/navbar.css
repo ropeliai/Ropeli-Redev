@@ -1,0 +1,224 @@
+.navbar {
+    width: 100%;
+    height: 65px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.078);
+}
+
+
+/* ===== INNER CONTAINER ===== */
+
+.navbar-inner {
+    max-width: 1280px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 3rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+
+/*
+
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+}
+
+.navbar-inner {
+    max-width: 1200px;
+    margin: auto;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}*/
+
+.logo a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.logo img {
+    width: 28px;
+    height: 28px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+}
+
+.nav-links a {
+    color: #bbb;
+    text-decoration: none;
+}
+
+.nav-links a.active {
+    color: white;
+}
+
+.signup-btn {
+    background: rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border: 0.5px solid rgb(143, 143, 143);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+
+/* Profile */
+
+.profile-wrapper {
+    position: relative;
+}
+
+.profile-btn {
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+
+.profile-btn:focus,
+.profile-btn:focus-visible,
+.profile-btn:active {
+    outline: none;
+    box-shadow: none;
+}
+
+.profile-btn:hover .avatar {
+    filter: brightness(1.1);
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #7229c4;
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+}
+
+.avatar.large {
+    width: 44px;
+    height: 44px;
+}
+
+.profile-dropdown {
+    position: absolute;
+    right: 0;
+    top: 52px;
+    width: 260px;
+    background: #121212;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.profile-header {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    position: relative;
+}
+
+.name {
+    color: white;
+    font-size: 0.9rem;
+    margin: 0px;
+}
+
+.plan {
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+
+/*.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #3ddc97;
+    border-radius: 50%;
+    position: absolute;
+    right: 0;
+}*/
+
+.credits {
+    display: flex;
+    justify-content: space-between;
+    margin: 1rem 0;
+    color: #ddd;
+}
+
+.upgrade-btn {
+    width: 100%;
+    background: linear-gradient(90deg, #ffd76a, #f5c14b);
+    border: none;
+    border-radius: 10px;
+    padding: 0.6rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.profile-links {
+    list-style: none;
+    margin: 1rem 0;
+    padding: 0;
+}
+
+.profile-links li {
+    padding: 0.5rem 0;
+    color: #bbb;
+    cursor: pointer;
+}
+
+.profile-links li:hover {
+    color: white;
+}
+
+.logout-btn {
+    color: #d6b71d4f;
+    cursor: pointer;
+    text-align: left;
+}
+
+
+/* =========================
+   NAVBAR MOBILE
+   ========================= */
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+    }
+    .navbar-inner {
+        justify-content: space-between;
+    }
+    .signup-btn {
+        padding: 0.45rem 1rem;
+        font-size: 0.8rem;
+    }
+    .logo span {
+        font-size: 0.85rem;
+    }
+}

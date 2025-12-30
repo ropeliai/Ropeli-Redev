@@ -1,0 +1,164 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+
+/* PAGE */
+
+.templates-page {
+    width: 100vw;
+    min-height: 100%;
+    background: radial-gradient(circle at top, #0b0b0f, #000);
+    display: flex;
+    justify-content: center;
+    color: #fff;
+}
+
+
+/* CENTERED WRAPPER */
+
+.templates-container {
+    width: 100%;
+    max-width: 1400px;
+    padding: 6rem 2.5rem;
+}
+
+
+/* TITLE */
+
+.templates-title {
+    font-size: 2.4rem;
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+}
+
+
+/* FILTERS */
+
+.template-filters {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+}
+
+.filter-btn {
+    background: #16161c;
+    border: 1px solid #2a2a35;
+    color: #fff;
+    padding: 0.45rem 1.1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.filter-btn.active,
+.filter-btn:hover {
+    border-color: #fff;
+}
+
+
+/* GRID */
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 2rem;
+}
+
+
+/* CARD */
+
+.template-card {
+    background: linear-gradient( 180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #1f1f29;
+    transition: transform 0.3s ease, border 0.3s ease;
+}
+
+.template-card:hover {
+    transform: translateY(-6px);
+    border-color: #5c6cff;
+}
+
+
+/* IMAGE PLACEHOLDER */
+
+.template-image {
+    height: 180px;
+    background: linear-gradient(135deg, #0d0d12, #14141b);
+    display: flex;
+    align-items: center;
+    padding-left: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+
+/* CONTENT */
+
+.template-content {
+    padding: 1.2rem;
+}
+
+.template-desc {
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+
+/* META */
+
+.template-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.icons span {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.views {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+
+/* BUTTON */
+
+.use-template-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #2a2a35;
+    color: #fff;
+    padding: 0.6rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.25s ease, border 0.25s ease;
+}
+
+.use-template-btn:hover {
+    background: #5c6cff;
+    border-color: #5c6cff;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+    .templates-title {
+        font-size: 1.8rem;
+    }
+    .templates-container {
+        padding: 5rem 1.2rem;
+    }
+}

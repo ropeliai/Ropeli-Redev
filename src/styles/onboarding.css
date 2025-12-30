@@ -1,0 +1,51 @@
+.onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.onboarding-modal {
+    width: 480px;
+    background: #0e0e0e;
+    border-radius: 14px;
+    padding: 28px;
+    color: white;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.option {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.option:hover {
+    background: #1a1a1a;
+}
+
+button {
+    margin-top: 16px;
+    padding: 10px 16px;
+    background: white;
+    color: black;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+.step-indicator {
+    display: block;
+    margin-top: 12px;
+    font-size: 12px;
+    opacity: 0.6;
+}

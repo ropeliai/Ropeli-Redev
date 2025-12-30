@@ -1,0 +1,200 @@
+/*.builder-page {
+    min-height: 100vh;
+    background: black;
+    color: white;
+    padding: 4rem;
+    font-family: system-ui, sans-serif;
+}
+
+.builder-page h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.label {
+    opacity: 0.6;
+    margin-bottom: 0.5rem;
+}
+
+.prompt-pill {
+    background: #1a1a1a;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 2rem;
+}
+
+.status {
+    opacity: 0.7;
+}
+*/
+
+.builder-layout {
+    height: 100vh;
+    display: flex;
+    background: black;
+    color: white;
+    font-family: system-ui, sans-serif;
+}
+
+
+/* LEFT PANEL */
+
+.builder-left {
+    width: 40%;
+    padding: 2rem;
+    border-right: 1px solid #222;
+    overflow-y: auto;
+}
+
+.builder-left h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-label {
+    opacity: 0.6;
+    margin: 1rem 0 0.5rem;
+}
+
+.prompt-editor {
+    width: 100%;
+    min-height: 120px;
+    background: #111;
+    color: white;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 1rem;
+    resize: vertical;
+}
+
+.agent-log {
+    background: #0d0d0d;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    opacity: 0.8;
+}
+
+.builder-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.builder-root {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    height: 100vh;
+    background: #000;
+    color: white;
+}
+
+.builder-left {
+    border-right: 1px solid #222;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.builder-right {
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #222;
+}
+
+.preview-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+}
+
+.btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn.deploy {
+    background: #1f7a4d;
+    color: black;
+}
+
+.btn.preview {
+    background: #333;
+    color: white;
+}
+
+.agent-finished {
+    margin-top: 2rem;
+    color: #00ff88;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: #00ff88;
+    border-radius: 50%;
+}
+
+
+/* RIGHT PANEL */
+
+.builder-right {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+}
+
+.preview-header {
+    padding: 1rem;
+    border-bottom: 1px solid #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview-actions button {
+    margin-left: 0.5rem;
+    background: #222;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+}
+
+.preview-canvas {
+    flex: 1;
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-placeholder {
+    opacity: 0.4;
+}
+
+.preview-footer {
+    padding: 0.8rem;
+    border-top: 1px solid #222;
+    font-size: 0.85rem;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dot.green {
+    background: #00ff88;
+}
