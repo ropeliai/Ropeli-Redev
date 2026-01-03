@@ -203,22 +203,66 @@
 }
 
 
-/* =========================
-   NAVBAR MOBILE
-   ========================= */
+/* ===== NAV RIGHT ===== */
 
-@media (max-width: 768px) {
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+
+/* ===== HAMBURGER ===== */
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.hamburger span {
+    width: 22px;
+    height: 1.2px;
+    border: none;
+    background: white;
+}
+
+
+/* ===== MOBILE MENU ===== */
+
+.mobile-menu {
+    display: none;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.95);
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-menu a {
+    color: white;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.signup-btn.mobile {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 900px) {
     .nav-links {
         display: none;
     }
-    .navbar-inner {
-        justify-content: space-between;
+    .hamburger {
+        display: flex;
     }
-    .signup-btn {
-        padding: 0.45rem 1rem;
-        font-size: 0.8rem;
-    }
-    .logo span {
-        font-size: 0.85rem;
+    .mobile-menu.show {
+        display: flex;
     }
 }

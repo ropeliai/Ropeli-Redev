@@ -1,4 +1,4 @@
-.footer {
+    .footer {
     width: 100%;
     background: radial-gradient(circle at top, #151515, #000);
     color: #bdbdbd;
@@ -100,7 +100,10 @@
 }
 
 
-/* RESPONSIVE */
+/* ================= RESPONSIVE ================= */
+
+
+/* Tablets */
 
 @media (max-width: 900px) {
     .footer-grid {
@@ -115,9 +118,7 @@
 }
 
 
-/* =========================
-   FOOTER MOBILE
-   ========================= */
+/* Phones */
 
 @media (max-width: 600px) {
     .footer {
@@ -128,14 +129,31 @@
         gap: 2rem;
         text-align: center;
     }
-    .footer-col ul {
-        padding: 0;
+    .footer-brand {
+        margin-bottom: 1rem;
+    }
+    .footer-brand h3 {
+        font-size: 0.8rem;
+    }
+    .footer-brand p {
+        font-size: 0.8rem;
+    }
+    .footer-col h4 {
+        font-size: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+    .footer-col li {
+        font-size: 0.8rem;
+        margin-bottom: 0.6rem;
+    }
+    .footer-divider {
+        margin: 2rem 0 1.4rem;
     }
     .footer-bottom {
         flex-direction: column;
         gap: 0.8rem;
+        text-align: center;
     }
     .footer-icons {
         justify-content: center;
     }
-}

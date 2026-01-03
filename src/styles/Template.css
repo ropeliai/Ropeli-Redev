@@ -66,9 +66,15 @@ body {
 /* GRID */
 
 .templates-grid {
+    max-width: 1200px;
+    /* control content width */
+    margin: 0 auto;
+    /* ✅ CENTER GRID */
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
+    width: 80%;
+    box-sizing: border-box;
 }
 
 
@@ -84,7 +90,7 @@ body {
 
 .template-card:hover {
     transform: translateY(-6px);
-    border-color: #5c6cff;
+    border-color: #ffffff40;
 }
 
 
@@ -138,7 +144,7 @@ body {
 .use-template-btn {
     width: 100%;
     background: transparent;
-    border: 1px solid #2a2a35;
+    border: 1px solid #ffffff43;
     color: #fff;
     padding: 0.6rem;
     border-radius: 12px;
@@ -147,8 +153,8 @@ body {
 }
 
 .use-template-btn:hover {
-    background: #5c6cff;
-    border-color: #5c6cff;
+    background: #ffffff;
+    border-color: #fdfdfd;
 }
 
 

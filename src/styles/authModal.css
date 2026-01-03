@@ -1,0 +1,174 @@
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.auth-modal {
+    width: 900px;
+    height: 520px;
+    background: white;
+    border-radius: 18px;
+    display: flex;
+    overflow: hidden;
+}
+
+.auth-header {
+    margin-bottom: 1.5rem;
+}
+
+.auth-header h2 {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+.subtitle {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.4rem;
+}
+
+.auth-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.primary-btn {
+    margin-top: 0.5rem;
+    padding: 0.85rem;
+    border-radius: 10px;
+    border: none;
+    background: #000;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.auth-toggle {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.8rem;
+}
+
+.auth-toggle span {
+    color: #000;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+
+/* LEFT IMAGE */
+
+.auth-left {
+    flex: 1;
+    background: url("/auth-bg.png") center / cover no-repeat;
+}
+
+
+/* RIGHT */
+
+.auth-right {
+    flex: 1;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+
+/* BUTTONS */
+
+.google-btn,
+.github-btn {
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.google-btn {
+    background: #f1f1f1;
+}
+
+.github-btn {
+    background: #111;
+    color: white;
+    margin-top: 0.5rem;
+}
+
+.divider {
+    text-align: center;
+    margin: 1.2rem 0;
+    font-size: 0.8rem;
+    color: #777;
+}
+
+input {
+    padding: 0.8rem;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 0.8rem;
+}
+
+.continue-btn {
+    padding: 0.8rem;
+    border-radius: 10px;
+    border: none;
+    background: #e5e5e5;
+}
+
+.auth-error {
+    color: #ff6b6b;
+    font-size: 0.85rem;
+}
+
+.auth-success {
+    color: #4ade80;
+    font-size: 0.85rem;
+}
+
+.toggle span {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.terms {
+    font-size: 0.75rem;
+    color: #777;
+    margin-top: auto;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 900px) {
+    .auth-modal {
+        width: 95%;
+        height: auto;
+        flex-direction: column;
+    }
+    .auth-left {
+        height: 180px;
+    }
+}

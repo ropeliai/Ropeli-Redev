@@ -105,14 +105,19 @@ body {
 @media (max-width: 768px) {
     .hero-content {
         min-height: calc(100vh - 64px);
-        padding: 1.5rem 1rem;
+        /* 🔥 KEY CHANGE */
+        justify-content: flex-start;
+        padding-top: 22vh;
+        /* moves title + prompt upward */
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
     .hero-content h1 {
         font-size: clamp(2rem, 6vw, 2.6rem);
         line-height: 1.25;
     }
     .prompt-container {
-        margin-top: 2rem;
+        margin-top: 1.4rem;
     }
     .prompt-card {
         height: auto;
@@ -130,7 +135,9 @@ body {
 
 @media (max-width: 480px) {
     .hero-content {
-        padding: 1.2rem 0.9rem;
+        padding-top: 20vh;
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
     }
     .hero-content h1 {
         font-size: 1.9rem;
@@ -146,10 +153,20 @@ body {
         flex-direction: column;
         align-items: stretch;
         gap: 0.8rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    /* FOOTER */
+    .prompt-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .prompt-left {
-        justify-content: space-between;
-        width: 100%;
+        display: flex;
+        gap: 10px;
+        align-items: center;
     }
     /* Buttons easier to tap */
     .icon-btn,
@@ -170,6 +187,31 @@ body {
 }
 
 
+/* =========================
+   MOBILE WAVE POSITION FIX 🌊
+   ========================= */
+
+
+/* Tablets & phones */
+
+@media (max-width: 768px) {
+    .hero-tubes-canvas {
+        transform: translateY(-12vh);
+        /* move wave up */
+    }
+}
+
+
+/* Small phones */
+
+@media (max-width: 480px) {
+    .hero-tubes-canvas {
+        transform: translateY(-10vh);
+        /* slightly more up */
+    }
+}
+
+
 /* PROMPT */
 
 .prompt-container {
@@ -184,7 +226,7 @@ body {
     height: 100px;
     background: radial-gradient( circle at top, rgba(30, 30, 30, 0.95), rgba(10, 10, 10, 0.95));
     border-radius: 22px;
-    border: 0.2px solid rgba(255, 255, 255, 0.7);
+    border: 0.2px solid rgb(255 255 255 / 16%);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -195,7 +237,7 @@ body {
 
 .prompt-card:hover,
 .prompt-card:focus-within {
-    box-shadow: 0 0 0 1px rgba(206, 215, 230, 0.5), 0 14px 45px rgba(195, 203, 216, 0.35);
+    box-shadow: 0 0 0 1px rgba(206, 215, 230, 0.326), 0 14px 45px rgba(195, 203, 216, 0.255);
 }
 
 
@@ -316,6 +358,7 @@ body {
     padding: 0px;
     width: 44px;
     height: 44px;
+    border: 0.12rem solid transparent;
     background: linear-gradient(0deg, rgb(10 10 10) 10%, rgb(40 40 50)) padding-box, conic-gradient( from var(--gradient_rotate), rgb(from var(--metal_01) r g b / 0.5), rgb(from var(--metal_01) r g b / 0.0), rgb(from var(--metal_06) r g b / 0.0), rgb(from var(--metal_06) r g b / 1.0), rgb(from var(--metal_04) r g b / 0.5), rgb(from var(--metal_04) r g b / 0.0), rgb(from var(--metal_04) r g b / 1.0), rgb(from var(--metal_01) r g b / 0.5)) border-box;
     border-radius: 50%;
     border: var(--border_width) solid transparent;
@@ -355,15 +398,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-
-/* LEFT */
-
-.prompt-left {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
 }
 
 
@@ -512,6 +546,52 @@ body {
     }
     .mic-btn {
         align-self: flex-end;
+    }
+}
+
+
+/* =========================
+   MOBILE PROMPT ACTION FIX 🎤⬆️
+   ========================= */
+
+@media (max-width: 640px) {
+    /* Keep footer horizontal */
+    .prompt-footer {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+    }
+    /* Left section (+, mode) stays left */
+    .prompt-left {
+        flex: 1;
+        justify-content: flex-start;
+    }
+    /* Right actions (mic + arrow) */
+    .prompt-footer> :last-child {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    /* Mic & Arrow buttons — smaller & contained */
+    .build-mic-btn,
+    .build-btn-metal {
+        width: 36px;
+        /* ⬅️ smaller */
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    /* Icons inside buttons */
+    .build-mic-btn svg,
+    .build-btn-metal svg {
+        width: 15px;
+        height: 15px;
+    }
+    /* Prevent buttons from escaping card */
+    .build-mic-btn,
+    .build-btn-metal {
+        position: relative;
     }
 }
 

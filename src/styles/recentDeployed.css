@@ -1,0 +1,313 @@
+/* =========================
+   SECTION
+   ========================= */
+
+.rd-section {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1rem 4rem;
+}
+
+.rd-card {
+    width: 100%;
+    max-width: 1200px;
+    background: radial-gradient( circle at top, rgba(25, 25, 25, 0.9), rgba(8, 8, 8, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    backdrop-filter: blur(16px);
+    padding: 1.6rem;
+}
+
+
+/* =========================
+   TABS
+   ========================= */
+
+.rd-tabs {
+    display: inline-flex;
+    gap: 0.6rem;
+    /* ✅ space between buttons */
+    padding: 0.4rem;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 999px;
+    margin-bottom: 1.6rem;
+}
+
+.rd-tabs button {
+    padding: 0.5rem 1.2rem;
+    border-radius: 999px;
+    background: transparent;
+    border: none;
+    color: #cfcfcf;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.rd-tabs button.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+}
+
+
+/* =========================
+   RECENT GRID
+   ========================= */
+
+.recent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.2rem;
+}
+
+
+/* =========================
+   CARD
+   ========================= */
+
+.recent-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.recent-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-2px);
+}
+
+.recent-thumb {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    background: #111;
+}
+
+.recent-info {
+    padding: 0.8rem 0.9rem 1rem;
+}
+
+.recent-info strong {
+    display: block;
+    font-size: 0.95rem;
+    color: white;
+}
+
+.recent-info span {
+    font-size: 0.75rem;
+    color: #9a9a9a;
+}
+
+
+/* =========================
+   MENU
+   ========================= */
+
+.recent-menu-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    /* ✅ perfect centering */
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.55);
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.recent-menu-btn:focus,
+.recent-menu-btn:active {
+    outline: none;
+    box-shadow: none;
+}
+
+
+/* ✅ hover only */
+
+.recent-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.recent-menu {
+    position: absolute;
+    top: 0px;
+    right: 12px;
+    background: #121212;
+    border-radius: 14px;
+    min-width: 180px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    /*   gap: 0.2rem;*/
+    z-index: 20;
+}
+
+.recent-menu button {
+    border-radius: 10px;
+    background: none;
+    border: none;
+    color: #e5e5e5;
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.recent-menu button:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.recent-menu .danger {
+    color: #ff5a5a;
+}
+
+
+/* =========================
+   RENAME INPUT
+   ========================= */
+
+.rename-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 8px;
+    padding: 0.3rem 0.45rem;
+    color: white;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+
+/* =========================
+   PROFILE META
+   ========================= */
+
+.recent-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+    font-size: 0.75rem;
+    color: #9a9a9a;
+}
+
+.avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #333;
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    color: white;
+}
+
+
+/* =========================
+   MODAL
+   ========================= */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: grid;
+    place-items: center;
+    z-index: 100;
+}
+
+.modal {
+    width: min(420px, 90vw);
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 1.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal input {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.7rem;
+    border-radius: 10px;
+    background: #222;
+    border: none;
+    color: white;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+}
+
+.modal-actions button {
+    padding: 0.45rem 1rem;
+    border-radius: 10px;
+    border: none;
+}
+
+.modal-actions .primary {
+    background: white;
+    color: black;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+}
+
+
+/* =========================
+   EMPTY STATE
+   ========================= */
+
+.rd-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #aaa;
+}
+
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 640px) {
+    .recent-thumb {
+        height: 130px;
+    }
+}
+
+@media (max-width: 400px) {
+    .recent-thumb {
+        height: 110px;
+    }
+}
+
+@media (max-width: 300px) {
+    .recent-thumb {
+        height: 90px;
+    }
+}
+
+@media (max-width: 900px) {
+    .rd-card {
+        padding: 1.2rem;
+    }
+}

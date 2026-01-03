@@ -56,6 +56,15 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 2rem;
+    max-width: 1450px;
+    margin: 0 auto;
+    /* ✅ CENTER GRID */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    width: 100%;
+    /* ✅ PREVENT OVERFLOW */
+    box-sizing: border-box;
 }
 
 
@@ -173,16 +182,119 @@
 }
 
 
-/* RESPONSIVE */
+/* ============================= */
 
-@media (max-width: 1200px) {
+
+/* MOBILE RESPONSIVENESS FIXES   */
+
+
+/* ============================= */
+
+
+/* Tablets */
+
+@media (max-width: 900px) {
+    .pricing {
+        padding: 2rem 1.2rem;
+    }
+    .pricing-header {
+        margin-bottom: 2rem;
+    }
+    .billing-toggle {
+        width: 70%;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+    .billing-toggle button {
+        min-width: unset;
+        font-size: 14px;
+        padding: 8px 10px;
+    }
     .pricing-grid {
-        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    .pricing-card {
+        padding: 1.6rem;
+    }
+    .pricing-card h2 {
+        font-size: 1.8rem;
+    }
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+    .pricing {
+        padding: 1.5rem 1rem;
+    }
+    .pricing-header h1 {
+        font-size: 1.8rem;
+    }
+    .pricing-subtitle {
+        font-size: 0.85rem;
+    }
+    .billing-toggle {
+        height: 44px;
+    }
+    .billing-toggle button {
+        font-size: 13px;
+        padding: 6px 8px;
+    }
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+    .pricing-card {
+        border-radius: 16px;
+        padding: 1.4rem;
+    }
+    .pricing-card h3 {
+        font-size: 1.2rem;
+    }
+    .pricing-card h2 {
+        font-size: 1.6rem;
+    }
+    .pricing-card ul {
+        margin: 1rem 0;
+    }
+    .pricing-card li {
+        font-size: 0.8rem;
+    }
+    .token-select {
+        width: 100%;
+        margin: 0.8rem 0;
+    }
+    .primary-btn,
+    .secondary-btn {
+        width: 100%;
+        padding: 0.7rem;
+        font-size: 0.95rem;
     }
 }
 
 @media (max-width: 700px) {
+    .pricing {
+        padding: 1.5rem 1rem;
+        overflow-x: hidden;
+        /* ✅ STOP SIDE CLIPPING */
+    }
     .pricing-grid {
         grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+    .pricing-card {
+        width: 80%;
+    }
+}
+
+
+/* Small phones */
+
+@media (max-width: 600px) {
+    .pricing-card h2 {
+        font-size: 1.4rem;
+    }
+    .pricing-card li {
+        font-size: 0.78rem;
     }
 }

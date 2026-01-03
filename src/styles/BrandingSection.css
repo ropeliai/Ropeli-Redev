@@ -44,3 +44,41 @@
     opacity: 0.05;
     pointer-events: none;
 }
+
+
+/* ------------------ */
+
+
+/* MOBILE RESPONSIVE  */
+
+
+/* ------------------ */
+
+@media (max-width: 768px) {
+    .branding-section {
+        height: 300px;
+        padding: 20px 0;
+    }
+    .smoke-canvas {
+        filter: blur(40px);
+    }
+    .branding-content {
+        transform: translateY(-10px);
+    }
+    .brand-name {
+        font-size: clamp(80px, 28vw, 140px);
+        line-height: 0.9;
+    }
+    .grain-overlay {
+        opacity: 0.03;
+    }
+}
+
+@media (max-width: 480px) {
+    .branding-section {
+        height: 260px;
+    }
+    .brand-name {
+        font-size: clamp(64px, 32vw, 110px);
+    }
+}

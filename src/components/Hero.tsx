@@ -11,7 +11,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import TubesCursor from "https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js";
 
 const PLACEHOLDER_TEXT =
-  "Build a fun multiplayer app I can play with my friends.";
+  "Build a fun app I can play with my friends.";
 
 const Hero = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -298,7 +298,7 @@ const handleBuild = () => {
                 <input  ref={fileInputRef}  type="file"  multiple  className="hidden-file-input"/>
               </div>
 
-              <button className={`icon-btn ${listening ? "active" : ""}`} type="button"  aria-label="Microphone"onClick={toggleMic}>
+              {/*<button className={`icon-btn ${listening ? "active" : ""}`} type="button"  aria-label="Microphone"onClick={toggleMic}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-5 9a7.002 7.002 0 0 0  " />
                 </svg>

@@ -23,7 +23,8 @@ import { useAuth } from "../context/AuthContext";
 import OnboardingModal from "../components/OnboardingModal";
 import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
-import Hero from "../components/hero";
+import RecentDeployed from "../components/RecentDeployed";
+import Hero from "../components/Hero";
 
 import BrandingSection from "../components/BrandingSection";
 import Footer from "../components/Footer";
@@ -58,7 +59,7 @@ const Home = () => {
       <Navbar />
       <Hero />
   
-
+ <RecentDeployed />
       <Footer />
       <BrandingSection /> 
     </>
