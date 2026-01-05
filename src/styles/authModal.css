@@ -11,15 +11,17 @@
 
 .auth-modal {
     width: 900px;
-    height: 520px;
-    background: white;
+    height: 620px;
+    background: rgb(0, 0, 0);
     border-radius: 18px;
     display: flex;
     overflow: hidden;
 }
 
 .auth-header {
-    margin-bottom: 1.5rem;
+    /*margin-bottom: 1.5rem;*/
+    color: rgb(255, 255, 255);
+    text-align: center;
 }
 
 .auth-header h2 {
@@ -29,8 +31,8 @@
 
 .subtitle {
     font-size: 0.9rem;
-    color: #666;
-    margin-top: 0.4rem;
+    color: #949494;
+    margin: 0px;
 }
 
 .auth-content {
@@ -40,12 +42,12 @@
 }
 
 .primary-btn {
-    margin-top: 0.5rem;
+    margin: 0px;
     padding: 0.85rem;
     border-radius: 10px;
     border: none;
-    background: #000;
-    color: white;
+    background: #ffffff;
+    color: rgb(0, 0, 0);
     font-weight: 600;
     cursor: pointer;
 }
@@ -58,11 +60,11 @@
 .auth-toggle {
     font-size: 0.85rem;
     color: #666;
-    margin-top: 0.8rem;
+    margin: 0px;
 }
 
 .auth-toggle span {
-    color: #000;
+    color: #ffffff;
     cursor: pointer;
     text-decoration: underline;
 }
@@ -80,17 +82,18 @@
 
 .auth-right {
     flex: 1;
-    padding: 2.5rem;
+    padding: 5.5rem;
     display: flex;
     flex-direction: column;
     position: relative;
 }
 
-.close-btn {
+.close-btnn {
     position: absolute;
     top: 16px;
     right: 16px;
     border: none;
+    color: #ffffff;
     background: none;
     cursor: pointer;
 }
@@ -108,18 +111,19 @@
 }
 
 .google-btn {
-    background: #f1f1f1;
+    background: #ffffff;
+    color: rgb(0, 0, 0);
 }
 
 .github-btn {
-    background: #111;
-    color: white;
-    margin-top: 0.5rem;
+    background: #ffffff;
+    color: rgb(0, 0, 0);
+    margin: 0px;
 }
 
 .divider {
     text-align: center;
-    margin: 1.2rem 0;
+    /*margin: 1.2rem 0;*/
     font-size: 0.8rem;
     color: #777;
 }
@@ -127,15 +131,16 @@
 input {
     padding: 0.8rem;
     border-radius: 10px;
-    border: 1px solid #ddd;
-    margin-bottom: 0.8rem;
+    border: none;
+    /*margin-bottom: 0.8rem;*/
 }
 
 .continue-btn {
     padding: 0.8rem;
     border-radius: 10px;
     border: none;
-    background: #e5e5e5;
+    background: #ffffff;
+    color: rgb(0, 0, 0);
 }
 
 .auth-error {
@@ -156,7 +161,12 @@ input {
 .terms {
     font-size: 0.75rem;
     color: #777;
-    margin-top: auto;
+}
+
+.terms-a {
+    font-weight: 500;
+    color: #ffffff;
+    text-decoration: inherit;
 }
 
 

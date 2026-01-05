@@ -35,17 +35,6 @@ body {
 }
 
 
-/*
-.hero {
-    position: relative;
-    width: 100vw;
-    min-height: 100vh;
-    overflow: hidden;
-    background: radial-gradient(circle at top left, #1a1a1a 0%, #000 60%);
-}
-*/
-
-
 /* STARFIELD CANVAS */
 
 .hero-canvas {
@@ -148,7 +137,7 @@ body {
         padding: 0.9rem;
         border-radius: 16px;
     }
-    /* Footer controls stack better */
+    /* FOOTER */
     .prompt-footer {
         flex-direction: column;
         align-items: stretch;
@@ -156,24 +145,31 @@ body {
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-    /* FOOTER */
-    .prompt-footer {
         display: flex;
+        align-items: center;
+        /* 🔥 vertical alignment fix */
+        margin-top: 0.6rem;
+    }
+    .prompt-footer.single-row {
+        display: flex;
+        align-items: center;
         justify-content: space-between;
-        align-items: center;
+        gap: 12px;
     }
-    .prompt-left {
+    .prompt-left,
+    .prompt-right {
         display: flex;
-        gap: 10px;
         align-items: center;
+        gap: 10px;
     }
     /* Buttons easier to tap */
     .icon-btn,
     .build-mic-btn,
     .build-btn-metal {
-        width: 42px;
-        height: 42px;
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
     }
     /* Build arrow stays reachable */
     .build-btn-metal {
@@ -223,16 +219,14 @@ body {
 
 .prompt-card {
     width: min(900px, 94vw);
-    height: 100px;
+    min-height: 96px;
     background: radial-gradient( circle at top, rgba(30, 30, 30, 0.95), rgba(10, 10, 10, 0.95));
     border-radius: 22px;
-    border: 0.2px solid rgb(255 255 255 / 16%);
+    border: 1px solid rgb(255 255 255 / 14%);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 1.3rem 1.5rem;
+    padding: 1rem 1.2rem;
     backdrop-filter: blur(16px);
-    transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .prompt-card:hover,
@@ -254,6 +248,7 @@ body {
     font-size: 1.05rem;
     position: relative;
     z-index: 2;
+    min-height: 40px;
     line-height: 1.5;
 }
 
@@ -262,9 +257,10 @@ body {
 
 .prompt-textarea-wrapper {
     position: relative;
-    width: 100%;
     flex: 1;
-    display: block;
+    display: flex;
+    align-items: center;
+    /* 🔥 centers text vertically */
 }
 
 .prompt-transmission {
@@ -342,6 +338,26 @@ body {
 }
 
 
+/* ================= figma BUTTON ================= */
+
+
+/* FIGMA BUTTON */
+
+.figma-btn img {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+
+/* Slight hover polish (matches modern AI tools) */
+
+.figma-btn:hover {
+    border-color: #444;
+    background: #1f1f1f;
+}
+
+
 /* ================= METAL BUILD BUTTON ================= */
 
 .build-btn-metal {
@@ -398,6 +414,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    /* 🔥 vertical alignment fix */
+    margin-top: 0.6rem;
 }
 
 
@@ -536,6 +554,56 @@ body {
     border-color: #ff4d4d;
 }
 
+.model-selector {
+    position: relative;
+}
+
+.model-btn {
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    padding: 6px 12px;
+    color: #eaeaea;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.model-btn:hover {
+    background: #1c1c1c;
+}
+
+.model-dropdown {
+    position: absolute;
+    bottom: 48px;
+    left: 0;
+    width: 240px;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    z-index: 50;
+}
+
+.model-item {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #dcdcdc;
+    cursor: pointer;
+}
+
+.model-item:hover {
+    background: #1b1b1b;
+}
+
+.model-item.active {
+    background: #222;
+    color: #fff;
+}
+
 
 /* MOBILE */
 
@@ -550,9 +618,7 @@ body {
 }
 
 
-/* =========================
-   MOBILE PROMPT ACTION FIX 🎤⬆️
-   ========================= */
+/* ========================= MOBILE PROMPT ACTION FIX ========================= */
 
 @media (max-width: 640px) {
     /* Keep footer horizontal */
@@ -596,21 +662,83 @@ body {
 }
 
 
-/* SUGGESTIONS */
+/* ---------- PROMPT FOOTER SINGLE ROW ---------- */
 
-.suggestions {
-    margin-top: 1.6rem;
+.prompt-footer.single-row {
     display: flex;
-    gap: 0.8rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: nowrap;
+    margin-top: 0.6rem;
 }
 
-.suggestions span {
-    background: #111;
+.prompt-left,
+.prompt-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+}
+
+
+/* Prevent wrapping / shrinking */
+
+.icon-btn,
+.figma-btn,
+.model-btn,
+.build-mic-btn,
+.build-btn-metal {
+    flex-shrink: 0;
+}
+
+
+/* ---------- BUTTONS ---------- */
+
+.icon-btn {
+    width: 36px;
+    height: 36px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    color: white;
+    font-size: 1.4rem;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.figma-btn img {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* ---------- MODEL ---------- */
+
+.model-btn {
+    background: #141414;
     border: 1px solid #2a2a2a;
-    padding: 0.7rem 1.2rem;
     border-radius: 999px;
-    font-size: 0.95rem;
-    color: #cfcfcf;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    color: #eaeaea;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+/* ---------- MOBILE (STILL ONE ROW) ---------- */
+
+@media (max-width: 480px) {
+    .prompt-footer.single-row {
+        gap: 8px;
+    }
+    .icon-btn,
+    .build-mic-btn,
+    .build-btn-metal {
+        width: 36px;
+        height: 36px;
+    }
 }

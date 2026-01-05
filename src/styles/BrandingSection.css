@@ -2,11 +2,18 @@
 .branding-section {
     position: relative;
     height: 500px;
+    /* or whatever you want */
     background: #050505;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+}
+
+.branding-stars {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .smoke-canvas {
@@ -28,6 +35,7 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    margin-top: 190px;
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.8));
 }
 

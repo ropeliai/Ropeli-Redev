@@ -72,6 +72,25 @@ const handleBuild = () => {
     }
   };
 
+  /*---FIGMA---*/
+  const handleFigmaClick = () => {
+  alert("Will be soon");
+};
+
+  /*---Models---*/
+
+const MODELS = [
+  "Claude 4.5 Sonnet",
+  "Claude 4.5 Opus",
+  "Claude 4.5 Sonnet – 1M",
+  
+];
+
+const [selectedModel, setSelectedModel] = useState("Claude 4.5 Sonnet");
+const [modelOpen, setModelOpen] = useState(false);
+
+
+
   /* ---------- MICROPHONE ---------- */
   const toggleMic = () => {
     const SpeechRecognition =
@@ -287,35 +306,80 @@ const handleBuild = () => {
               </div>
             )}
 
-            <div className="prompt-footer">
-              <div className="prompt-left">
-                <button className="icon-btn" onClick={() => fileInputRef.current?.click()}  >
-                  +
-                  {/*<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                  </svg>*/}
-                </button>
-                <input  ref={fileInputRef}  type="file"  multiple  className="hidden-file-input"/>
-              </div>
+           <div className="prompt-footer single-row">
+  {/* LEFT SIDE */}
+  <div className="prompt-left">
+    {/* + */}
+    <button
+      className="icon-btn"
+      onClick={() => fileInputRef.current?.click()}
+    >
+      +
+    </button>
 
-              {/*<button className={`icon-btn ${listening ? "active" : ""}`} type="button"  aria-label="Microphone"onClick={toggleMic}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-5 9a7.002 7.002 0 0 0  " />
-                </svg>
-              </button>
+    {/* hidden file input */}
+    <input
+      ref={fileInputRef}
+      type="file"
+      multiple
+      className="hidden-file-input"
+    />
 
-              {/*<button className="build-btn-metal" type="button" aria-label="Build it">
-                <svg data-name="1-Arrow Up" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 32 32">
-                  <path d="m26.71 10.29-10-10a1 1 0 0 0-1.41 0l-10 10 1.41 1.41L15 3.41V32h2V3.41l8.29 8.29z" />
-                </svg>
-              </button>*/}
+    {/* Figma */}
+    <button className="icon-btn figma-btn" onClick={handleFigmaClick}>
+      <img src="/figma.svg" alt="Figma" />
+    </button>
 
-              <button className="build-btn-metal" type="button" aria-label="Build it" onClick={handleBuild} >
-               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-                 <path d="m26.71 10.29-10-10a1 1 0 0 0-1.41 0l-10 10 1.41 1.41L15 3.41V32h2V3.41l8.29 8.29z" />
-               </svg>
-              </button>
+    {/* MODEL SELECTOR */}
+    <div className="model-selector">
+      <button
+        className="model-btn"
+        onClick={() => setModelOpen((v) => !v)}
+      >
+        {selectedModel}
+        <span className="chevron">▾</span>
+      </button>
+
+      {modelOpen && (
+        <div className="model-dropdown">
+          {MODELS.map((model) => (
+            <div
+              key={model}
+              className={`model-item ${
+                model === selectedModel ? "active" : ""
+              }`}
+              onClick={() => {
+                setSelectedModel(model);
+                setModelOpen(false);
+              }}
+            >
+              {model}
             </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* RIGHT SIDE */}
+  <div className="prompt-right">
+    {/* MIC */}
+    <button
+      className={`build-mic-btn ${listening ? "active" : ""}`}
+      onClick={toggleMic}
+    >
+      🎤
+    </button>
+
+    {/* SEND */}
+    <button className="build-btn-metal" onClick={handleBuild}>
+      <svg viewBox="0 0 32 32">
+        <path d="m26.71 10.29-10-10a1 1 0 0 0-1.41 0l-10 10 1.41 1.41L15 3.41V32h2V3.41l8.29 8.29z" />
+      </svg>
+    </button>
+  </div>
+</div>
+
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ const AuthModal = ({ open, onClose }: Props) => {
 
         {/* RIGHT CONTENT */}
         <div className="auth-right">
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btnn" onClick={onClose}>
             <X size={18} />
           </button>
 
@@ -33,7 +33,7 @@ const AuthModal = ({ open, onClose }: Props) => {
 
           <p className="terms">
             By continuing, you agree to our{" "}
-            <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+            <a href="#" className="terms-a">Terms</a> and <a href="#"  className="terms-a">Privacy Policy</a>.
           </p>
         </div>
       </div>

@@ -25,7 +25,6 @@ import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import RecentDeployed from "../components/RecentDeployed";
 import Hero from "../components/Hero";
-
 import BrandingSection from "../components/BrandingSection";
 import Footer from "../components/Footer";
 

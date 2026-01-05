@@ -20,6 +20,10 @@ const Footer = () => {
               <li>Features</li>
               <li>Pricing</li>
               <li>Templates</li>
+              <li>Developers Playground</li>
+              <li>Integrations</li>
+              {/*<li><NavLink to="/dev-house">DEV HOUSE</NavLink></li>
+            <li><NavLink to="/pricing">PRICING</NavLink></li>*/}
             </ul>
           </div>
 
@@ -29,6 +33,8 @@ const Footer = () => {
               <li>About</li>
               <li>Blog</li>
               <li>Careers</li>
+              <li>FAQ's</li>
+              <li>Founders</li>
             </ul>
           </div>
 
@@ -47,11 +53,11 @@ const Footer = () => {
         <div className="footer-bottom">
           <span>© 2025 Ropeli AI. All rights reserved.</span>
 
-          <div className="footer-icons">
+          {/*<div className="footer-icons">
             <span>🐙</span>
             <span>💬</span>
             <span>🌐</span>
-          </div>
+          </div>*/}
         </div>
       </div>
     </footer>

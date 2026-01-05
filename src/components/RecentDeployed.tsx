@@ -80,6 +80,8 @@ export default RecentDeployed;
 
 
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+
 import "../styles/recentDeployed.css";
 
 type Tab = "recent" | "deployed" | "templates";
@@ -122,9 +124,13 @@ export default function RecentDeployed() {
 
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  /* =========================
-     CLOSE MENU ON OUTSIDE CLICK
-     ========================= */
+
+  /*profile for recent, my projects avatar*/
+  const { user } = useAuth();
+
+
+
+  /* ==== CLOSE MENU ON OUTSIDE CLICK ==== */
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (
@@ -184,17 +190,22 @@ export default function RecentDeployed() {
     <section className="rd-section">
       <div className="rd-card">
         {/* TABS */}
-        <div className="rd-tabs">
-          {(["recent", "deployed", "templates"] as Tab[]).map((tab) => (
-            <button
-              key={tab}
-              className={activeTab === tab ? "active" : ""}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <div className="rd-tabs-alt">
+          <button className={activeTab === "recent" ? "active" : ""} onClick={() => setActiveTab("recent")} >
+            My Projects  
+          </button>
+          <span className="rd-divider">|</span>
+
+          <button className={activeTab === "deployed" ? "active" : ""} onClick={() => setActiveTab("deployed")}>
+            Deployed Apps
+          </button>
+          <span className="rd-divider">|</span>
+
+          <button className={activeTab === "templates" ? "active" : ""} onClick={() => setActiveTab("templates")}>
+            Templates
+          </button>
+       </div>
+
 
         {/* GRID */}
         <div className="recent-grid">
@@ -251,7 +262,11 @@ export default function RecentDeployed() {
               <div className="recent-info">
                 <strong>{project.name}</strong>
                 <div className="recent-meta">
-                  <div className="avatar">P</div>
+                  <div className="avatar">
+                    {user?.email?.[0]?.toUpperCase()}
+                  </div>
+
+
                   <span>{project.lastEdited}</span>
                 </div>
               </div>
