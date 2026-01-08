@@ -57,12 +57,9 @@ const Navbar = () => {
 
           {/* DESKTOP LINKS */}
           <ul className="nav-links">
-            <li>
-              <NavLink to="/dev-house">DEV HOUSE</NavLink>
-            </li>
-            <li>
-              <NavLink to="/pricing">PRICING</NavLink>
-            </li>
+            <li><NavLink to="/templates">TEMPLATES</NavLink></li>
+            <li> <NavLink to="/dev-house">DEVELOPERS PLAYGROUND</NavLink></li>
+            <li><NavLink to="/pricing">PRICING</NavLink></li>
           </ul>
 
           {/* RIGHT SIDE */}
@@ -105,10 +102,7 @@ const Navbar = () => {
             )}
 
             {/* 🔹 HAMBURGER (MOBILE) */}
-            <button
-              className="hamburger"
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
+            <button className="hamburger" onClick={() => setMenuOpen((prev) => !prev)} >
               <span />
               <span />
               <span />
@@ -120,35 +114,9 @@ const Navbar = () => {
       {/* ================= MOBILE MENU ================= */}
       {menuOpen && (
         <div className="mobile-menu">
-          <NavLink to="/dev-house" onClick={() => setMenuOpen(false)}>
-            Dev House
-          </NavLink>
-
-          <NavLink to="/pricing" onClick={() => setMenuOpen(false)}>
-            Pricing
-          </NavLink>
-
-          {!user ? (
-            <button
-              className="mobile-auth-btn"
-              onClick={() => {
-                setAuthOpen(true);
-                setMenuOpen(false);
-              }}
-            >
-              Get Started
-            </button>
-          ) : (
-            <button
-              className="mobile-auth-btn logout"
-              onClick={() => {
-                signOut();
-                setMenuOpen(false);
-              }}
-            >
-              Logout
-            </button>
-          )}
+          <NavLink to="/templates" onClick={() => setMenuOpen(false)}> Templates </NavLink>
+          <NavLink to="/dev-house" onClick={() => setMenuOpen(false)}> Developers Playground </NavLink>
+          <NavLink to="/pricing" onClick={() => setMenuOpen(false)}> Pricing </NavLink>
         </div>
       )}
 

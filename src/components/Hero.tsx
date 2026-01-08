@@ -13,6 +13,9 @@ import TubesCursor from "https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/
 const PLACEHOLDER_TEXT =
   "Build a fun app I can play with my friends.";
 
+type FigmaState = "idle" | "loading" | "success" | "error";
+
+
 const Hero = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -22,26 +25,6 @@ const Hero = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
-
-
-  /*------------ NAVIGATE TO BUILDER -----------*/
-
-
-  const navigate = useNavigate();
-
-const handleBuild = () => {
-  if (!text.trim()) {
-    console.warn("Prompt is empty");
-    return;
-  }
-
-  navigate("/Builder", {
-    state: {
-      prompt: text
-    }
-  });
-};
-
 
   /* ---------- Spanized placeholder ---------- */
   const spanizedPlaceholder = useMemo(
@@ -72,10 +55,68 @@ const handleBuild = () => {
     }
   };
 
+
+
   /*---FIGMA---*/
-  const handleFigmaClick = () => {
-  alert("Will be soon");
+const handleFigmaClick = () => {
+  setFigmaOpen(true);
 };
+
+
+
+  /* ================= FIGMA STATE ================= */
+  const [figmaOpen, setFigmaOpen] = useState(false);
+  const [figmaUrl, setFigmaUrl] = useState("");
+  const [figmaState, setFigmaState] = useState<FigmaState>("idle");
+  const [figmaDesign, setFigmaDesign] = useState<any>(null);
+
+  const navigate = useNavigate();
+
+
+
+  /* ================= navigate to builder ================= */
+  const handleBuild = () => {
+    if (!text.trim()) return;
+
+    navigate("/Builder", {
+      state: {
+        prompt: text,
+        design: figmaDesign, // 👈 attached for later backend + model
+      },
+    });
+  };
+
+  /* ================= FIGMA FLOW ================= */
+  const startFigmaImport = () => {
+  if (!figmaUrl.trim()) return;
+
+  //  Validate first
+  if (!figmaUrl.includes("figma.com")) {
+    setFigmaState("error");
+    return;
+  }
+
+  //  Then go to loading
+  setFigmaState("loading");
+
+    //frontend mock (backend later)
+    setTimeout(() => {
+      setFigmaDesign({
+        type: "figma",
+        url: figmaUrl,
+        importedAt: Date.now(),
+      });
+
+      setFigmaState("success");
+      setFigmaUrl("");
+      // auto close modal after success
+      setTimeout(() => {
+        setFigmaOpen(false);
+        setFigmaState("idle");
+      }, 1200);
+    }, 1800);
+  };
+
 
   /*---Models---*/
 
@@ -123,6 +164,8 @@ const [modelOpen, setModelOpen] = useState(false);
     setListening(true);
   };
 
+
+  
   /* ================= TUBES CURSOR ================= */
   useEffect(() => {
     if (!tubesCanvasRef.current) return;
@@ -289,6 +332,13 @@ const [modelOpen, setModelOpen] = useState(false);
 
         <div className="prompt-container">
           <div className="prompt-card">
+            {figmaDesign && (
+  <div className="design-badge">
+    🎨 Figma design attached
+    <button onClick={() => setFigmaDesign(null)}>×</button>
+  </div>
+)}
+
             <div className="prompt-textarea-wrapper">
               {!text && (
                 <div className="prompt-transmission">
@@ -327,7 +377,7 @@ const [modelOpen, setModelOpen] = useState(false);
 
     {/* Figma */}
     <button className="icon-btn figma-btn" onClick={handleFigmaClick}>
-      <img src="/figma.svg" alt="Figma" />
+      <img src="/figma.png" alt="Figma" />
     </button>
 
     {/* MODEL SELECTOR */}
@@ -364,11 +414,9 @@ const [modelOpen, setModelOpen] = useState(false);
   {/* RIGHT SIDE */}
   <div className="prompt-right">
     {/* MIC */}
-    <button
-      className={`build-mic-btn ${listening ? "active" : ""}`}
-      onClick={toggleMic}
-    >
-      🎤
+    {/*<button className={`build-mic-btn ${listening ? "active" : ""}`} onClick={toggleMic} > 🎤 </button>*/}
+     <button className="icon-btn figma-btn" onClick={toggleMic}>
+      <img src="/mic1.png" alt="Figma" />
     </button>
 
     {/* SEND */}
@@ -383,6 +431,74 @@ const [modelOpen, setModelOpen] = useState(false);
           </div>
         </div>
       </div>
+
+      {figmaOpen && (
+  <div className="figma-modal-overlay" onClick={() => setFigmaOpen(false)}>
+    <div
+      className="figma-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Close */}
+      <button
+        className="figma-close"
+        onClick={() => setFigmaOpen(false)}
+      >
+        ×
+      </button>
+
+      {/* Logo */}
+      <div className="figma-logo">
+        <img src="/figma.png" alt="Figma" />
+      </div>
+
+      {/* Title */}
+      <h3>Figma frame or file import</h3>
+
+      {/* Input */}
+     {figmaState === "idle" && (
+  <>
+    <input
+      type="text"
+      placeholder="Paste Figma file or frame URL"
+      value={figmaUrl}
+      onChange={(e) => setFigmaUrl(e.target.value)}
+    />
+    <button
+      className="figma-import-btn"
+      onClick={startFigmaImport} >
+      Import
+    </button>
+  </>
+)}
+
+{figmaState === "loading" && (
+  <div className="figma-loading">
+    ⏳ Importing design…
+  </div>
+)}
+
+{figmaState === "success" && (
+  <div className="figma-success">
+    ✅ Design attached successfully
+  </div>
+)}
+
+
+      {/* Links */}
+      <div className="figma-links">
+        <a href="#">How to get URL?</a>
+        
+      </div>
+
+      {/* Info */}
+      <div className="figma-info">
+        ⚠️ Figma has recently introduced API rate limits based on your
+        subscription plan. Your request may be impacted due to this rate limit.
+      </div>
+    </div>
+  </div>
+)}
+
     </section>
   );
 };
