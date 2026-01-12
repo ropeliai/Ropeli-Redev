@@ -1,10 +1,8 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "./pages/home";
+import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Templates from "./pages/Templates";
 import Community from "./pages/Community";
-import Resources from "./pages/Pricing";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Pricing from "./pages/Pricing";
 import Careers from "./pages/careers";
 import Blog from "./pages/Blog";
@@ -36,7 +34,6 @@ const App = () => {
       <Route path="/terms" element={<Terms />} />
       <Route path="/github" element={<GitHubIntegration />} />
       <Route path="/developers-playground" element={<DevelopersPlayground />} />
-      <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
     </Routes>
   );
 };
