@@ -372,8 +372,8 @@ body {
     position: relative;
     cursor: pointer;
     padding: 0px;
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     border: 0.12rem solid transparent;
     background: linear-gradient(0deg, rgb(10 10 10) 10%, rgb(40 40 50)) padding-box, conic-gradient( from var(--gradient_rotate), rgb(from var(--metal_01) r g b / 0.5), rgb(from var(--metal_01) r g b / 0.0), rgb(from var(--metal_06) r g b / 0.0), rgb(from var(--metal_06) r g b / 1.0), rgb(from var(--metal_04) r g b / 0.5), rgb(from var(--metal_04) r g b / 0.0), rgb(from var(--metal_04) r g b / 1.0), rgb(from var(--metal_01) r g b / 0.5)) border-box;
     border-radius: 50%;
@@ -605,6 +605,59 @@ body {
 }
 
 
+/* ---------- MODEL ICONS ---------- */
+
+.model-icon {
+    width: 14px;
+    height: 14px;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.model-icon-img {
+    width: 20px;
+    height: 20px;
+    background-color: #ffffff;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+
+/* Dropdown item layout */
+
+.model-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+
+/* Text stack */
+
+.model-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.model-name {
+    font-size: 0.85rem;
+    color: #ffffff;
+}
+
+.model-desc {
+    font-size: 0.7rem;
+    color: #9a9a9a;
+}
+
+
+/* Selected */
+
+.model-item.active .model-name {
+    color: #ffffff;
+}
+
+
 /* MOBILE */
 
 @media (max-width: 640px) {
@@ -693,7 +746,7 @@ body {
 }
 
 
-/* ---------- BUTTONS ---------- */
+/* ---------- BUTTONS ----------  for hover + (Attach files & images) added css in the builder.css */
 
 .icon-btn {
     width: 36px;
@@ -740,6 +793,12 @@ body {
     .build-btn-metal {
         width: 36px;
         height: 36px;
+    }
+}
+
+@media (max-width: 640px) {
+    .model-selector {
+        display: none;
     }
 }
 
@@ -899,3 +958,88 @@ figma-modal input::placeholder {
 
 
 /* ========================= END FIGMA MODAL ========================= */
+
+
+/* ================= QUICK SUGGESTIONS (4 PILLS) ================= */
+
+.quick-suggestions {
+    margin-top: 1.2rem;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.quick-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.55rem 1.2rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-pill img {
+    width: 16px;
+    height: 16px;
+    color: white;
+    opacity: 0.9;
+    background-color: white;
+}
+
+.quick-pill:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+}
+
+.quick-pill.surprise {
+    background: linear-gradient(135deg, #7ab7ff, #b983ff);
+    color: #000;
+    border: none;
+    font-weight: 500;
+}
+
+.quick-pill.surprise:hover {
+    background: linear-gradient(135deg, #6aa6ff, #a972ff);
+    transform: translateY(-1px);
+}
+
+
+/* ================= MOBILE RESPONSIVE SUGGESTIONS ================= */
+
+
+/* Tablets */
+
+@media (max-width: 768px) {
+    .quick-suggestions {
+        gap: 10px;
+        margin-top: 14px;
+    }
+    .quick-pill {
+        padding: 0.5rem 1rem;
+        font-size: 0.82rem;
+    }
+}
+
+
+/* Phones */
+
+@media (max-width: 480px) {
+    .quick-suggestions {
+        justify-content: center;
+        gap: 8px;
+    }
+    .quick-pill {
+        font-size: 0.78rem;
+        padding: 0.45rem 0.9rem;
+    }
+    /* Make Surprise Me stand out & easier to tap */
+    .quick-pill.surprise {
+        padding: 0.55rem 1.1rem;
+    }
+}

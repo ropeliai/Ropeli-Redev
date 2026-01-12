@@ -1,7 +1,7 @@
 .navbar {
     width: 100%;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.75);
+    height: 50px;
+    background: rgba(18, 18, 18, 0.75);
     backdrop-filter: blur(10px);
     position: sticky;
     top: 0;
@@ -16,7 +16,8 @@
 
 .navbar-inner {
     width: 100%;
-    padding: 0 clamp(1rem, 4vw, 3rem);
+    padding-right: 0px;
+    padding-left: 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -42,6 +43,10 @@
     list-style: none;
 }
 
+.nav-links li:hover a {
+    color: white;
+}
+
 .nav-links a {
     color: #bbb;
     text-decoration: none;
@@ -59,6 +64,115 @@
     border: 0.5px solid rgb(143, 143, 143);
     border-radius: 999px;
     cursor: pointer;
+    margin-top: 0px;
+}
+
+
+/* ===== COMMUNITY DROPDOWN ===== */
+
+.community-wrapper {
+    position: relative;
+}
+
+.community-link {
+    color: #bbb;
+    cursor: pointer;
+}
+
+.community-wrapper:hover .community-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.community-dropdown {
+    position: absolute;
+    top: 42px;
+    left: 0;
+    display: flex;
+    gap: 40px;
+    background: #111;
+    padding: 18px 22px;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.25s ease;
+    z-index: 9999;
+}
+
+.community-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.community-title {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+}
+
+.community-column a {
+    color: #ddd;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.community-column a:hover {
+    color: #fff;
+}
+
+
+/*git and offer link styles*/
+
+
+/* ===== NAV ICONS ===== */
+
+.nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    margin-top: 0px;
+    width: auto;
+}
+
+.nav-icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    height: 34px;
+    width: 34px;
+    background: #c1c1c1;
+    color: #bbb;
+    padding: 6px;
+    margin-top: 0px;
+    border-radius: 50%;
+}
+
+.nav-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.863)
+}
+
+.nav-icon-offer {
+    margin-top: 0px;
+    height: 36px;
+    width: 36px;
+    padding: 4px;
+    background: #80fff91a;
+    /* color: black; */
+    border-radius: 50%;
+    border: none;
+    /* border-radius: 8px; */
+    font-weight: 600;
+}
+
+.nav-icon-offer:hover {
+    background: #80fff933;
+    /* color: black; */
 }
 
 
@@ -66,6 +180,7 @@
 
 .profile-wrapper {
     position: relative;
+    margin-right: 0px !important;
 }
 
 .profile-btn {
@@ -73,6 +188,7 @@
     border: none;
     cursor: pointer;
     padding: 0;
+    margin-top: 0px;
 }
 
 .profile-btn:focus,
@@ -109,7 +225,6 @@
     padding: 16px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
     z-index: 9999;
-    /* 🔥 prevents disappearing behind canvas */
 }
 
 .profile-header {
@@ -140,6 +255,7 @@
 .profile-name {
     color: #fff;
     font-size: 14px;
+    margin-bottom: 0px;
     font-weight: 500;
 }
 
@@ -215,7 +331,7 @@
 .nav-right {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.2rem;
 }
 
 
@@ -223,10 +339,13 @@
 
 .hamburger {
     display: none;
+    margin-top: 0px;
+    background: none;
+    border: none;
 }
 
 @media (max-width: 768px) {
-    .nav-links {
+    .desktop-only {
         display: none;
     }
     .hamburger {
@@ -285,5 +404,137 @@
     }
     .mobile-menu.show {
         display: flex;
+    }
+}
+
+
+/* ===== MOBILE MENU ENHANCED ===== */
+
+.mobile-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 12px 0;
+}
+
+.mobile-auth-btn {
+    background: #1a1a1a;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.mobile-auth-btn.primary {
+    background: #1e90ff;
+    color: white;
+}
+
+.mobile-profile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mobile-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-size: 14px;
+}
+
+
+/* Hide desktop profile on mobile */
+
+.desktop-only {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none;
+    }
+}
+
+
+/* ===== MOBILE MENU SLIDE IN ===== */
+
+.mobile-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 260px;
+    background: #111;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 9999;
+    box-shadow: -20px 0 40px rgba(0, 0, 0, 0.6);
+    animation: slideIn 0.25s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+
+/* CLOSE BUTTON */
+
+.mobile-close {
+    align-self: flex-end;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: white;
+    font-size: 18px;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+
+/* DIVIDER */
+
+.mobile-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 12px 0;
+}
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: flex;
+    }
+}
+
+
+/* REMOVE PROFILE AVATAR FROM MOBILE NAVBAR */
+
+@media (max-width: 900px) {
+    .profile-wrapper {
+        display: none
+    }
+}
+
+
+/* ===============================
+   FORCE DESKTOP GET STARTED
+   =============================== */
+
+@media (min-width: 769px) {
+    .signup-btn {
+        display: inline-flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
     }
 }

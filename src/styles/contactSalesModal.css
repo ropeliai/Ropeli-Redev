@@ -1,0 +1,201 @@
+.sales-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.sales-modal {
+    background: white;
+    width: 500px;
+    max-width: 80%;
+    padding: 2rem;
+    border-radius: 14px;
+    position: relative;
+}
+
+.sales-modal h2 {
+    text-align: center;
+    margin-bottom: 0.4rem;
+    color: black;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.row {
+    display: flex;
+    gap: 1rem;
+}
+
+.sales-modal input,
+.sales-modal textarea {
+    width: 95%;
+    margin-bottom: 1rem;
+    padding: 0.7rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    color: #818181;
+    font-size: 0.9rem;
+}
+
+.sales-modal textarea {
+    min-height: 80px;
+}
+
+.submit-btn {
+    width: 100%;
+    background: #0f4c4f;
+    color: white;
+    padding: 0.8rem;
+    border-radius: 6px;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: none;
+    color: #000000;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+input {
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background: rgb(255, 255, 255);
+}
+
+
+/* ===== Overlay stays fixed ===== */
+
+.sales-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+
+/* ===== Modal container ===== */
+
+.sales-modal {
+    background: white;
+    width: 520px;
+    max-height: 90vh;
+    /* ✅ limit height */
+    padding: 2rem;
+    border-radius: 14px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* ✅ prevent outer scroll */
+}
+
+
+/* ===== Scrollable form content ===== */
+
+.sales-modal form,
+.sales-modal .form-body {
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+
+/* ===== Close button stays fixed ===== */
+
+.sales-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #000000;
+    color: #000000;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+
+/* ===== Mobile specific ===== */
+
+@media (max-width: 600px) {
+    .sales-modal {
+        height: 100vh;
+        width: 92%;
+        /* ✅ full screen modal */
+        max-height: 100vh;
+        border-radius: 0;
+        padding: 1.2rem;
+    }
+    .row {
+        gap: 2;
+        margin-top: 2px;
+    }
+    .submit-btn {
+        position: sticky;
+        bottom: 0;
+        margin-top: 1rem;
+    }
+    .sales-model input {
+        padding: 0.5rem;
+        width: 92%;
+        margin-bottom: 0.7rem;
+    }
+    .subtitle {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1.3rem;
+    }
+}
+
+.sales-modal {
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.form-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+@media (max-width: 400px) {
+    .sales-modal {
+        height: 100vh;
+        border-radius: 0;
+    }
+    .submit-btn {
+        position: sticky;
+        bottom: 0;
+    }
+    .sales-model input {
+        padding: 0.5rem;
+        width: 92%;
+        margin-bottom: 0.7rem;
+    }
+}

@@ -1,170 +1,198 @@
-html,
-body {
-    margin: 0;
-    padding: 0;
-    background: black;
+/* =========================
+   TEMPLATES PAGE (MATCH PRICING)
+   ========================= */
+
+.templates {
     width: 100%;
+    max-width: 1540px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: radial-gradient(circle at top, #1a1a1a, #000);
+    color: white;
+    box-sizing: border-box;
     overflow-x: hidden;
 }
 
 
-/* PAGE */
+/* =========================
+   HEADER
+   ========================= */
 
-.templates-page {
-    width: 100vw;
-    min-height: 100%;
-    background: radial-gradient(circle at top, #0b0b0f, #000);
-    display: flex;
-    justify-content: center;
-    color: #fff;
+.templates-header {
+    max-width: 1450px;
+    margin: 0 auto 45px auto;
+    padding: 0 1rem;
+    text-align: left;
 }
 
-
-/* CENTERED WRAPPER */
-
-.templates-container {
-    width: 100%;
-    max-width: 1400px;
-    padding: 6rem 2.5rem;
-}
-
-
-/* TITLE */
-
-.templates-title {
-    font-size: 2.4rem;
+.templates-header h1 {
+    font-size: 2rem;
     font-weight: 600;
-    margin-bottom: 2.5rem;
+}
+
+.templates-header p {
+    color: #9ca3af;
+    margin-top: 0.4rem;
+    font-size: 0.95rem;
+}
+
+.primary.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 
-/* FILTERS */
-
-.template-filters {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    margin-bottom: 3rem;
-}
-
-.filter-btn {
-    background: #16161c;
-    border: 1px solid #2a2a35;
-    color: #fff;
-    padding: 0.45rem 1.1rem;
-    border-radius: 999px;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.filter-btn.active,
-.filter-btn:hover {
-    border-color: #fff;
-}
-
-
-/* GRID */
+/* =========================
+   GRID — SAME AS PRICING GRID
+   ========================= */
 
 .templates-grid {
-    max-width: 1200px;
-    /* control content width */
+    max-width: 1450px;
     margin: 0 auto;
-    /* ✅ CENTER GRID */
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-    width: 80%;
-    box-sizing: border-box;
+    gap: 2.5rem;
 }
 
 
-/* CARD */
+/* =========================
+   CARD
+   ========================= */
 
 .template-card {
-    background: linear-gradient( 180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
-    border-radius: 18px;
+    width: 100%;
+    height: 95%;
+    background: rgba(15, 15, 15, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid #222;
+    border-radius: 20px;
     overflow: hidden;
-    border: 1px solid #1f1f29;
-    transition: transform 0.3s ease, border 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
 }
 
 .template-card:hover {
-    transform: translateY(-6px);
-    border-color: #ffffff40;
+    transform: translateY(-8px);
+    border-color: #e3e7ed63;
+    box-shadow: 0 0 40px rgba(138, 180, 248, 0.25);
 }
 
 
-/* IMAGE PLACEHOLDER */
+/* =========================
+   IMAGE
+   ========================= */
 
-.template-image {
-    height: 180px;
-    background: linear-gradient(135deg, #0d0d12, #14141b);
-    display: flex;
-    align-items: center;
-    padding-left: 1rem;
-    font-size: 0.9rem;
-    opacity: 0.7;
-}
-
-
-/* CONTENT */
-
-.template-content {
-    padding: 1.2rem;
-}
-
-.template-desc {
-    font-size: 0.95rem;
-    margin-bottom: 1rem;
-}
-
-
-/* META */
-
-.template-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.icons span {
-    margin-right: 0.5rem;
-    cursor: pointer;
-}
-
-.views {
-    font-size: 0.85rem;
-    opacity: 0.7;
-}
-
-
-/* BUTTON */
-
-.use-template-btn {
+.template-thumb {
     width: 100%;
-    background: transparent;
-    border: 1px solid #ffffff43;
-    color: #fff;
-    padding: 0.6rem;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.25s ease, border 0.25s ease;
-}
-
-.use-template-btn:hover {
-    background: #ffffff;
-    border-color: #fdfdfd;
+    height: 220px;
+    object-fit: cover;
+    background: #111;
+    border-bottom: 1px solid #222;
 }
 
 
-/* RESPONSIVE */
+/* =========================
+   INFO
+   ========================= */
+
+.template-info {
+    padding: 1.2rem 1.4rem 1.4rem;
+}
+
+.template-info strong {
+    font-size: 1rem;
+    color: white;
+    display: block;
+}
+
+.template-info span {
+    font-size: 0.8rem;
+    color: #b0b0b0;
+    margin-top: 0.3rem;
+    display: block;
+}
+
+
+/* =========================
+   MODAL PREVIEW
+   ========================= */
+
+.template-preview {
+    max-width: 960px;
+    background: #0f0f0f;
+    border-radius: 22px;
+}
+
+.template-preview img {
+    width: 100%;
+    max-height: 520px;
+    object-fit: cover;
+    border-radius: 14px;
+    margin-top: 1rem;
+}
+
+.template-preview-desc {
+    color: #aaa;
+    margin-top: 0.8rem;
+}
+
+
+/* =========================
+   CTA
+   ========================= */
+
+.modal-actions .primary {
+    background: white;
+    color: black;
+    font-weight: 600;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+}
+
+
+/* =========================
+   RESPONSIVE 
+   ========================= */
+
+@media (max-width: 1100px) {
+    .templates-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+}
 
 @media (max-width: 768px) {
-    .templates-title {
-        font-size: 1.8rem;
+    .templates {
+        padding: 1.5rem 1rem;
     }
-    .templates-container {
-        padding: 5rem 1.2rem;
+    .templates-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .templates-grid {
+        grid-template-columns: 1fr;
+        gap: 1.8rem;
+        margin: 0px;
+    }
+    .template-card {
+        width: 80%;
+        margin: 0 auto;
+    }
+    .template-thumb {
+        height: 180px;
+    }
+}
+
+@media (max-width: 600px) {
+    .template-preview {
+        width: 95%;
+        max-width: none;
+        padding: 1rem;
+    }
+    .template-preview img {
+        max-height: 260px;
     }
 }

@@ -1,8 +1,14 @@
-
+import { NavLink } from "react-router-dom";
 import "../styles/footer.css";
+import { useState } from "react";
+import ContactUsModal from "../components/ContactUsModal";
+
 
 const Footer = () => {
+    const [openContact, setOpenContact] = useState(false);
+
   return (
+    <>
     <footer className="footer">
       <div className="footer-inner">
      
@@ -17,11 +23,10 @@ const Footer = () => {
           <div className="footer-col">
             <h4>Product</h4>
             <ul>
-              <li>Features</li>
-              <li>Pricing</li>
-              <li>Templates</li>
-              <li>Developers Playground</li>
-              <li>Integrations</li>
+              <li><NavLink to="/developers-playground">Developer's Playground</NavLink></li>
+              <li><NavLink to="/Integrations">Integrations</NavLink></li>
+              <li><NavLink to="/Templates">Templates</NavLink></li>
+              <li><NavLink to="/pricing">Pricing</NavLink></li>
               {/*<li><NavLink to="/dev-house">DEV HOUSE</NavLink></li>
             <li><NavLink to="/pricing">PRICING</NavLink></li>*/}
             </ul>
@@ -30,20 +35,27 @@ const Footer = () => {
           <div className="footer-col">
             <h4>Company</h4>
             <ul>
-              <li>About</li>
-              <li>Blog</li>
-              <li>Careers</li>
-              <li>FAQ's</li>
-              <li>Founders</li>
+              <li><NavLink to="/docs">Docs</NavLink></li>
+               <li><NavLink to="/blog">Blog</NavLink></li>
+              <li><NavLink to="/careers">Careers</NavLink></li>
+              <li><NavLink to="/founders">Founder</NavLink></li>
             </ul>
           </div>
 
           <div className="footer-col">
             <h4>Legal</h4>
             <ul>
-              <li>Privacy</li>
-              <li>Terms</li>
-              <li>Contact</li>
+              <li><NavLink to="/privacy">Privacy Policy</NavLink></li>
+              <li><NavLink to="/terms">Terms of Service</NavLink></li>
+              {/* ✅ Contact Us opens popup */}
+                <li>
+                  <button
+                    className="footer-link-btn"
+                    onClick={() => setOpenContact(true)}
+                  >
+                    Contact Us
+                  </button>
+                </li>
             </ul>
           </div>
         </div>
@@ -61,6 +73,11 @@ const Footer = () => {
         </div>
       </div>
     </footer>
+    <ContactUsModal
+        open={openContact}
+        onClose={() => setOpenContact(false)}
+      />
+    </>
   );
 };
 

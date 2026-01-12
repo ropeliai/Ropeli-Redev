@@ -42,6 +42,7 @@ const OnboardingModal = ({ onComplete }: Props) => {
                 {v}
               </label>
             ))}
+            {/* button styling need to be changed */}
             <button disabled={!form.expertise} onClick={next}>
               Next
             </button>

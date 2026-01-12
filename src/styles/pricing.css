@@ -67,6 +67,18 @@
     box-sizing: border-box;
 }
 
+.original-price {
+    text-decoration: line-through;
+    color: #666;
+    font-size: 2rem;
+    margin-right: 0.5rem;
+}
+
+.discounted-price {
+    color: #ffffff;
+    font-weight: 600;
+}
+
 
 /* CARD */
 
@@ -80,19 +92,25 @@
     flex-direction: column;
 }
 
+.pricing-card h2 {
+    margin: 2rem 0;
+    font-size: 2rem;
+}
+
 .pricing-card h3 {
     margin-top: 0.5rem;
     font-size: 1.4rem;
 }
 
-.pricing-card h2 {
-    margin: 1rem 0;
-    font-size: 2rem;
+.pricing-card h2 .original-price {
+    margin-top: 2rem 0;
+    font-size: 1.2rem;
+    color: #797777;
 }
 
 .pricing-card h2 span {
-    font-size: 0.9rem;
-    color: #9ca3af;
+    font-size: 2rem;
+    color: #ffffff;
 }
 
 .pricing-card {
@@ -182,13 +200,7 @@
 }
 
 
-/* ============================= */
-
-
 /* MOBILE RESPONSIVENESS FIXES   */
-
-
-/* ============================= */
 
 
 /* Tablets */

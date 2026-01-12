@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import AuthModalContent from "../components/AuthModalContent";
+import StarfieldCanvas from "../components/StarfieldCanvas";
 import "../styles/authModal.css";
 
 interface Props {
@@ -13,8 +14,13 @@ const AuthModal = ({ open, onClose }: Props) => {
   return (
     <div className="auth-overlay">
       <div className="auth-modal">
-        {/* LEFT IMAGE */}
-        <div className="auth-left" />
+        {/* left stars with Ropeliai name */}
+        <div className="auth-left">
+          <StarfieldCanvas className="auth-starfield" />
+          <div className="auth-brand">
+            <h1>ROPELI AI</h1>
+            </div>
+        </div>
 
         {/* RIGHT CONTENT */}
         <div className="auth-right">
@@ -22,7 +28,7 @@ const AuthModal = ({ open, onClose }: Props) => {
             <X size={18} />
           </button>
 
-          {/* ✅ HEADER */}
+          {/*  HEADER */}
   <div className="auth-header">
     <h2>Sign in / Sign up</h2>
     <p className="subtitle">

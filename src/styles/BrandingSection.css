@@ -35,7 +35,7 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    margin-top: 190px;
+    margin-top: 170px;
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.8));
 }
 
@@ -84,9 +84,10 @@
 
 @media (max-width: 480px) {
     .branding-section {
-        height: 260px;
+        height: 150px;
     }
     .brand-name {
+        margin-top: 40px;
         font-size: clamp(64px, 32vw, 110px);
     }
 }

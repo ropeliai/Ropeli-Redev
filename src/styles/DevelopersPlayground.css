@@ -1,0 +1,89 @@
+.dev-playground {
+    width: 100%;
+    padding: 2.5rem 1.5rem;
+    background: radial-gradient(circle at top, #1a1a1a, #000);
+    color: white;
+    box-sizing: border-box;
+}
+
+
+/* HERO */
+
+.dev-hero {
+    max-width: 1100px;
+    margin: 0 auto 3rem;
+    text-align: center;
+}
+
+.dev-hero h1 {
+    font-size: 2.4rem;
+    font-weight: 600;
+}
+
+.dev-hero p {
+    margin-top: 0.8rem;
+    color: #9ca3af;
+    font-size: 1rem;
+}
+
+
+/* CONTENT */
+
+.dev-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.dev-section h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.8rem;
+}
+
+.dev-section p {
+    color: #cfcfcf;
+    line-height: 1.6;
+}
+
+.dev-section ul,
+.dev-section ol {
+    padding-left: 1.2rem;
+    color: #cfcfcf;
+}
+
+.dev-section li {
+    margin-bottom: 0.5rem;
+}
+
+
+/* EXAMPLE */
+
+.dev-example pre {
+    background: #0f0f0f;
+    border: 1px solid #222;
+    padding: 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    overflow-x: auto;
+    color: #d1d5db;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+    .dev-playground {
+        padding: 2rem 1rem;
+    }
+    .dev-hero h1 {
+        font-size: 1.9rem;
+    }
+    .dev-section h2 {
+        font-size: 1.2rem;
+    }
+    .dev-example pre {
+        font-size: 0.8rem;
+    }
+}

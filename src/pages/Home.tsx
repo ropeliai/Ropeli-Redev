@@ -1,23 +1,3 @@
-{/*import Navbar from "../components/Navbar";
-import Hero from "../components/hero";
-import BrandingSection from "../components/BrandingSection";
-import Footer from "../components/Footer";
-
-const Home = () => {
-  return (
-    <>
-      <Navbar />
-      <Hero />
-      <BrandingSection /> 
-      <Footer />
-      <BrandingSection /> 
-    </>
-  );
-};
-
-export default Home;
-*/}
-
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import OnboardingModal from "../components/OnboardingModal";
@@ -25,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
 import RecentDeployed from "../components/RecentDeployed";
 import Hero from "../components/Hero";
+import FAQSection from "../components/FAQSection";
 import BrandingSection from "../components/BrandingSection";
 import Footer from "../components/Footer";
 
@@ -57,8 +38,8 @@ const Home = () => {
       
       <Navbar />
       <Hero />
-  
- <RecentDeployed />
+      <RecentDeployed />
+      {!user && <FAQSection />}
       <Footer />
       <BrandingSection /> 
     </>

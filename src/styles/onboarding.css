@@ -29,13 +29,14 @@
     background: #1a1a1a;
 }
 
-button {
+.onboarding-modal button {
     margin-top: 16px;
     padding: 10px 16px;
-    background: white;
-    color: black;
     border-radius: 8px;
     font-weight: 600;
+    border: none;
+    background-color: #fff;
+    color: #000;
 }
 
 .actions {

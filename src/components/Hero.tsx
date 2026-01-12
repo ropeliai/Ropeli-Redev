@@ -25,6 +25,22 @@ const Hero = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+
+
+
+const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files) return;
+
+  setAttachedFiles((prev) => [
+    ...prev,
+    ...Array.from(e.target.files!),
+  ]);
+
+  e.target.value = ""; // allow re-selecting same file
+};
+
+
 
   /* ---------- Spanized placeholder ---------- */
   const spanizedPlaceholder = useMemo(
@@ -79,11 +95,13 @@ const handleFigmaClick = () => {
     if (!text.trim()) return;
 
     navigate("/Builder", {
-      state: {
-        prompt: text,
-        design: figmaDesign, // 👈 attached for later backend + model
-      },
-    });
+  state: {
+    prompt: text,
+    design: figmaDesign,
+    files: attachedFiles,
+  },
+});
+
   };
 
   /* ================= FIGMA FLOW ================= */
@@ -118,16 +136,97 @@ const handleFigmaClick = () => {
   };
 
 
+
+
+
+
+  const QUICK_SUGGESTIONS = [
+  {
+    label: "Clone Spotify",
+    //icon: "https://emergent-website-migrate.s3.us-west-2.amazonaws.com/website/spotify.svg",
+    prompt: "Build a Spotify clone with playlists, auth, and music player",
+  },
+  {
+  label: "Personal Portfolio",
+  prompt: "Create a personal portfolio website with projects, skills, and contact section",
+},
+{
+  label: "CRM Tool",
+  prompt: "Build a CRM tool to manage leads, customers, and sales pipelines",
+},
+
+];
+
+const SURPRISE_PROMPTS = [
+  "Build a YouTube clone with video upload and comments",
+  "Create an AI-powered note taking app",
+  "Design a fitness coaching mobile app",
+  "Build a SaaS dashboard with analytics",
+  "Create a real-time chat application",
+  "Build a productivity timer app",
+  "Design a food delivery app",
+  "Create a learning management system",
+  "Build a crypto price tracker",
+  "Design a travel planning app",
+  "Create a portfolio builder",
+  "Build a job board platform",
+  "Design a meditation app",
+  "Create an event booking system",
+  "Build a social media scheduler",
+  "Design a finance tracking app",
+  "Create a music recommendation app",
+  "Build a blogging platform",
+  "Design a stock watchlist app",
+  "Create a multiplayer quiz app",
+];
+
+
+const [surpriseIndex, setSurpriseIndex] = useState(0);
+
+const handleSurpriseMe = () => {
+  const next = (surpriseIndex + 1) % SURPRISE_PROMPTS.length;
+  setSurpriseIndex(next);
+  setText(SURPRISE_PROMPTS[next]);
+};
+
+
+
+
+
+
   /*---Models---*/
 
 const MODELS = [
-  "Claude 4.5 Sonnet",
-  "Claude 4.5 Opus",
-  "Claude 4.5 Sonnet – 1M",
-  
+  {
+    id: "claude-sonnet",
+    name: "Claude 4.5 Sonnet",
+    desc: "200k Context",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg",
+  },
+  {
+    id: "claude-opus",
+    name: "Claude 4.5 Opus",
+    desc: "Anthropic’s most advanced model",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg",
+  },
+  {
+    id: "gemini",
+    name: "Gemini Flash 2.5",
+    desc: "Google’s fast multimodal model",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/640px-Google_Gemini_icon_2025.svg.png",
+  },
+  {
+    id: "gpt",
+    name: "GPT 5 Turbo",
+    desc: "OpenAI’s latest model",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Tabler-icons_brand-openai.svg/640px-Tabler-icons_brand-openai.svg.png",
+  },
 ];
 
-const [selectedModel, setSelectedModel] = useState("Claude 4.5 Sonnet");
+const [selectedModel, setSelectedModel] = useState(MODELS[0]);
+
+
+//const [selectedModel, setSelectedModel] = useState("Claude 4.5 Sonnet");
 const [modelOpen, setModelOpen] = useState(false);
 
 
@@ -326,18 +425,48 @@ const [modelOpen, setModelOpen] = useState(false);
       <div className="hero-content">
         <h1>
           Turn Your Ideas Into
-          <br />
+          <br/>
           <span>Custom-Built Apps</span>
         </h1>
 
         <div className="prompt-container">
           <div className="prompt-card">
+    
+
+
+
+
+   {/* ========== figma ATTACHMENTS ========== */}
             {figmaDesign && (
-  <div className="design-badge">
-    🎨 Figma design attached
+  <div className="design-badge ">
+    Figma design attached
     <button onClick={() => setFigmaDesign(null)}>×</button>
   </div>
 )}
+
+{/* ========== FILE ATTACHMENTS ========== */}
+{attachedFiles.length > 0 && (
+  <div className="design-badge">
+    {attachedFiles.map((file, i) => (
+      <div key={i} className="file-chip">
+         {file.name}
+        <button
+          onClick={() =>
+            setAttachedFiles((prev) =>
+              prev.filter((_, idx) => idx !== i)
+            )
+          }
+        >
+          ×
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+
+
+
+
 
             <div className="prompt-textarea-wrapper">
               {!text && (
@@ -368,12 +497,7 @@ const [modelOpen, setModelOpen] = useState(false);
     </button>
 
     {/* hidden file input */}
-    <input
-      ref={fileInputRef}
-      type="file"
-      multiple
-      className="hidden-file-input"
-    />
+    <input ref={fileInputRef} type="file" multiple className="hidden-file-input" onChange={handleFileSelect}/>
 
     {/* Figma */}
     <button className="icon-btn figma-btn" onClick={handleFigmaClick}>
@@ -382,28 +506,28 @@ const [modelOpen, setModelOpen] = useState(false);
 
     {/* MODEL SELECTOR */}
     <div className="model-selector">
-      <button
-        className="model-btn"
-        onClick={() => setModelOpen((v) => !v)}
-      >
-        {selectedModel}
+      <button className="model-btn" onClick={() => setModelOpen((v) => !v)}>
+        <div className="model-icon-img"><img src={selectedModel.icon} alt="" className="model-icon" /></div>
+         {selectedModel.name}
         <span className="chevron">▾</span>
       </button>
+
 
       {modelOpen && (
         <div className="model-dropdown">
           {MODELS.map((model) => (
-            <div
-              key={model}
-              className={`model-item ${
-                model === selectedModel ? "active" : ""
-              }`}
+             <div key={model.id} className={`model-item ${  model.id === selectedModel.id ? "active" : "" }`}
               onClick={() => {
                 setSelectedModel(model);
                 setModelOpen(false);
               }}
-            >
-              {model}
+             >
+               <img src={model.icon} alt="" className="model-icon" />
+
+                <div className="model-text">
+                <div className="model-name">{model.name}</div>
+                <div className="model-desc">{model.desc}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -429,7 +553,28 @@ const [modelOpen, setModelOpen] = useState(false);
 </div>
 
           </div>
-        </div>
+       </div>
+
+                       {/* ========== QUICK SUGGESTIONS ========== */}
+<div className="quick-suggestions">
+  {QUICK_SUGGESTIONS.map((item) => (
+    <button
+      key={item.label}
+      className="quick-pill"
+      onClick={() => setText(item.prompt)}
+    >
+      {/*<img src={item.icon} alt="" />*/}
+      {item.label}
+    </button>
+  ))}
+
+  <button
+    className="quick-pill surprise"
+    onClick={handleSurpriseMe}
+  >
+     Surprise Me ✨
+  </button>
+</div>
       </div>
 
       {figmaOpen && (
@@ -473,13 +618,13 @@ const [modelOpen, setModelOpen] = useState(false);
 
 {figmaState === "loading" && (
   <div className="figma-loading">
-    ⏳ Importing design…
+     Importing design…
   </div>
 )}
 
 {figmaState === "success" && (
   <div className="figma-success">
-    ✅ Design attached successfully
+     Design attached successfully
   </div>
 )}
 
@@ -492,7 +637,7 @@ const [modelOpen, setModelOpen] = useState(false);
 
       {/* Info */}
       <div className="figma-info">
-        ⚠️ Figma has recently introduced API rate limits based on your
+         Figma has recently introduced API rate limits based on your
         subscription plan. Your request may be impacted due to this rate limit.
       </div>
     </div>

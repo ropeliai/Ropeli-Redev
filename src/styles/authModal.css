@@ -12,7 +12,6 @@
 .auth-modal {
     width: 900px;
     height: 620px;
-    background: rgb(0, 0, 0);
     border-radius: 18px;
     display: flex;
     overflow: hidden;
@@ -74,7 +73,38 @@
 
 .auth-left {
     flex: 1;
-    background: url("/auth-bg.png") center / cover no-repeat;
+    background: radial-gradient(circle at top, #151515, #000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow: hidden;
+}
+
+.auth-left canvas.auth-stars {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+}
+
+.auth-brand {
+    position: absolute;
+    z-index: 2;
+    height: auto;
+    text-align: center;
+    font-family: "Bebas Neue", sans-serif;
+}
+
+.auth-brand h1 {
+    font-size: clamp(120px, 25vw, 120px);
+    background: linear-gradient(to bottom, #4a4a4a, #1e1e1e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-top: 110px;
 }
 
 
@@ -85,6 +115,7 @@
     padding: 5.5rem;
     display: flex;
     flex-direction: column;
+    backdrop-filter: blur(10px);
     position: relative;
 }
 
