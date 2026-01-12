@@ -4,7 +4,7 @@ import Auth from "./pages/Auth";
 import Templates from "./pages/Templates";
 import Community from "./pages/Community";
 import Pricing from "./pages/Pricing";
-import Careers from "./pages/careers";
+import Careers from "./pages/Careers";
 import Blog from "./pages/Blog";
 import Founders from "./pages/Founders";
 import Integrations from "./pages/Integrations";
