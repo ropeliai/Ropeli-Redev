@@ -40,7 +40,6 @@ const OnboardingModal = ({ onComplete }: Props) => {
     "Google / Search Engine",
     "Article",
     "A friend / referral",
-    "TikTok",
     "X / Twitter",
     "Instagram",
   ];
