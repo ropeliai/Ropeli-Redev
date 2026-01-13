@@ -20,19 +20,19 @@ const templateData: Project[] = [
     id: "t1",
     name: "CRM Dashboard",
     lastEdited: "Firm website & showcase",
-    thumbnail: "/public/CRM Dashboard.png",
+    thumbnail: "/CRM Dashboard.png",
   },
   {
     id: "t2",
     name: "Spotify clone",
     lastEdited: "Premium design for webstore",
-    thumbnail: "/public/Spotify clone.jpg",
+    thumbnail: "/Spotify clone.jpg",
   },
   {
     id: "t3",
     name: "Saas Website",
     lastEdited: "Find, register, create events",
-    thumbnail: "/public/Saas Website.png",
+    thumbnail: "/Saas Website.png",
   },
 ];
 
