@@ -158,7 +158,7 @@ const Navbar = () => {
             Templates
           </NavLink>
 
-          <NavLink to="/DevelopersPlayground" onClick={() => setMenuOpen(false)}>
+          <NavLink to="/developers-playground" onClick={() => setMenuOpen(false)}>
             Developer’s Playground
           </NavLink>
 
