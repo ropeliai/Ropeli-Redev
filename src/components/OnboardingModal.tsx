@@ -33,7 +33,6 @@ const OnboardingModal = ({ onComplete }: Props) => {
     "Launch a business app",
     "Prepare to publish soon",
     "Learning only",
-    "Launch a client’s app",
     "Other",
   ];
 
@@ -49,28 +48,27 @@ const OnboardingModal = ({ onComplete }: Props) => {
   return (
     <div className="onboarding-overlay">
       <div className="onboarding-modal">
-        <h2>Let’s get Started</h2>
-        <p>Answer a few quick questions to personalize your experience</p>
+       <h2 style={{ margin: "0px" }}>Let’s get Started</h2>
 
         {/* STEP 1 */}
         {step === 1 && (
           <>
             <h3>What’s your technical expertise?</h3>
-            {optionsStep1.map((v) => (
-              <label
-                key={v}
-                className={`option ${form.expertise === v ? "selected" : ""}`}
-              >
-                <input
-                  type="radio"
-                  name="expertise"
-                  value={v}
-                  checked={form.expertise === v}
-                  onChange={() => updateForm("expertise", v)}
-                />
-                <span>{v}</span>
-              </label>
-            ))}
+  {optionsStep1.map((v) => (
+    <label
+      key={v}
+      className={`option ${form.expertise === v ? "selected" : ""}`}
+    >
+      <input
+        type="radio"
+        name="expertise"
+        value={v}
+        checked={form.expertise === v}
+        onChange={() => updateForm("expertise", v)}
+      />
+      <span>{v}</span>
+    </label>
+  ))}
             <button disabled={!form.expertise} onClick={next}>
               Next
             </button>

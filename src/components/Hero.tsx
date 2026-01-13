@@ -11,7 +11,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import TubesCursor from "https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js";
 
 const PLACEHOLDER_TEXT =
-  "Build a fun app I can play with my friends.";
+  "Build a social media scheduler app ";
 
 type FigmaState = "idle" | "loading" | "success" | "error";
 
@@ -172,7 +172,6 @@ const SURPRISE_PROMPTS = [
   "Build a job board platform",
   "Design a meditation app",
   "Create an event booking system",
-  "Build a social media scheduler",
   "Design a finance tracking app",
   "Create a music recommendation app",
   "Build a blogging platform",
@@ -579,13 +578,24 @@ const [modelOpen, setModelOpen] = useState(false);
 
       {figmaOpen && (
   <div className="figma-modal-overlay" onClick={() => setFigmaOpen(false)}>
-    <div className="figma-modal" onClick={(e) => e.stopPropagation()}>
-      <button className="figma-close" onClick={() => setFigmaOpen(false)}>
+    <div
+      className="figma-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Close */}
+      <button
+        className="figma-close"
+        onClick={() => setFigmaOpen(false)}
+      >
         ×
       </button>
+
+      {/* Logo */}
       <div className="figma-logo">
         <img src="/figma.png" alt="Figma" />
       </div>
+
+      {/* Title */}
       <h3>Figma frame or file import</h3>
 
       {/* Input */}
