@@ -46,7 +46,7 @@ const Founders = () => {
             {/* Content */}
             <div className="founder-description">
               <p>Fueled by a passion for fast, effective coding, I interned at eight startups and delivered projects for international clients during college. Those years deep in code taught me one thing clearly: speed matters.
-               I’ve built with global clients. I’ve shipped. I’ve broken things and fixed them. And somewhere along the way, I realized something was broken.</p>
+               I’ve built with global clients. I’ve shipped. I’ve broken things and fixed them. and Along the way, I spotted the real flaw.</p>
               <p>Building apps takes too much time, too much effort and it shuts out people with powerful ideas but no technical background. Long dev cycles and constant technical friction kill momentum. </p>
                 <p>Great ideas don’t fail. Slow execution kills them.</p>
                 <p>That’s why I built Ropeli AI.With Ropeli AI, you describe what you want in natural language, and it turns into a fully functional, enterprise-scale app or website complete with essential integrations. No long dev cycles. No technical roadblocks. Just execution.</p>
