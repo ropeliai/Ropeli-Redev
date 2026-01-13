@@ -6,47 +6,130 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 16px; /* Adds breathing room on mobile */
 }
 
 .onboarding-modal {
-    width: 480px;
+    width: 100%;
+    max-width: 480px; /* Desktop max width */
     background: #0e0e0e;
     border-radius: 14px;
     padding: 28px;
     color: white;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    box-sizing: border-box; /* Ensures padding doesn't overflow */
+}
+
+.onboarding-modal h2 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.onboarding-modal > p {
+    margin: 0 0 24px;
+    opacity: 0.8;
+    font-size: 14px;
+}
+
+.onboarding-modal h3 {
+    margin: 24px 0 16px;
+    font-size: 18px;
+    font-weight: 600;
 }
 
 .option {
     display: flex;
-    gap: 10px;
-    padding: 12px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
     border-radius: 10px;
     cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
 }
 
 .option:hover {
     background: #1a1a1a;
 }
 
+.option input[type="radio"] {
+    margin: 0;
+    accent-color: #fff; /* Better visibility on dark bg */
+}
+
 .onboarding-modal button {
-    margin-top: 16px;
-    padding: 10px 16px;
+    margin-top: 20px;
+    padding: 12px 20px;
     border-radius: 8px;
     font-weight: 600;
+    font-size: 15px;
     border: none;
     background-color: #fff;
     color: #000;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.onboarding-modal button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.onboarding-modal button:hover:not(:disabled) {
+    opacity: 0.9;
 }
 
 .actions {
     display: flex;
     justify-content: space-between;
+    gap: 12px;
+}
+
+.actions button {
+    flex: 1;
+}
+
+.actions button:first-child {
+    background: transparent;
+    color: #aaa;
+}
+
+.actions button:first-child:hover:not(:disabled) {
+    background: #1a1a1a;
+    color: white;
 }
 
 .step-indicator {
     display: block;
-    margin-top: 12px;
-    font-size: 12px;
+    margin-top: 24px;
+    font-size: 13px;
     opacity: 0.6;
+    text-align: center;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 480px) {
+    .onboarding-modal {
+        padding: 24px 20px;
+        border-radius: 16px; /* Slightly larger radius on mobile for modern feel */
+    }
+
+    .onboarding-modal h2 {
+        font-size: 22px;
+    }
+
+    .onboarding-modal h3 {
+        font-size: 17px;
+    }
+
+    .option {
+        padding: 16px 14px;
+        font-size: 15px;
+    }
+
+    .onboarding-modal button {
+        padding: 14px 20px;
+        font-size: 16px;
+    }
 }
