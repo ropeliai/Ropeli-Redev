@@ -93,7 +93,7 @@ body {
 
 @media (max-width: 768px) {
     .hero-content {
-        min-height: calc(100vh - 64px);
+        min-height: calc(100vh - 204px);
         /* 🔥 KEY CHANGE */
         justify-content: flex-start;
         padding-top: 22vh;
@@ -127,6 +127,8 @@ body {
         padding-top: 20vh;
         padding-left: 0.9rem;
         padding-right: 0.9rem;
+        min-height: calc(100vh - 354px);
+        justify-content: flex-start;
     }
     .hero-content h1 {
         font-size: 1.9rem;

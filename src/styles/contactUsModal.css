@@ -89,7 +89,7 @@ textarea {
 
 @media (max-width: 600px) {
     .contact-modal {
-        width: 100%;
+        width: 80%;
         max-height: 100vh;
         padding: 1.2rem;
     }
