@@ -32,7 +32,7 @@ const templateData: Project[] = [
     id: "t3",
     name: "Saas Website",
     lastEdited: "Find, register, create events",
-    thumbnail: "/Saas Website.png",
+    thumbnail: "/SaaS website.png",
   },
 ];
 
