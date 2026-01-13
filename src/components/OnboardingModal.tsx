@@ -33,7 +33,6 @@ const OnboardingModal = ({ onComplete }: Props) => {
     "Launch a business app",
     "Prepare to publish soon",
     "Learning only",
-    "Launch a client’s app",
     "Other",
   ];
 
@@ -50,8 +49,6 @@ const OnboardingModal = ({ onComplete }: Props) => {
     <div className="onboarding-overlay">
       <div className="onboarding-modal">
         <h2>Let’s get Started</h2>
-        <p>Answer a few quick questions to personalize your experience</p>
-
         {/* STEP 1 */}
         {step === 1 && (
           <>
