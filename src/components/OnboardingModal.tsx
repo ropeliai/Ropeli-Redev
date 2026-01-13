@@ -20,6 +20,7 @@ const OnboardingModal = ({ onComplete }: Props) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Option lists for each step
   const optionsStep1 = [
     "I’m a beginner coder",
     "I’m an intermediate coder",
@@ -56,7 +57,10 @@ const OnboardingModal = ({ onComplete }: Props) => {
           <>
             <h3>What’s your technical expertise?</h3>
             {optionsStep1.map((v) => (
-              <label key={v} className="option">
+              <label
+                key={v}
+                className={`option ${form.expertise === v ? "selected" : ""}`}
+              >
                 <input
                   type="radio"
                   name="expertise"
@@ -78,7 +82,10 @@ const OnboardingModal = ({ onComplete }: Props) => {
           <>
             <h3>What’s your primary goal for the next 0–4 weeks?</h3>
             {optionsStep2.map((v) => (
-              <label key={v} className="option">
+              <label
+                key={v}
+                className={`option ${form.goal === v ? "selected" : ""}`}
+              >
                 <input
                   type="radio"
                   name="goal"
@@ -103,7 +110,10 @@ const OnboardingModal = ({ onComplete }: Props) => {
           <>
             <h3>How did you hear about us?</h3>
             {optionsStep3.map((v) => (
-              <label key={v} className="option">
+              <label
+                key={v}
+                className={`option ${form.source === v ? "selected" : ""}`}
+              >
                 <input
                   type="radio"
                   name="source"
