@@ -194,23 +194,7 @@ const Navbar = () => {
 
           {!user && (
             <>
-              <button
-                className="mobile-auth-btn"
-                onClick={() => {
-                  setAuthOpen(true);
-                  setMenuOpen(false);
-                }}
-              >
-                Sign in
-              </button>
-
-              <button
-                className="mobile-auth-btn primary"
-                onClick={() => {
-                  setAuthOpen(true);
-                  setMenuOpen(false);
-                }}
-              >
+              <button  className="mobile-auth-btn primary"  onClick={() => { setAuthOpen(true); setMenuOpen(false); }}>
                 Get started
               </button>
             </>

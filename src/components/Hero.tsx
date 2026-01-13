@@ -579,24 +579,13 @@ const [modelOpen, setModelOpen] = useState(false);
 
       {figmaOpen && (
   <div className="figma-modal-overlay" onClick={() => setFigmaOpen(false)}>
-    <div
-      className="figma-modal"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Close */}
-      <button
-        className="figma-close"
-        onClick={() => setFigmaOpen(false)}
-      >
+    <div className="figma-modal" onClick={(e) => e.stopPropagation()}>
+      <button className="figma-close" onClick={() => setFigmaOpen(false)}>
         ×
       </button>
-
-      {/* Logo */}
       <div className="figma-logo">
         <img src="/figma.png" alt="Figma" />
       </div>
-
-      {/* Title */}
       <h3>Figma frame or file import</h3>
 
       {/* Input */}

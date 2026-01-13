@@ -428,8 +428,12 @@
 }
 
 .mobile-auth-btn.primary {
-    background: #1e90ff;
-    color: white;
+    background: #e2e2e2;
+    color: rgb(0, 0, 0);
+}
+
+.mobile-auth-btn.hover {
+    background: #ffffff;
 }
 
 .mobile-profile {

@@ -241,6 +241,7 @@ body {
     flex: 1;
     width: 100%;
     background: transparent;
+    padding: 0rem !important;
     border: none;
     outline: none;
     resize: none;
@@ -490,19 +491,6 @@ body {
     background: linear-gradient(180deg, #0f0f0f, #111);
     border: 1px solid #222;
     border-radius: 18px;
-}
-
-
-/* TEXTAREA */
-
-.prompt-box textarea {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    resize: none;
-    color: white;
-    font-size: 1rem;
 }
 
 

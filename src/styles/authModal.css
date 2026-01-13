@@ -133,7 +133,8 @@
 /* BUTTONS */
 
 .google-btn,
-.github-btn {
+.github-btn,
+.signin-inputs {
     padding: 0.75rem;
     border-radius: 10px;
     border: none;
@@ -157,13 +158,6 @@
     /*margin: 1.2rem 0;*/
     font-size: 0.8rem;
     color: #777;
-}
-
-input {
-    padding: 0.8rem;
-    border-radius: 10px;
-    border: none;
-    /*margin-bottom: 0.8rem;*/
 }
 
 .continue-btn {
@@ -210,6 +204,19 @@ input {
         flex-direction: column;
     }
     .auth-left {
-        height: 180px;
+        display: none;
+    }
+    .auth-right {
+        flex: 1;
+        padding: 1.8rem;
+    }
+    .auth-header h2 {
+        font-size: 1.3rem;
+    }
+    .subtitle {
+        font-size: 0.85rem;
+    }
+    .signin-inputs {
+        width: auto;
     }
 }

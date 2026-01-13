@@ -6,47 +6,203 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 16px;
 }
 
 .onboarding-modal {
-    width: 480px;
+    width: 100%;
+    max-width: 480px;
     background: #0e0e0e;
     border-radius: 14px;
-    padding: 28px;
+    padding: 32px 28px;
     color: white;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    box-sizing: border-box;
 }
+
+.onboarding-modal h2 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.onboarding-modal>p {
+    margin: 0 0 28px;
+    opacity: 0.8;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.onboarding-modal h3 {
+    margin: 28px 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+
+/* Option container */
 
 .option {
     display: flex;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 10px;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 12px;
     cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    background: transparent;
+    border: 1px solid transparent;
 }
 
 .option:hover {
     background: #1a1a1a;
 }
 
+
+/* Highlight selected option */
+
+.option.selected {
+    background: #1e1e1e;
+    border: 1px solid #444;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+
+/* Custom radio button */
+
+.option input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #666;
+    border-radius: 50%;
+    margin: 0;
+    display: grid;
+    place-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+
+/* Outer ring turns white when selected */
+
+.option input[type="radio"]:checked {
+    border-color: #fff;
+}
+
+
+/* Inner black dot (your request) */
+
+.option input[type="radio"]::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #000;
+    /* Black dot */
+    transform: scale(0);
+    transition: transform 0.15s ease;
+}
+
+.option input[type="radio"]:checked::before {
+    transform: scale(1);
+}
+
+
+/* Text */
+
+.option span {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+
+/* Buttons */
+
 .onboarding-modal button {
-    margin-top: 16px;
-    padding: 10px 16px;
-    border-radius: 8px;
+    margin-top: 24px;
+    padding: 13px 24px;
+    border-radius: 10px;
     font-weight: 600;
+    font-size: 15px;
     border: none;
     background-color: #fff;
     color: #000;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.onboarding-modal button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.onboarding-modal button:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
 }
 
 .actions {
     display: flex;
     justify-content: space-between;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.actions button {
+    flex: 1;
+}
+
+.actions button:first-child {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid #444;
+}
+
+.actions button:first-child:hover:not(:disabled) {
+    background: #1a1a1a;
+    color: white;
+    border-color: #666;
 }
 
 .step-indicator {
     display: block;
-    margin-top: 12px;
-    font-size: 12px;
+    margin-top: 28px;
+    font-size: 13px;
     opacity: 0.6;
+    text-align: center;
+}
+
+
+/* Mobile */
+
+@media (max-width: 480px) {
+    .onboarding-modal {
+        padding: 28px 20px;
+        border-radius: 16px;
+    }
+    .onboarding-modal h2 {
+        font-size: 22px;
+    }
+    .onboarding-modal h3 {
+        font-size: 17px;
+    }
+    .option {
+        padding: 18px 16px;
+        gap: 16px;
+    }
+    .option span {
+        font-size: 16px;
+    }
+    .onboarding-modal button,
+    .actions button {
+        padding: 15px 20px;
+        font-size: 16px;
+    }
 }

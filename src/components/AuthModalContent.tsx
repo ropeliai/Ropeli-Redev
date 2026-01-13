@@ -88,6 +88,7 @@ const AuthModalContent = ({ onSuccess }: Props) => {
 
     {/* Email */}
     <input
+      className="signin-inputs"
       type="email"
       placeholder="Email"
       value={email}
@@ -96,6 +97,7 @@ const AuthModalContent = ({ onSuccess }: Props) => {
 
     {/* Password */}
     <input
+      className="signin-inputs"
       type="password"
       placeholder="Password"
       value={password}
@@ -105,6 +107,7 @@ const AuthModalContent = ({ onSuccess }: Props) => {
     {/* Confirm password */}
     {mode === "signup" && (
       <input
+        className="signin-inputs"
         type="password"
         placeholder="Confirm password"
         value={confirmPassword}
@@ -116,12 +119,8 @@ const AuthModalContent = ({ onSuccess }: Props) => {
     {error && <p className="auth-error">{error}</p>}
     {message && <p className="auth-success">{message}</p>}
 
-    {/* ✅ PRIMARY CTA */}
-    <button
-      className="primary-btn"
-      onClick={mode === "login" ? signIn : signUp}
-      disabled={loading}
-    >
+    {/*  PRIMARY CTA */}
+    <button className="primary-btn" onClick={mode === "login" ? signIn : signUp} disabled={loading}>
       {loading
         ? "Please wait..."
         : mode === "login"
@@ -129,7 +128,7 @@ const AuthModalContent = ({ onSuccess }: Props) => {
         : "Create account"}
     </button>
 
-    {/* ✅ TOGGLE LINE */}
+    {/* TOGGLE LINE */}
     <p className="auth-toggle">
       {mode === "login" ? (
         <>
