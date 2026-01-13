@@ -25,14 +25,14 @@ const templateData: Project[] = [
   {
     id: "t2",
     name: "Spotify clone",
-    lastEdited: "Streaming app for music or movies on demand",
-    thumbnail: "/Spotify clone.jpg",
+    lastEdited: "Premium design for webstore",
+    thumbnail: "/public/Spotify clone.jpg",
   },
   {
     id: "t3",
     name: "Saas Website",
     lastEdited: "Find, register, create events",
-    thumbnail: "/SaaS website.png",
+    thumbnail: "/public/SaaS website.png",
   },
 ];
 
