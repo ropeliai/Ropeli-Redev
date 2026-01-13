@@ -16,6 +16,10 @@ const OnboardingModal = ({ onComplete }: Props) => {
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
 
+  const updateForm = (key: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
   return (
     <div className="onboarding-overlay">
       <div className="onboarding-modal">
@@ -37,12 +41,12 @@ const OnboardingModal = ({ onComplete }: Props) => {
                   type="radio"
                   name="expertise"
                   value={v}
-                  onChange={() => setForm({ ...form, expertise: v })}
+                  checked={form.expertise === v}
+                  onChange={() => updateForm("expertise", v)}
                 />
                 {v}
               </label>
             ))}
-            {/* button styling need to be changed */}
             <button disabled={!form.expertise} onClick={next}>
               Next
             </button>
@@ -66,7 +70,8 @@ const OnboardingModal = ({ onComplete }: Props) => {
                   type="radio"
                   name="goal"
                   value={v}
-                  onChange={() => setForm({ ...form, goal: v })}
+                  checked={form.goal === v}
+                  onChange={() => updateForm("goal", v)}
                 />
                 {v}
               </label>
@@ -98,7 +103,8 @@ const OnboardingModal = ({ onComplete }: Props) => {
                   type="radio"
                   name="source"
                   value={v}
-                  onChange={() => setForm({ ...form, source: v })}
+                  checked={form.source === v}
+                  onChange={() => updateForm("source", v)}
                 />
                 {v}
               </label>
@@ -106,10 +112,7 @@ const OnboardingModal = ({ onComplete }: Props) => {
 
             <div className="actions">
               <button onClick={back}>Back</button>
-              <button
-                disabled={!form.source}
-                onClick={() => onComplete(form)}
-              >
+              <button disabled={!form.source} onClick={() => onComplete(form)}>
                 Done
               </button>
             </div>
