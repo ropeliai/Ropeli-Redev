@@ -15,7 +15,7 @@ const templates: Template[] = [
   id: "t1",
   name: "All in one AI-CRM Dashboards",
   description: "AI-powered dashboard to manage customers, sales, and insights.",
-  thumbnail: "/public/ARC portfolios.jpg",
+  thumbnail: "/ARC portfolios.jpg",
 },
 {
   id: "t2",
