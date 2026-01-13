@@ -17,28 +17,6 @@
     padding: 32px 28px;
     color: white;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
-    box-sizing: border-box;
-}
-
-.onboarding-modal h2 {
-    margin: 0 0 8px;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1.2;
-}
-
-.onboarding-modal>p {
-    margin: 0 0 28px;
-    opacity: 0.8;
-    font-size: 15px;
-    line-height: 1.5;
-}
-
-.onboarding-modal h3 {
-    margin: 28px 0 16px;
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1.3;
 }
 
 
@@ -60,6 +38,69 @@
 .option:hover {
     background: #1a1a1a;
 }
+
+
+/* Highlight selected option */
+
+.option.selected {
+    background: #1e1e1e;
+    border: 1px solid #444;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+
+/* Custom radio button */
+
+.option input[type="radio"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #666;
+    border-radius: 50%;
+    margin: 0;
+    display: grid;
+    place-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+
+/* Outer ring turns white when selected */
+
+.option input[type="radio"]:checked {
+    border-color: #fff;
+}
+
+
+/* Inner black dot (your request) */
+
+.option input[type="radio"]::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #000;
+    /* Black dot */
+    transform: scale(0);
+    transition: transform 0.15s ease;
+}
+
+.option input[type="radio"]:checked::before {
+    transform: scale(1);
+}
+
+
+/* Text */
+
+.option span {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+
+/* Buttons */
 
 
 /* Highlight selected option */
@@ -176,33 +217,4 @@
     margin-top: 28px;
     font-size: 13px;
     opacity: 0.6;
-    text-align: center;
-}
-
-
-/* Mobile */
-
-@media (max-width: 480px) {
-    .onboarding-modal {
-        padding: 28px 20px;
-        border-radius: 16px;
-    }
-    .onboarding-modal h2 {
-        font-size: 22px;
-    }
-    .onboarding-modal h3 {
-        font-size: 17px;
-    }
-    .option {
-        padding: 18px 16px;
-        gap: 16px;
-    }
-    .option span {
-        font-size: 16px;
-    }
-    .onboarding-modal button,
-    .actions button {
-        padding: 15px 20px;
-        font-size: 16px;
-    }
 }
