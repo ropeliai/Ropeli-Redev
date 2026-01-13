@@ -29,7 +29,7 @@ const Founders = () => {
             <div className="founder-header">
               <div>
                 <h2>Daanish Ilahi Sumkesula</h2>
-                <p className="founder-role">CEO & Founder</p>
+                <p className="founder-role">Founder & CEO</p>
               </div>
 
               <a
