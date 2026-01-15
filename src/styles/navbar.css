@@ -440,6 +440,8 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    margin-bottom: 50px;
+    margin-top: auto;
 }
 
 .mobile-profile-header {

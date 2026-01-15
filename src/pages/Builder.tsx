@@ -233,21 +233,21 @@ setAttachedFiles([]);
               className={`device-btn ${previewSize === "desktop" ? "active" : ""}`}
               onClick={() => setPreviewSize("desktop")}
             >
-              <img src="https://static.vecteezy.com/system/resources/previews/025/916/231/non_2x/laptop-illustration-notebook-flat-icon-pc-symbol-simple-business-concept-pictogram-on-isolated-background-vector.jpg" />
+              <img src="/desktop.svg" />
             </button>
 
             <button
               className={`device-btn ${previewSize === "tablet" ? "active" : ""}`}
               onClick={() => setPreviewSize("tablet")}
             >
-              <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnE4ctehpHevnAKSkv-Bz1R4EA7Qk8ohWXcw&s" />
+              <img src="/tablet.svg"/>
             </button>
 
             <button
               className={`device-btn ${previewSize === "mobile" ? "active" : ""}`}
               onClick={() => setPreviewSize("mobile")}
             >
-              <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXZ_r3QX3Ui_h9sf0MP7RM52jMNdZyfuyzTg&s" />
+              <img src="/mobile.svg"/>
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "../styles/hero.css";
 
 import * as THREE from "three";
@@ -27,7 +28,12 @@ const Hero = () => {
   const [listening, setListening] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
+/* ================= AUTH CONTEXT for disabling button for guest user ================= */
+const { user, setAuthModalOpen } = useAuth();
+const isGuest = !user;
 
+
+  /* ---------- FILE SELECT ---------- */
 
 const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
   if (!e.target.files) return;
@@ -416,6 +422,8 @@ const [modelOpen, setModelOpen] = useState(false);
     };
   }, []);
 
+  
+
   return (
     <section className="hero">
       <canvas ref={tubesCanvasRef} className="hero-tubes-canvas" />
@@ -442,6 +450,7 @@ const [modelOpen, setModelOpen] = useState(false);
     <button onClick={() => setFigmaDesign(null)}>×</button>
   </div>
 )}
+
 
 {/* ========== FILE ATTACHMENTS ========== */}
 {attachedFiles.length > 0 && (
@@ -488,18 +497,38 @@ const [modelOpen, setModelOpen] = useState(false);
   {/* LEFT SIDE */}
   <div className="prompt-left">
     {/* + */}
+   
+
     <button
-      className="icon-btn"
-      onClick={() => fileInputRef.current?.click()}
-    >
-      +
-    </button>
+  className={`icon-btn ${isGuest ? "disabled-btn" : ""}`}
+  aria-disabled={isGuest}
+  onClick={() => {
+    if (isGuest) {
+      setAuthModalOpen(true);
+      return;
+    }
+    fileInputRef.current?.click();
+  }}
+>
+  +
+</button>
+
 
     {/* hidden file input */}
     <input ref={fileInputRef} type="file" multiple className="hidden-file-input" onChange={handleFileSelect}/>
 
     {/* Figma */}
-    <button className="icon-btn figma-btn" onClick={handleFigmaClick}>
+    <button
+  className={`icon-btn figma-btn ${isGuest ? "disabled-btn" : ""}`}
+  aria-disabled={isGuest}
+  onClick={() => {
+    if (isGuest) {
+      setAuthModalOpen(true);
+      return;
+    }
+    handleFigmaClick();
+  }}
+>
       <img src="/figma.png" alt="Figma" />
     </button>
 
@@ -538,19 +567,35 @@ const [modelOpen, setModelOpen] = useState(false);
   <div className="prompt-right">
     {/* MIC */}
     {/*<button className={`build-mic-btn ${listening ? "active" : ""}`} onClick={toggleMic} > 🎤 </button>*/}
-     <button className="icon-btn figma-btn" onClick={toggleMic}>
+     <button 
+     className={`icon-btn figma-btn ${isGuest ? "disabled-btn" : ""}`}
+     aria-disabled={isGuest}
+     onClick={() => {
+       if (isGuest) {
+         setAuthModalOpen(true);
+         return;
+        }
+       toggleMic();
+       }}>
       <img src="/mic1.png" alt="Figma" />
     </button>
 
     {/* SEND */}
-    <button className="build-btn-metal" onClick={handleBuild}>
+    <button  className={`build-btn-metal ${isGuest ? "disabled-btn" : ""}`}
+    aria-disabled={isGuest}
+    onClick={() =>{
+     if (isGuest){
+       setAuthModalOpen(true);
+       return;
+     }
+     handleBuild();
+     }}>
       <svg viewBox="0 0 32 32">
         <path d="m26.71 10.29-10-10a1 1 0 0 0-1.41 0l-10 10 1.41 1.41L15 3.41V32h2V3.41l8.29 8.29z" />
       </svg>
     </button>
   </div>
 </div>
-
           </div>
        </div>
 

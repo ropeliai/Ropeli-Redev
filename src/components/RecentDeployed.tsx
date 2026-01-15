@@ -26,13 +26,13 @@ const templateData: Project[] = [
     id: "t2",
     name: "Spotify clone",
     lastEdited: "Premium design for webstore",
-    thumbnail: "/public/Spotify clone.jpg",
+    thumbnail: "/Spotify clone.jpg",
   },
   {
     id: "t3",
     name: "Saas Website",
     lastEdited: "Find, register, create events",
-    thumbnail: "/public/SaaS website.png",
+    thumbnail: "/SaaS website.png",
   },
 ];
 
@@ -73,10 +73,17 @@ export default function RecentDeployed() {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isGuest = !user;
+/* SET TABS TO TEMPLATES IF GUEST USER */
+useEffect(() => {
+  if (isGuest) {
+    setActiveTab("templates");
+  }
+}, [isGuest]);
+
+
 
 /*  BUILDER prompt to task */
-
-
 useEffect(() => {
   const stored = JSON.parse(
     localStorage.getItem("recentTasks") || "[]"
@@ -155,29 +162,36 @@ useEffect(() => {
         {/* HEADER */}
         <div className="rd-tabs-header">
           <div className="rd-tabs-alt">
-            <button
-              className={activeTab === "recent" ? "active" : ""}
-              onClick={() => setActiveTab("recent")}
-            >
-              My Projects
-            </button>
-            <span className="rd-divider">|</span>
+  {!isGuest && (
+    <>
+      <button
+        className={activeTab === "recent" ? "active" : ""}
+        onClick={() => setActiveTab("recent")}
+      >
+        My Projects
+      </button>
 
-            <button
-              className={activeTab === "deployed" ? "active" : ""}
-              onClick={() => setActiveTab("deployed")}
-            >
-              Deployed Apps
-            </button>
-            <span className="rd-divider">|</span>
+      <span className="rd-divider">|</span>
 
-            <button
-              className={activeTab === "templates" ? "active" : ""}
-              onClick={() => setActiveTab("templates")}
-            >
-              Templates
-            </button>
-          </div>
+      <button
+        className={activeTab === "deployed" ? "active" : ""}
+        onClick={() => setActiveTab("deployed")}
+      >
+        Deployed Apps
+      </button>
+
+      <span className="rd-divider">|</span>
+    </>
+  )}
+
+  <button
+    className={activeTab === "templates" ? "active" : ""}
+    onClick={() => setActiveTab("templates")}
+  >
+    Templates
+  </button>
+</div>
+
 
           {activeTab === "templates" && (
             <button className="browse-all" onClick={() => navigate("/templates")}>

@@ -1,11 +1,18 @@
 import { NavLink } from "react-router-dom";
 import "../styles/footer.css";
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import ContactUsModal from "../components/ContactUsModal";
 
 
 const Footer = () => {
     const [openContact, setOpenContact] = useState(false);
+
+    
+/* ================= AUTH CONTEXT for disabling button for guest user ================= */
+const { user, setAuthModalOpen } = useAuth();
+const isGuest = !user;
+
 
   return (
     <>
@@ -50,8 +57,13 @@ const Footer = () => {
               {/* ✅ Contact Us opens popup */}
                 <li>
                   <button
-                    className="footer-link-btn"
-                    onClick={() => setOpenContact(true)}
+                    className={`footer-link-btn ${isGuest ? "disabled-btn" : ""}`}
+                    onClick={() => {
+                      if(isGuest){
+                        setAuthModalOpen(true);
+                        return;}
+                        setOpenContact(true);
+                      }}
                   >
                     Contact Us
                   </button>
