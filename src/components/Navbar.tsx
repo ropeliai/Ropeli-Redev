@@ -164,22 +164,31 @@ const {
           </button>
 
           {/* LINKS */}
-          <NavLink to="/templates" onClick={() => setMenuOpen(false)}>
-            Templates
-          </NavLink>
+          <NavLink to="/templates" onClick={() => setMenuOpen(false)} className="mobile-link">
+  <img src="/hamburger.svg" alt="Templates" />
+  <span>Templates</span>
+</NavLink>
 
-          <NavLink to="/developers-playground" onClick={() => setMenuOpen(false)}>
-            Developer’s Playground
-          </NavLink>
-          <NavLink to="/Integrations"onClick={() => setMenuOpen(false)}>Integrations</NavLink>
+<NavLink to="/developers-playground" onClick={() => setMenuOpen(false)} className="mobile-link">
+  <img src="/icons/code.svg" alt="Developers Playground" />
+  <span>Developer’s Playground</span>
+</NavLink>
 
-          <NavLink to="/careers" onClick={() => setMenuOpen(false)}>
-            Careers
-          </NavLink>
+<NavLink to="/Integrations" onClick={() => setMenuOpen(false)} className="mobile-link">
+  <img src="/icons/integrations.svg" alt="Integrations" />
+  <span>Integrations</span>
+</NavLink>
 
-          <NavLink to="/pricing" onClick={() => setMenuOpen(false)}>
-            Pricing
-          </NavLink>
+<NavLink to="/careers" onClick={() => setMenuOpen(false)} className="mobile-link">
+  <img src="/icons/careers.svg" alt="Careers" />
+  <span>Careers</span>
+</NavLink>
+
+<NavLink to="/pricing" onClick={() => setMenuOpen(false)} className="mobile-link">
+  <img src="/icons/pricing.svg" alt="Pricing" />
+  <span>Pricing</span>
+</NavLink>
+
 
           <div className="mobile-divider" />
 

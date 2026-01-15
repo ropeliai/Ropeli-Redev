@@ -194,6 +194,50 @@
     text-decoration: inherit;
 }
 
+.auth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.auth-btn img {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* Google button */
+
+.google-btn {
+    background: #ffffff;
+    color: #000;
+    border: 1px solid #e5e5e5;
+}
+
+
+/* GitHub button */
+
+.github-btn {
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid#e5e5e5;
+}
+
+
+/* Disabled */
+
+.auth-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 
 /* MOBILE */
 

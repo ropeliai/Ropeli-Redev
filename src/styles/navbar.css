@@ -522,6 +522,39 @@
     }
 }
 
+.mobile-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+
+/* icon sizing */
+
+.mobile-link img {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+
+/* FORCE ICON TO WHITE */
+
+.mobile-link img {
+    filter: brightness(0) invert(1);
+}
+
+
+/* optional hover */
+
+.mobile-link:hover {
+    opacity: 0.85;
+}
+
 
 /* REMOVE PROFILE AVATAR FROM MOBILE NAVBAR */
 

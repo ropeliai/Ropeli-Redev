@@ -39,7 +39,7 @@ const AuthModal = ({ open, onClose }: Props) => {
 
           <p className="terms">
             By continuing, you agree to our{" "}
-            <a href="#" className="terms-a">Terms</a> and <a href="#"  className="terms-a">Privacy Policy</a>.
+            <a href="/terms" className="terms-a">Terms</a> and <a href="/privacy"  className="terms-a">Privacy Policy</a>.
           </p>
         </div>
       </div>

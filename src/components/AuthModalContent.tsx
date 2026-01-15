@@ -76,13 +76,16 @@ const AuthModalContent = ({ onSuccess }: Props) => {
   return (
   <div className="auth-content">
     {/* OAuth */}
-    <button className="google-btn" onClick={signInWithGoogle} disabled={loading}>
-      Continue with Google
+    <button className="google-btn auth-btn" onClick={signInWithGoogle} disabled={loading}>
+      <img src="https://img.icons8.com/color/48/google-logo.png" alt="Google"/>
+      <span>Continue with Google</span>
     </button>
 
-    <button className="github-btn" onClick={signInWithGithub} disabled={loading}>
-      Continue with GitHub
+    <button className="github-btn auth-btn" onClick={signInWithGithub} disabled={loading}>
+      <img src="https://img.icons8.com/ios-glyphs/48/github.png" alt="GitHub"/>
+      <span>Continue with GitHub</span>
     </button>
+
 
     <div className="divider">OR</div>
 
