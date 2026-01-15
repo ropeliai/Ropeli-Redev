@@ -40,7 +40,6 @@ const OnboardingModal = ({ onComplete }: Props) => {
     "Google / Search Engine",
     "Article",
     "A friend / referral",
-    "TikTok",
     "X / Twitter",
     "Instagram",
   ];
@@ -48,6 +47,7 @@ const OnboardingModal = ({ onComplete }: Props) => {
   return (
     <div className="onboarding-overlay">
       <div className="onboarding-modal">
+
        <h2 style={{ margin: "0px" }}>Let’s get Started</h2>
 
         {/* STEP 1 */}
