@@ -738,24 +738,6 @@ body {
 
 /* ---------- BUTTONS ----------  for hover + (Attach files & images) added css in the builder.css */
 
-.icon-btn {
-    width: 36px;
-    height: 36px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 10px;
-    color: white;
-    font-size: 1.4rem;
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-}
-
-.figma-btn img {
-    width: 18px;
-    height: 18px;
-}
-
 
 /* ---------- MODEL ---------- */
 

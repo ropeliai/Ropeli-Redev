@@ -190,7 +190,7 @@ const {
 </NavLink>
 
 
-          <div className="mobile-divider" />
+          {/*<div className="mobile-divider" />*/}
 
           {/* PROFILE (ONLY IN MENU) */}
           {user && (

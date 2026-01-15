@@ -18,21 +18,39 @@ type Project = {
 const templateData: Project[] = [
   {
     id: "t1",
-    name: "CRM Dashboard",
-    lastEdited: "Firm website & showcase",
-    thumbnail: "/CRM Dashboard.png",
+    name: "All in one AI-CRM Dashboards",
+    lastEdited: "AI-powered dashboard to manage customers, sales, and insights.",
+    thumbnail:  "/ARC portfolios.jpg",
   },
   {
     id: "t2",
-    name: "Spotify clone",
-    lastEdited: "Premium design for webstore",
-    thumbnail: "/Spotify clone.jpg",
+    name:"Travel apps like makemytrip",
+    lastEdited: "Complete travel booking app for flights, hotels, and trips.",
+    thumbnail: "/travel website.png",
+  },
+ {
+    id: "t3",
+    name:"Inventory management portals",
+    lastEdited:  "Track inventory, orders, and stock in real time.",
+    thumbnail: "/inventory management.png",
+  },
+   {
+    id: "t4",
+    name:"HRM tools",
+    lastEdited:"Manage employees, payroll, and HR workflows easily.",
+    thumbnail: "/HRM.png",
   },
   {
-    id: "t3",
-    name: "Saas Website",
-    lastEdited: "Find, register, create events",
-    thumbnail: "/SaaS website.png",
+    id: "t5",
+    name: "E-commerce platforms",
+    lastEdited:"Online store with products, payments, and orders.",
+    thumbnail:"/E-commerece.png",
+  },
+  {
+    id: "t6",
+    name: "Fitness trackers",
+    lastEdited:"Monitor workouts, health stats, and progress.",
+    thumbnail: "/Fitness Tracker.webp",
   },
 ];
 

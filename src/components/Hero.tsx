@@ -519,7 +519,7 @@ const [modelOpen, setModelOpen] = useState(false);
 
     {/* Figma */}
     <button
-  className={`icon-btn figma-btn ${isGuest ? "disabled-btn" : ""}`}
+  className={`figma-btn ${isGuest ? "disabled-btn" : ""}`}
   aria-disabled={isGuest}
   onClick={() => {
     if (isGuest) {
@@ -568,7 +568,7 @@ const [modelOpen, setModelOpen] = useState(false);
     {/* MIC */}
     {/*<button className={`build-mic-btn ${listening ? "active" : ""}`} onClick={toggleMic} > 🎤 </button>*/}
      <button 
-     className={`icon-btn figma-btn ${isGuest ? "disabled-btn" : ""}`}
+     className={`figma-btn ${isGuest ? "disabled-btn" : ""}`}
      aria-disabled={isGuest}
      onClick={() => {
        if (isGuest) {
@@ -577,7 +577,7 @@ const [modelOpen, setModelOpen] = useState(false);
         }
        toggleMic();
        }}>
-      <img src="/mic1.png" alt="Figma" />
+      <img src="/mic.svg" alt="mic" />
     </button>
 
     {/* SEND */}

@@ -372,18 +372,13 @@
     align-items: center;
     gap: 8px;
     height: 34px;
-    padding: 0 14px;
-    border-radius: 999px;
+    padding: 0 10px;
+    border-radius: 50%;
     background: rgba(255, 255, 255, 0.06);
     border: none;
     color: #fff;
     font-size: 13px;
     cursor: pointer;
-}
-
-.figma-btn img {
-    width: 16px;
-    height: 16px;
 }
 
 
