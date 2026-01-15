@@ -165,27 +165,28 @@ const {
 
           {/* LINKS */}
           <NavLink to="/templates" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="/hamburger.svg" alt="Templates" />
+  <img src="https://img.icons8.com/ios-filled/24/ffffff/grid-2.png" alt="Templates" />
   <span>Templates</span>
 </NavLink>
 
 <NavLink to="/developers-playground" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="/icons/code.svg" alt="Developers Playground" />
+  <img src="https://img.icons8.com/ios-filled/24/ffffff/source-code.png" alt="Developers Playground" />
   <span>Developer’s Playground</span>
 </NavLink>
 
 <NavLink to="/Integrations" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="/icons/integrations.svg" alt="Integrations" />
+  <img src="https://img.icons8.com/ios-filled/24/ffffff/layers.png" alt="Integrations" />
   <span>Integrations</span>
 </NavLink>
 
 <NavLink to="/careers" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="/icons/careers.svg" alt="Careers" />
+  <img src="https://img.icons8.com/ios-filled/24/ffffff/briefcase.png" alt="Careers" />
   <span>Careers</span>
 </NavLink>
 
 <NavLink to="/pricing" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="/icons/pricing.svg" alt="Pricing" />
+  <img src="https://img.icons8.com/ios-filled/24/ffffff/price-tag.png
+" alt="Pricing" />
   <span>Pricing</span>
 </NavLink>
 
