@@ -9,7 +9,7 @@ export const initiatePayment = async (payload: any) => {
     return;
   }
 
-  
+  alert(" Razorpay SDK loaded");
 
   const res = await fetch(
     `${import.meta.env.VITE_API_BASE_URL}/api/payment/create-order`,
@@ -26,7 +26,7 @@ export const initiatePayment = async (payload: any) => {
   const rzp = new (window as any).Razorpay({
     key: import.meta.env.VITE_RAZORPAY_KEY_ID,
     amount: order.amount,
-     currency: "USD",
+    currency: "USD",
     name: "RopeliAI",
     description: payload.planName,
     image: "/logo.svg",
