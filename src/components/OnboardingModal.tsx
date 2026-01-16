@@ -1,12 +1,15 @@
 import { useState } from "react";
+import { supabase } from "../lib/supabase";
 import "../styles/onboarding.css";
 
 type Props = {
-  onComplete: (data: any) => void;
+  onComplete: () => void;
 };
 
 const OnboardingModal = ({ onComplete }: Props) => {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     expertise: "",
     goal: "",
@@ -20,11 +23,41 @@ const OnboardingModal = ({ onComplete }: Props) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Option lists for each step
+  const submitOnboarding = async () => {
+    setLoading(true);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.error("User not authenticated");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.from("user_onboarding").insert({
+      user_id: user.id,
+      expertise: form.expertise,
+      goal: form.goal,
+      source: form.source,
+    });
+
+    if (error) {
+      console.error("Failed to save onboarding:", error);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    onComplete();
+  };
+
   const optionsStep1 = [
-    "I’m a beginner coder",
-    "I’m an intermediate coder",
-    "I’m an experienced coder",
+    "I’m a beginner ",
+    "I’m an intermediate ",
+    "I’m an experienced ",
     "I don’t know how to code",
   ];
 
@@ -47,28 +80,25 @@ const OnboardingModal = ({ onComplete }: Props) => {
   return (
     <div className="onboarding-overlay">
       <div className="onboarding-modal">
-
-       <h2 style={{ margin: "0px" }}>Let’s get Started</h2>
+        <h2 style={{ margin: "0px" }}>Let’s get Started</h2>
 
         {/* STEP 1 */}
         {step === 1 && (
           <>
             <h3>What’s your technical expertise?</h3>
-  {optionsStep1.map((v) => (
-    <label
-      key={v}
-      className={`option ${form.expertise === v ? "selected" : ""}`}
-    >
-      <input
-        type="radio"
-        name="expertise"
-        value={v}
-        checked={form.expertise === v}
-        onChange={() => updateForm("expertise", v)}
-      />
-      <span>{v}</span>
-    </label>
-  ))}
+            {optionsStep1.map((v) => (
+              <label
+                key={v}
+                className={`option ${form.expertise === v ? "selected" : ""}`}
+              >
+                <input
+                  type="radio"
+                  checked={form.expertise === v}
+                  onChange={() => updateForm("expertise", v)}
+                />
+                <span>{v}</span>
+              </label>
+            ))}
             <button disabled={!form.expertise} onClick={next}>
               Next
             </button>
@@ -86,8 +116,6 @@ const OnboardingModal = ({ onComplete }: Props) => {
               >
                 <input
                   type="radio"
-                  name="goal"
-                  value={v}
                   checked={form.goal === v}
                   onChange={() => updateForm("goal", v)}
                 />
@@ -114,8 +142,6 @@ const OnboardingModal = ({ onComplete }: Props) => {
               >
                 <input
                   type="radio"
-                  name="source"
-                  value={v}
                   checked={form.source === v}
                   onChange={() => updateForm("source", v)}
                 />
@@ -124,8 +150,11 @@ const OnboardingModal = ({ onComplete }: Props) => {
             ))}
             <div className="actions">
               <button onClick={back}>Back</button>
-              <button disabled={!form.source} onClick={() => onComplete(form)}>
-                Done
+              <button
+                disabled={!form.source || loading}
+                onClick={submitOnboarding}
+              >
+                {loading ? "Saving..." : "Done"}
               </button>
             </div>
           </>
