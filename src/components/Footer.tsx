@@ -33,6 +33,7 @@ const isGuest = !user;
               <li><NavLink to="/developers-playground">Developer's Playground</NavLink></li>
               <li><NavLink to="/Integrations">Integrations</NavLink></li>
               <li><NavLink to="/Templates">Templates</NavLink></li>
+              <li><NavLink to="/pricing">Pricing</NavLink></li>
               {/*<li><NavLink to="/dev-house">DEV HOUSE</NavLink></li>
             <li><NavLink to="/pricing">PRICING</NavLink></li>*/}
             </ul>

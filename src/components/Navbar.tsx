@@ -64,6 +64,7 @@ const {
             <li><NavLink to="/templates">Templates</NavLink></li>
             <li><NavLink to="/developers-playground">Developer's Playground</NavLink></li>
             <li><NavLink to="/careers">Careers</NavLink></li>
+            <li><NavLink to="/pricing">Pricing</NavLink></li>
           </ul>
 
           {/* RIGHT SIDE */}
@@ -183,6 +184,11 @@ const {
   <span>Careers</span>
 </NavLink>
 
+<NavLink to="/pricing" onClick={() => setMenuOpen(false)} className="mobile-link">
+  <img src="https://img.icons8.com/ios-filled/24/ffffff/price-tag.png
+" alt="Pricing" />
+  <span>Pricing</span>
+</NavLink>
 
 
           {/*<div className="mobile-divider" />*/}

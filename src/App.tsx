@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Templates from "./pages/Templates";
 import Community from "./pages/Community";
+import Pricing from "./pages/Pricing";
 import Careers from "./pages/Careers";
 import Blog from "./pages/Blog";
 import Founders from "./pages/Founders";
@@ -22,6 +23,7 @@ const App = () => {
       <Route path="/auth" element={<Auth />} /> 
       <Route path="/templates" element={<Templates />} />
       <Route path="/community" element={<Community />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/integrations" element={<Integrations />} />
       <Route path="/builder" element={<Builder />} />
       <Route path="/careers" element={<Careers />} />
