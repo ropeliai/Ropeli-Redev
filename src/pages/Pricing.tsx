@@ -106,11 +106,8 @@ const [openSales, setOpenSales] = useState(false);
 
             <ul>
               <li>Supabase, Razorpay, Stripe</li>
-              <li>AI-powered data tools</li>
               <li>No Ropeli branding</li>
               <li>Unused tokens roll over</li>
-              <li>Custom domains</li>
-              <li>Expanded database</li>
             </ul>
 
             <button className="secondary-btn">Get Started</button>
