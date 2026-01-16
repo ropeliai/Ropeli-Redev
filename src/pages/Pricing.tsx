@@ -2,11 +2,64 @@ import { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "../styles/pricing.css";
+import { initiatePayment } from "../lib/razorpay";
 import ContactSalesModal from "../components/ContactSalesModal";
 
 
 
 type Billing = "weekly" | "monthly" | "yearly";
+
+const FEATURES = {
+  Breeze: {
+    weekly: [
+      "Supabase, Razorpay, Stripe",
+      "No Ropeli branding",
+      "Unused tokens roll over",
+    ],
+    monthly: [
+      "Supabase, Razorpay, Stripe",
+      "AI-powered data tools",
+      "No Ropeli branding",
+      "Unused tokens roll over",
+      "Custom domains",
+      "Expanded database",
+    ],
+    yearly: [
+      "Supabase, Razorpay, Stripe",
+      "AI-powered data tools",
+      "No Ropeli branding",
+      "Unused tokens roll over",
+      "Custom domains",
+      "Expanded database",
+      "Advanced analytics",
+      "Team collaboration",
+    ],
+  },
+
+  Peak: {
+    weekly: [
+      "Multiple locals & regions",
+      "Priority support",
+      "Unlimited storage",
+    ],
+    monthly: [
+      "Multiple locals & regions",
+      "Free domain (1 year)",
+      "Priority support",
+      "Unlimited storage",
+      "Advanced marketing tools",
+    ],
+    yearly: [
+      "Multiple locals & regions",
+      "Free domain (1 year)",
+      "Priority support",
+      "Unlimited storage",
+      "Advanced marketing tools",
+      "Dedicated onboarding",
+      "SSO, SEO, SLAs",
+    ],
+  },
+};
 
 const PRICING = {
   Breeze: {
@@ -103,17 +156,29 @@ const [openSales, setOpenSales] = useState(false);
               <option value="40M">40M tokens</option>
               <option value="50M">50M tokens</option>
             </select>
-
             <ul>
-              <li>Supabase, Razorpay, Stripe</li>
-              <li>AI-powered data tools</li>
-              <li>No Ropeli branding</li>
-              <li>Unused tokens roll over</li>
-              <li>Custom domains</li>
-              <li>Expanded database</li>
+              {FEATURES.Breeze[billing].map((feature, index) => (
+              <li key={index}>{feature}</li>
+              ))}
             </ul>
 
-            <button className="secondary-btn">Get Started</button>
+
+<button
+  className="secondary-btn"
+  onClick={() => {
+  console.log("BREEZE CLICKED");
+  initiatePayment({
+    planName: "Breeze",
+    billing,
+    tokens: breezeTokens,
+    amount: 1,
+  });
+}}
+
+>
+  Get Started
+</button>
+
           </div>
 
           {/* Peak */}
@@ -142,18 +207,30 @@ const [openSales, setOpenSales] = useState(false);
               <option value="40M">40M tokens</option>
               <option value="50M">50M tokens</option>
             </select>
-
             <ul>
-              <li>Multiple locals & regions</li>
-              <li>Free domain (1 year)</li>
-              <li>Priority support</li>
-              <li>Unlimited storage</li>
-              <li>Advanced marketing tools</li>
-              <li>Dedicated onboarding</li>
-              <li>SSO, SEO, SLAs</li>
+              {FEATURES.Peak[billing].map((feature, index) => (
+                <li key={index}>{feature}</li>
+             ))}
             </ul>
 
-            <button className="primary-btn">Get Started</button>
+
+<button
+  className="primary-btn"
+  onClick={() =>
+    initiatePayment({
+      planName: "Peak",
+      billing,
+      tokens: peakTokens,
+      amount: getDiscountedPrice(
+        PRICING.Peak[billing][
+          peakTokens as keyof typeof PRICING.Peak.weekly
+        ]
+      ),
+    })
+  }
+>
+  Get Started
+</button>
           </div>
 
           {/* Sail */}
