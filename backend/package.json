@@ -1,36 +1,19 @@
-/*{
-    "type": "module",
-    "name": "backend",
-    "version": "1.0.0",
-    "description": "",
-    "main": "payment.controller.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node server.js"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "cors": "^2.8.5",
-        "dotenv": "^17.2.3",
-        "express": "^5.2.1",
-        "razorpay": "^2.9.6"
-    }
-}*/
-
 {
     "name": "ropeli-backend",
     "version": "1.0.0",
+    "private": true,
     "type": "module",
     "main": "server.js",
     "scripts": {
         "start": "node server.js"
     },
+    "engines": {
+        "node": ">=18"
+    },
     "dependencies": {
-        "express": "^4.19.2",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
+        "express": "^4.19.2",
         "razorpay": "^2.9.6"
     }
 }
