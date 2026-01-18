@@ -121,7 +121,7 @@ const {
 
                     <ul className="profile-links">
                       <li>Account Settings</li>
-                      <li onClick={() => window.open("https://discord.com/invite/kBuGHsZy", "_blank")}>Join Discord</li>
+                      <li onClick={() => window.open("https://discord.gg/95RzDeYU", "_blank")}>Join Discord</li>
                     </ul>
 
                     <button className="logout-btn" onClick={signOut}>

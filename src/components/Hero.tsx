@@ -566,8 +566,7 @@ const [modelOpen, setModelOpen] = useState(false);
   {/* RIGHT SIDE */}
   <div className="prompt-right">
     {/* MIC */}
-    {/*<button className={`build-mic-btn ${listening ? "active" : ""}`} onClick={toggleMic} > 🎤 </button>*/}
-     <button 
+     {/*<button 
      className={`figma-btn ${isGuest ? "disabled-btn" : ""}`}
      aria-disabled={isGuest}
      onClick={() => {
@@ -578,7 +577,7 @@ const [modelOpen, setModelOpen] = useState(false);
        toggleMic();
        }}>
       <img src="/mic.svg" alt="mic" />
-    </button>
+    </button>*/}
 
     {/* SEND */}
     <button  className={`build-btn-metal ${isGuest ? "disabled-btn" : ""}`}

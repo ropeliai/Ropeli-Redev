@@ -557,7 +557,7 @@ body {
     font-size: 0.85rem;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     cursor: pointer;
 }
 
@@ -582,7 +582,11 @@ body {
     padding: 10px 14px;
     font-size: 0.85rem;
     color: #dcdcdc;
+    text-align: left;
     cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
 }
 
 .model-item:hover {
@@ -610,15 +614,6 @@ body {
     background-color: #ffffff;
     object-fit: contain;
     border-radius: 50%;
-}
-
-
-/* Dropdown item layout */
-
-.model-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
 }
 
 
@@ -737,21 +732,6 @@ body {
 
 
 /* ---------- BUTTONS ----------  for hover + (Attach files & images) added css in the builder.css */
-
-
-/* ---------- MODEL ---------- */
-
-.model-btn {
-    background: #141414;
-    border: 1px solid #2a2a2a;
-    border-radius: 999px;
-    padding: 6px 12px;
-    font-size: 0.85rem;
-    color: #eaeaea;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
 
 
 /* ---------- MOBILE (STILL ONE ROW) ---------- */

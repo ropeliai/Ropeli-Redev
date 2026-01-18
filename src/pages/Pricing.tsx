@@ -2,7 +2,11 @@ import { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import "../styles/pricing.css";
+import { useAuth } from "../context/AuthContext";
 import { initiatePayment } from "../lib/razorpay";
+import PaymentModal from "../components/PaymentModal";
+import type { PaymentStatus } from "../types/payment";
+
 import ContactSalesModal from "../components/ContactSalesModal";
 
 
@@ -82,10 +86,22 @@ const getSavingsAmount = (original: number) => {
   return Math.round(original * 0.4); // 40% savings
 };
 
+
+// Function to handle payment initiation
 const Pricing = () => {
   const [billing, setBilling] = useState<Billing>("weekly");
   const [breezeTokens, setBreezeTokens] = useState("10M");
   const [peakTokens, setPeakTokens] = useState("10M");
+// Payment modal state
+const [paymentOpen, setPaymentOpen] = useState(false);
+type PaymentStatus = "idle" | "loading" | "success" | "cancelled" | "failed";
+
+
+const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
+
+
+  const { user, setAuthModalOpen } = useAuth();
+  const isGuest = !user;
 
 
 /*contact sales modal state*/
@@ -163,7 +179,7 @@ const [openSales, setOpenSales] = useState(false);
             </ul>
 
 
-<button
+{/*<button
   className="secondary-btn"
   onClick={() => {
   console.log("BREEZE CLICKED");
@@ -173,11 +189,50 @@ const [openSales, setOpenSales] = useState(false);
     tokens: breezeTokens,
     amount: 1,
   });
-}}
+}}>
+  Get Started
+</button>*/}
+<button
+  className={`secondary-btn ${isGuest ? "disabled-btn" : ""}`}
+  onClick={() => {
+    if (isGuest) {
+      setAuthModalOpen(true);
+      return;
+    }
 
+    const price =
+      PRICING.Breeze[billing]?.[
+        breezeTokens as keyof (typeof PRICING.Breeze)[typeof billing]
+      ];
+
+    if (!price) return;
+
+    setPaymentStatus("loading");
+
+setTimeout(() => {
+  setPaymentOpen(true);
+}, 200);
+
+initiatePayment({
+  planName: "Breeze",
+  billing,
+  tokens: breezeTokens,
+  amount: getDiscountedPrice(price),
+
+  onSuccess: () => setPaymentStatus("success"),
+  onCancel: () => setPaymentStatus("cancelled"),
+  onFailure: () => setPaymentStatus("failed"),
+});
+
+  }}
 >
   Get Started
 </button>
+
+
+
+
+
 
           </div>
 
@@ -213,24 +268,46 @@ const [openSales, setOpenSales] = useState(false);
              ))}
             </ul>
 
-
 <button
-  className="primary-btn"
-  onClick={() =>
-    initiatePayment({
-      planName: "Peak",
-      billing,
-      tokens: peakTokens,
-      amount: getDiscountedPrice(
-        PRICING.Peak[billing][
-          peakTokens as keyof typeof PRICING.Peak.weekly
-        ]
-      ),
-    })
-  }
+  className={`secondary-btn ${isGuest ? "disabled-btn" : ""}`}
+  onClick={() => {
+    if (isGuest) {
+      setAuthModalOpen(true);
+      return;
+    }
+
+    const price =
+      PRICING.Peak[billing]?.[
+        peakTokens as keyof (typeof PRICING.Peak)[typeof billing]
+      ];
+
+    if (!price) return;
+
+    setPaymentStatus("loading");
+
+setTimeout(() => {
+  setPaymentOpen(true);
+}, 200);
+
+initiatePayment({
+  planName: "peak",
+  billing,
+  tokens: peakTokens,
+  amount: getDiscountedPrice(price),
+
+  onSuccess: () => setPaymentStatus("success"),
+  onCancel: () => setPaymentStatus("cancelled"),
+  onFailure: () => setPaymentStatus("failed"),
+});
+
+  }}
 >
   Get Started
 </button>
+
+
+
+
           </div>
 
           {/* Sail */}
@@ -241,9 +318,19 @@ const [openSales, setOpenSales] = useState(false);
             <p className="custom-text">
               Tailored solutions, custom integrations, and enterprise-grade support.
             </p>
-            <button className="primary-btn" onClick={() => setOpenSales(true)}>
-  Contact Sales
-</button>
+           <button 
+           className={`secondary-btn ${isGuest ? "disabled-btn" : ""}`}
+           aria-disabled={isGuest}
+           onClick={() => {
+           if (isGuest) {
+               setAuthModalOpen(true);
+               return;
+            }
+            setOpenSales(true);
+          }} >
+               Contact Sales
+            </button>
+
 
           </div>
         </div>
@@ -251,6 +338,19 @@ const [openSales, setOpenSales] = useState(false);
 
       {/* CONTACT SALES MODAL */}
       <ContactSalesModal open={openSales} onClose={() => setOpenSales(false)}/>
+      {/* PAYMENT MODAL */}
+      <PaymentModal
+  open={paymentOpen}
+  status={paymentStatus}
+  onClose={() => {
+    setPaymentOpen(false);
+    setPaymentStatus("idle");
+  }}
+  onRetry={() => {
+    setPaymentOpen(false);
+    setPaymentStatus("idle");
+  }}
+/>
 
 
       <Footer />

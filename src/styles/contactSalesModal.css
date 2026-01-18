@@ -186,7 +186,7 @@ input {
 
 @media (max-width: 400px) {
     .sales-modal {
-        height: 69vh;
+        height: 70vh;
         border-radius: 0;
     }
     .submit-btn {

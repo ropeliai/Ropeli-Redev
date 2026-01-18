@@ -184,6 +184,7 @@
 .secondary-btn {
     background: #1f1f1f;
     color: white;
+    margin-top: auto;
     border: 1px solid #333;
     border-radius: 999px;
     padding: 0.6rem;
