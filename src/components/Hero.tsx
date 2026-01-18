@@ -577,7 +577,7 @@ const [modelOpen, setModelOpen] = useState(false);
        toggleMic();
        }}>
       <img src="/mic.svg" alt="mic" />
-    </button>*/}
+    </button>
 
     {/* SEND */}
     <button  className={`build-btn-metal ${isGuest ? "disabled-btn" : ""}`}

@@ -11,15 +11,19 @@ const OnboardingModal = ({ onComplete }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
-    expertise: "",
-    goal: "",
+    name: "",
+    role: "",
+    customRole: "",
     source: "",
   });
 
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
 
-  const updateForm = (key: keyof typeof form, value: string) => {
+  const updateForm = (
+    key: keyof typeof form,
+    value: string
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -39,8 +43,8 @@ const OnboardingModal = ({ onComplete }: Props) => {
 
     const { error } = await supabase.from("user_onboarding").insert({
       user_id: user.id,
-      expertise: form.expertise,
-      goal: form.goal,
+      name: form.name,
+      role: form.role === "Other" ? form.customRole : form.role,
       source: form.source,
     });
 
@@ -54,22 +58,15 @@ const OnboardingModal = ({ onComplete }: Props) => {
     onComplete();
   };
 
-  const optionsStep1 = [
-    "I’m a beginner ",
-    "I’m an intermediate ",
-    "I’m an experienced ",
-    "I don’t know how to code",
-  ];
-
-  const optionsStep2 = [
-    "Indie/personal project — exploring or prototyping",
-    "Launch a business app",
-    "Prepare to publish soon",
-    "Learning only",
+  const roleOptions = [
+    "Founder",
+    "Engineer",
+    "Designer",
+    "Marketing",
     "Other",
   ];
 
-  const optionsStep3 = [
+  const sourceOptions = [
     "Google / Search Engine",
     "Article",
     "A friend / referral",
@@ -82,72 +79,125 @@ const OnboardingModal = ({ onComplete }: Props) => {
       <div className="onboarding-modal">
         <h2 style={{ margin: "0px" }}>Let’s get Started</h2>
 
-        {/* STEP 1 */}
+        {/* STEP 1 — NAME */}
         {step === 1 && (
           <>
-            <h3>What’s your technical expertise?</h3>
-            {optionsStep1.map((v) => (
-              <label
-                key={v}
-                className={`option ${form.expertise === v ? "selected" : ""}`}
-              >
-                <input
-                  type="radio"
-                  checked={form.expertise === v}
-                  onChange={() => updateForm("expertise", v)}
-                />
-                <span>{v}</span>
-              </label>
-            ))}
-            <button disabled={!form.expertise} onClick={next}>
+            <h3>What should we call you?</h3>
+
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={form.name}
+              onChange={(e) =>
+                updateForm("name", e.target.value)
+              }
+              style={{
+                width: "90%",
+                padding: "12px",
+                borderRadius: "10px",
+                border: "1px solid #444",
+                background: "#111",
+                color: "#fff",
+                marginTop: "12px",
+              }}
+            />
+
+            <button
+              disabled={!form.name.trim()}
+              onClick={next}
+            >
               Next
             </button>
           </>
         )}
 
-        {/* STEP 2 */}
+        {/* STEP 2 — ROLE */}
         {step === 2 && (
           <>
-            <h3>What’s your primary goal for the next 0–4 weeks?</h3>
-            {optionsStep2.map((v) => (
+            <h3>Which role suits you best?</h3>
+
+            {roleOptions.map((v) => (
               <label
                 key={v}
-                className={`option ${form.goal === v ? "selected" : ""}`}
+                className={`option ${
+                  form.role === v ? "selected" : ""
+                }`}
               >
                 <input
                   type="radio"
-                  checked={form.goal === v}
-                  onChange={() => updateForm("goal", v)}
+                  checked={form.role === v}
+                  onChange={() =>
+                    updateForm("role", v)
+                  }
                 />
                 <span>{v}</span>
               </label>
             ))}
+
+            {form.role === "Other" && (
+              <input
+                type="text"
+                placeholder="Please specify your role"
+                value={form.customRole}
+                onChange={(e) =>
+                  updateForm(
+                    "customRole",
+                    e.target.value
+                  )
+                }
+                style={{
+                  width: "90%",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #444",
+                  background: "#111",
+                  color: "#fff",
+                  marginTop: "12px",
+                }}
+              />
+            )}
+
             <div className="actions">
               <button onClick={back}>Back</button>
-              <button disabled={!form.goal} onClick={next}>
+              <button
+                disabled={
+                  !form.role ||
+                  (form.role === "Other" &&
+                    !form.customRole.trim())
+                }
+                onClick={next}
+              >
                 Next
               </button>
             </div>
           </>
         )}
 
-        {/* STEP 3 */}
+        {/* STEP 3 — SOURCE */}
         {step === 3 && (
           <>
-            <h3>How did you hear about us?</h3>
-            {optionsStep3.map((v) => (
+            <h3>Where did you hear about us?</h3>
+
+            {sourceOptions.map((v) => (
               <label
                 key={v}
-                className={`option ${form.source === v ? "selected" : ""}`}
+                className={`option ${
+                  form.source === v
+                    ? "selected"
+                    : ""
+                }`}
               >
                 <input
                   type="radio"
                   checked={form.source === v}
-                  onChange={() => updateForm("source", v)}
+                  onChange={() =>
+                    updateForm("source", v)
+                  }
                 />
                 <span>{v}</span>
               </label>
             ))}
+
             <div className="actions">
               <button onClick={back}>Back</button>
               <button
@@ -160,7 +210,9 @@ const OnboardingModal = ({ onComplete }: Props) => {
           </>
         )}
 
-        <span className="step-indicator">{step} of 3</span>
+        <span className="step-indicator">
+          {step} of 3
+        </span>
       </div>
     </div>
   );
