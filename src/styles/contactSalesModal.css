@@ -42,13 +42,25 @@
     margin-bottom: 1rem;
     padding: 0.7rem;
     border-radius: 6px;
+    background: #ffffff;
     border: 1px solid #ccc;
     color: #818181;
+    font-family: inherit;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .sales-modal textarea {
-    min-height: 80px;
+    resize: none;
+    overflow: hidden;
+    font-family: inherit;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.sales-modal textarea {
+    min-height: 20px;
 }
 
 .submit-btn {
@@ -137,40 +149,6 @@ input {
     z-index: 10;
 }
 
-
-/* ===== Mobile specific ===== */
-
-@media (max-width: 600px) {
-    .sales-modal {
-        height: 100vh;
-        width: 92%;
-        /* ✅ full screen modal */
-        max-height: 100vh;
-        border-radius: 0;
-        padding: 1.2rem;
-    }
-    .row {
-        gap: 2;
-        margin-top: 2px;
-    }
-    .submit-btn {
-        position: sticky;
-        bottom: 0;
-        margin-top: 1rem;
-    }
-    .sales-model input {
-        padding: 0.5rem;
-        width: 92%;
-        margin-bottom: 0.7rem;
-    }
-    .subtitle {
-        text-align: center;
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 1.3rem;
-    }
-}
-
 .sales-modal {
     display: flex;
     flex-direction: column;
@@ -182,6 +160,48 @@ input {
     flex: 1;
     overflow-y: auto;
     padding-right: 4px;
+}
+
+
+/* ===== Mobile specific ===== */
+
+@media (max-width: 600px) {
+    .sales-modal {
+        height: 100vh;
+        width: 92%;
+        max-height: 100vh;
+        border-radius: 0;
+        padding: 1.2rem;
+    }
+    .row {
+        gap: 0rem !important;
+        margin-top: 2px;
+    }
+    .submit-btn {
+        position: sticky;
+        bottom: 0;
+        margin-top: 1rem;
+    }
+    .sales-modal input,
+    .sales-modal textarea {
+        width: 85% !important;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+    .subtitle {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1.3rem;
+    }
+    input,
+    textarea {
+        width: 85%;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
 }
 
 @media (max-width: 400px) {

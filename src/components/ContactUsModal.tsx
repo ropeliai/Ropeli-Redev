@@ -64,17 +64,33 @@ const ContactUsModal = ({ open, onClose }: Props) => {
           <input name="email" placeholder="Work Email" onChange={handleChange} />
           <input name="phone" placeholder="Phone Number" onChange={handleChange} />
 
-          <input
-            name="query"
+          
+
+          <textarea 
+           name="query"
             placeholder="Your query"
-            onChange={handleChange}
+            onChange={handleChange}        
+          rows={2}
+          onInput={(e) => {
+             const el = e.target as HTMLTextAreaElement;
+             el.style.height = "auto";
+             el.style.height = el.scrollHeight + "px";
+          }}
           />
 
-          <input
-            name="company"
+          <textarea 
+          name="company"
             placeholder="Company name and details (if any)"
-            onChange={handleChange}
-          />
+            onChange={handleChange}          
+          rows={2}
+          onInput={(e) => {
+             const el = e.target as HTMLTextAreaElement;
+             el.style.height = "auto";
+             el.style.height = el.scrollHeight + "px";
+          }}
+          />       
+
+         
         </div>
 
         <button className="submit-btn" onClick={handleSubmit}>

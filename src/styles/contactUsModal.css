@@ -22,6 +22,15 @@
     overflow: hidden;
 }
 
+.contact-modal textarea {
+    resize: none;
+    overflow: hidden;
+    font-family: inherit;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .contact_head_h2 {
     font-size: 1.5rem;
     text-align: center;
@@ -63,16 +72,19 @@
 input,
 textarea {
     width: 95%;
-    padding: 0.7rem;
     margin-bottom: 1rem;
-    color: #666;
+    padding: 0.7rem;
     border-radius: 6px;
+    background: #ffffff;
     border: 1px solid #ccc;
+    color: #818181;
+    font-family: inherit;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 textarea {
-    min-height: 90px;
+    min-height: 40px;
 }
 
 .submit-btn {
@@ -99,5 +111,12 @@ textarea {
     .submit-btn {
         position: sticky;
         bottom: 0;
+    }
+    .contact-modal input,
+    .contact-modal textarea {
+        width: 85% !important;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
     }
 }

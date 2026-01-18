@@ -88,29 +88,57 @@ const ContactSalesModal = ({ open, onClose }: Props) => {
           onChange={handleChange}
         />
 
-        <input
-          name="lookingFor"
+        
+        <textarea
+        name="lookingFor"
           placeholder="What are you looking for in Ropeli AI's custom plan?"
           onChange={handleChange}
+        rows={2}
+        onInput={(e) => {
+          const el = e.target as HTMLTextAreaElement;
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
+         }}
         />
 
-        <input
-          name="problem"
+        <textarea
+        name="problem"
           placeholder="What problem are you trying to solve?"
           onChange={handleChange}
+        rows={2}
+        onInput={(e) => {
+          const el = e.target as HTMLTextAreaElement;
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
+         }}
         />
 
-        <input
-          name="users"
+
+         <textarea
+        name="users"
           placeholder="How many users would you like to onboard?"
           onChange={handleChange}
+        rows={2}
+        onInput={(e) => {
+          const el = e.target as HTMLTextAreaElement;
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
+         }}
         />
 
-        <input
-          name="timeline"
+
+          <textarea
+         name="timeline"
           placeholder="Do you have any timeline to get started?"
           onChange={handleChange}
+        rows={2}
+        onInput={(e) => {
+          const el = e.target as HTMLTextAreaElement;
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
+         }}
         />
+
       </div>
 
       {/* ✅ STICKY BUTTON */}
