@@ -166,25 +166,38 @@ input {
 /* ===== Mobile specific ===== */
 
 @media (max-width: 600px) {
-    .sales-modal {
-        height: 100vh;
-        width: 92%;
-        max-height: 100vh;
-        border-radius: 0;
-        padding: 1.2rem;
+    .sales-overlay {
+        align-items: center;
+        justify-content: center;
     }
-    .row {
-        gap: 0rem !important;
-        margin-top: 2px;
+    .sales-modal {
+        width: 92%;
+        max-height: 85vh;
+        /* NOT full screen */
+        height: auto;
+        padding: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .form-body {
+        flex: 1;
+        overflow-y: auto;
+        /* ✅ internal scroll */
+        padding-right: 4px;
     }
     .submit-btn {
         position: sticky;
         bottom: 0;
         margin-top: 1rem;
     }
+    .row {
+        flex-direction: column;
+        gap: 0;
+    }
     .sales-modal input,
     .sales-modal textarea {
-        width: 85% !important;
+        width: 85%;
         margin-left: auto;
         margin-right: auto;
         display: block;
@@ -207,7 +220,7 @@ input {
 @media (max-width: 400px) {
     .sales-modal {
         height: 70vh;
-        border-radius: 0;
+        border-radius: 14;
     }
     .submit-btn {
         position: sticky;
