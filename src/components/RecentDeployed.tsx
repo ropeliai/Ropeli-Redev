@@ -213,7 +213,7 @@ useEffect(() => {
 
           {activeTab === "templates" && (
             <button className="browse-all" onClick={() => navigate("/templates")}>
-              Browse all →
+              Browse →
             </button>
           )}
         </div>
