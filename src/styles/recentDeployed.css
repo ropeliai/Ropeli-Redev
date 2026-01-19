@@ -58,10 +58,15 @@
     color: #555;
 }
 
+.rd-browse-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 0;
+}
+
 .browse-all {
     background: none;
     border: none;
-    color: #aaa;
     cursor: pointer;
 }
 

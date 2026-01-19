@@ -22,6 +22,7 @@ const Hero = () => {
   const starCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const tubesCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const modelRef = useRef<HTMLDivElement | null>(null);
 
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -230,10 +231,26 @@ const MODELS = [
 
 const [selectedModel, setSelectedModel] = useState(MODELS[0]);
 
-
 //const [selectedModel, setSelectedModel] = useState("Claude 4.5 Sonnet");
 const [modelOpen, setModelOpen] = useState(false);
 
+// Close model dropdown on outside click
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      modelOpen &&
+      modelRef.current &&
+      !modelRef.current.contains(event.target as Node)
+    ) {
+      setModelOpen(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [modelOpen]);
 
 
   /* ---------- MICROPHONE ---------- */
@@ -533,7 +550,7 @@ const [modelOpen, setModelOpen] = useState(false);
     </button>
 
     {/* MODEL SELECTOR */}
-    <div className="model-selector">
+    <div className="model-selector" ref={modelRef}>
       <button className="model-btn" onClick={() => setModelOpen((v) => !v)}>
         <div className="model-icon-img"><img src={selectedModel.icon} alt="" className="model-icon" /></div>
          {selectedModel.name}

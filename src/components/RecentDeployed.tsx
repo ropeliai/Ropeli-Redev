@@ -180,8 +180,17 @@ useEffect(() => {
         {/* HEADER */}
         <div className="rd-tabs-header">
           <div className="rd-tabs-alt">
+  <button
+    className={activeTab === "templates" ? "active" : ""}
+    onClick={() => setActiveTab("templates")}
+  >
+    Templates
+  </button>
+
   {!isGuest && (
     <>
+      <span className="rd-divider">|</span>
+
       <button
         className={activeTab === "recent" ? "active" : ""}
         onClick={() => setActiveTab("recent")}
@@ -197,26 +206,25 @@ useEffect(() => {
       >
         Deployed Apps
       </button>
-
-      <span className="rd-divider">|</span>
     </>
   )}
-
-  <button
-    className={activeTab === "templates" ? "active" : ""}
-    onClick={() => setActiveTab("templates")}
-  >
-    Templates
-  </button>
 </div>
 
 
-          {activeTab === "templates" && (
-            <button className="browse-all" onClick={() => navigate("/templates")}>
-              Browse →
-            </button>
-          )}
+
+          
         </div>
+        {activeTab === "templates" && (
+  <div className="rd-browse-wrapper">
+    <button
+      className="browse-all"
+      onClick={() => navigate("/templates")}
+    >
+      Browse All
+    </button>
+  </div>
+)}
+
 
         {/* ================= TABLE VIEW ================= */}
         {activeTab !== "templates" && (
