@@ -361,7 +361,6 @@
 .mobile-menu {
     position: fixed;
     inset: 0;
-    height: 100vh;
     width: auto;
     background: #111;
     z-index: 9999;
@@ -488,6 +487,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-bottom: 15px;
     color: white;
     font-size: 16px;
 }
@@ -594,7 +594,6 @@
 .mobile-menu {
     position: fixed;
     inset: 0;
-    height: 100vh;
     background: #111;
     display: flex;
     flex-direction: column;
@@ -625,10 +624,9 @@
 
 .mobile-menu-bottom {
     margin-top: auto;
-    /* 🔑 KEY FIX */
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
     padding-bottom: env(safe-area-inset-bottom);
 }
 
