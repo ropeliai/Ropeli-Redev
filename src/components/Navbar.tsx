@@ -168,74 +168,82 @@ const {
 
       {/* ================= MOBILE MENU ================= */}
       {menuOpen && (
-        <div className="mobile-menu slide-in">
-          {/* CLOSE */}
+  <div className="mobile-menu slide-in">
+    {/* ===== HEADER ===== */}
+    <div className="mobile-menu-header">
+      <span className="mobile-menu-logo">ROPELI AI</span>
+      <button
+        className="mobile-close"
+        onClick={() => setMenuOpen(false)}
+      >
+        ✕
+      </button>
+    </div>
+
+    {/* ===== NAV LINKS ===== */}
+    <div className="mobile-menu-links">
+      <NavLink to="/templates" onClick={() => setMenuOpen(false)} className="mobile-link">
+        <img src="https://img.icons8.com/ios-filled/24/ffffff/grid-2.png" />
+        <span>Templates</span>
+      </NavLink>
+
+      <NavLink to="/developers-playground" onClick={() => setMenuOpen(false)} className="mobile-link">
+        <img src="https://img.icons8.com/ios-filled/24/ffffff/source-code.png" />
+        <span>Developer’s Playground</span>
+      </NavLink>
+
+      <NavLink to="/Integrations" onClick={() => setMenuOpen(false)} className="mobile-link">
+        <img src="https://img.icons8.com/ios-filled/24/ffffff/layers.png" />
+        <span>Integrations</span>
+      </NavLink>
+
+      <NavLink to="/careers" onClick={() => setMenuOpen(false)} className="mobile-link">
+        <img src="https://img.icons8.com/ios-filled/24/ffffff/briefcase.png" />
+        <span>Careers</span>
+      </NavLink>
+
+      <NavLink to="/pricing" onClick={() => setMenuOpen(false)} className="mobile-link">
+        <img src="https://img.icons8.com/ios-filled/24/ffffff/price-tag.png" />
+        <span>Pricing</span>
+      </NavLink>
+    </div>
+
+    {/* ===== BOTTOM (FIXED) ===== */}
+    <div className="mobile-menu-bottom">
+      {user && (
+        <>
+          <div className="mobile-profile-header">
+            <div className="avatar-circle">{avatarLetter}</div>
+            <span>{displayName}</span>
+          </div>
+
           <button
-            className="mobile-close"
-            onClick={() => setMenuOpen(false)}
+            className="mobile-auth-btn logout"
+            onClick={() => {
+              signOut();
+              setMenuOpen(false);
+            }}
           >
-            ✕
+            Logout
           </button>
-
-          {/* LINKS */}
-          <NavLink to="/templates" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="https://img.icons8.com/ios-filled/24/ffffff/grid-2.png" alt="Templates" />
-  <span>Templates</span>
-</NavLink>
-
-<NavLink to="/developers-playground" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="https://img.icons8.com/ios-filled/24/ffffff/source-code.png" alt="Developers Playground" />
-  <span>Developer’s Playground</span>
-</NavLink>
-
-<NavLink to="/Integrations" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="https://img.icons8.com/ios-filled/24/ffffff/layers.png" alt="Integrations" />
-  <span>Integrations</span>
-</NavLink>
-
-<NavLink to="/careers" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="https://img.icons8.com/ios-filled/24/ffffff/briefcase.png" alt="Careers" />
-  <span>Careers</span>
-</NavLink>
-
-<NavLink to="/pricing" onClick={() => setMenuOpen(false)} className="mobile-link">
-  <img src="https://img.icons8.com/ios-filled/24/ffffff/price-tag.png
-" alt="Pricing" />
-  <span>Pricing</span>
-</NavLink>
-
-
-          {/*<div className="mobile-divider" />*/}
-
-          {/* PROFILE (ONLY IN MENU) */}
-          {user && (
-            <div className="mobile-profile">
-              <div className="mobile-profile-header">
-                <div className="avatar-circle">{avatarLetter}</div>
-                <span>{displayName}</span>
-              </div>
-
-              <button
-                className="mobile-auth-btn logout"
-                onClick={() => {
-                  signOut();
-                  setMenuOpen(false);
-                }}
-              >
-                Logout
-              </button>
-            </div>
-          )}
-
-          {!user && (
-            <>
-              <button  className="mobile-auth-btn primary"  onClick={() => { setAuthModalOpen(true); setMenuOpen(false); }}>
-                Get started
-              </button>
-            </>
-          )}
-        </div>
+        </>
       )}
+
+      {!user && (
+        <button
+          className="mobile-auth-btn primary"
+          onClick={() => {
+            setAuthModalOpen(true);
+            setMenuOpen(false);
+          }}
+        >
+          Get started
+        </button>
+      )}
+    </div>
+  </div>
+)}
+
 
       {/* ================= AUTH MODAL ================= */}
 <AuthModal

@@ -336,8 +336,6 @@ setAttachedFiles([]);
           <div className="builder-prompt-footer">
             <div className="prompt-footer-left">
               <button className="icon-btn" onClick={() => fileInputRef.current?.click()}>+</button>
-              <input ref={fileInputRef} type="file" hidden multiple onChange={handleFileSelect} />
-
               <button className="figma-btn" onClick={() => setFigmaOpen(true)}>
                 <img src="/figma.png" />
               </button>
@@ -466,13 +464,7 @@ setAttachedFiles([]);
           >
             +
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            hidden
-            onChange={handleFileSelect}
-          />
+          
 
           <button className="figma-btn" onClick={() => setFigmaOpen(true)}>
             <img src="/figma.png" alt="Figma" />
