@@ -47,6 +47,20 @@ const {
 
   const avatarLetter = displayName.charAt(0).toUpperCase();
 
+// Disable body scroll when mobile menu is open
+  useEffect(() => {
+  if (menuOpen) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "";
+  }
+
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [menuOpen]);
+
+
   return (
     <>
       {/* ================= NAVBAR ================= */}
