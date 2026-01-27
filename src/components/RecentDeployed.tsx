@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/recentDeployed.css";
+import { supabase } from "../lib/supabase";
+
 
 type Tab = "recent" | "deployed" | "templates";
 
@@ -100,8 +102,34 @@ useEffect(() => {
 }, [isGuest]);
 
 
+useEffect(() => {
+  if (!user) return;
 
-/*  BUILDER prompt to task */
+  const fetchProjects = async () => {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setProjects((prev) => ({
+      ...prev,
+      recent: data.filter(p => p.status === "recent"),
+      deployed: data.filter(p => p.status === "deployed"),
+    }));
+  };
+
+  fetchProjects();
+}, [user]);
+
+
+
+/*  BUILDER prompt to task 
 useEffect(() => {
   const stored = JSON.parse(
     localStorage.getItem("recentTasks") || "[]"
@@ -121,7 +149,7 @@ useEffect(() => {
     ...prev,
     recent: formatted,
   }));
-}, []);
+}, []);*/
 
 
   /* CLOSE MENU ON OUTSIDE CLICK */
@@ -145,25 +173,65 @@ useEffect(() => {
     setMenuOpenId(null);
   };
 
-  const saveRename = () => {
-    if (!modal) return;
-    setProjects((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].map((p) =>
-        p.id === modal.project.id ? { ...p, name: inputValue } : p
-      ),
-    }));
-    closeModal();
-  };
+
+  
+ const saveRename = async () => {
+  if (!modal || !inputValue.trim()) return;
+
+  const newName = inputValue.trim();
+
+  // 1️⃣ Update database
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      name: newName,
+      updated_at: new Date(),
+    })
+    .eq("id", modal.project.id);
+
+  if (error) {
+    console.error("Rename failed:", error);
+    return;
+  }
+
+  // 2️⃣ Update UI instantly
+  setProjects((prev) => ({
+    ...prev,
+    [activeTab]: prev[activeTab].map((p) =>
+      p.id === modal.project.id
+        ? { ...p, name: newName }
+        : p
+    ),
+  }));
+
+  // 3️⃣ Close modal
+  setModal(null);
+  setInputValue("");
+};
 
 
-  const deleteProject = (id: string) => {
-    setProjects((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter((p) => p.id !== id),
-    }));
-    setMenuOpenId(null);
-  };
+
+const deleteProject = async (id: string) => {
+  // 1) Delete from DB
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Delete failed:", error);
+    return;
+  }
+
+  // 2) Update UI
+  setProjects((prev) => ({
+    ...prev,
+    [activeTab]: prev[activeTab].filter((p) => p.id !== id),
+  }));
+
+  setMenuOpenId(null);
+};
+
 
 
   const closeModal = () => {
@@ -243,9 +311,10 @@ useEffect(() => {
                <div className="rd-task">
                 <strong>
                  {project.taskNo ?? "-"}.{" "}
-                    <span className="rd-task-prompt" title={project.prompt || ""}>
-                       {project.prompt || "Untitled task"}
+                    <span className="rd-task-prompt">
+                      {project.name || project.prompt || "Untitled task"}
                     </span>
+
                 </strong>
                </div>
 

@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.89.0",
+    "@webcontainer/api": "^1.6.1",
+    "esbuild-wasm": "^0.27.2",
     "lucide-react": "^0.562.0",
     "razorpay": "^2.9.6",
     "react": "^19.2.0",

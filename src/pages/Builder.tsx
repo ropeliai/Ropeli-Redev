@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/builder.css";
+{/*import { getWebContainer } from '../compiler/webcontainer';
+import { mountFiles } from '../compiler/filesystem';
+import { runProject } from '../compiler/runner';
+import { attachPreview } from '../compiler/preview';*/}
+import MonacoEditor from "../components/builder/MonacoEditor";
+import { compile } from "../compiler/esbuild";
+import { iframeHtml } from "../compiler/iframeRuntime";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+
+
 
 const DEFAULT_ASSISTANT_MESSAGE = `
 Welcome to Ropeli - your single destination to build and deploy production-ready applications!
@@ -16,6 +27,19 @@ const ANIMATED_TEXTS = [
   "Turn prompts into products",
 ];
 
+const SETUP_STEPS = [
+  "Setting up project",
+  "Customizing configuration",
+  "Creating folders & files",
+  "Loading assets & images",
+  "Finalizing environment",
+];
+
+
+
+
+
+
 
 
 type FigmaState = "idle" | "loading" | "success" | "error";
@@ -23,18 +47,90 @@ type FigmaState = "idle" | "loading" | "success" | "error";
 export default function Builder() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [projectId, setProjectId] = useState<string | null>(null);
+ 
 
 
+
+  const [code, setCode] = useState(`
+const root = document.getElementById("root");
+root.innerHTML = "<h1>Hello from Ropeli </h1>";
+`);
+
+const [compiled, setCompiled] = useState("");
+const [compileError, setCompileError] = useState("");
+const [isCompiling, setIsCompiling] = useState(false);
+
+
+
+const handleRun = async () => {
+  setIsCompiling(true);
+  setCompileError("");
+
+  // UX delay (matches your builder animation style)
+  await new Promise((r) => setTimeout(r, 2000));
+
+  const res = await compile(code);
+
+  if (res.error) {
+    setCompileError(res.error);
+  } else {
+    setCompiled(res.js);
+    setActiveTab("preview");
+  }
+
+  setIsCompiling(false);
+};
+
+{/*
+  // Preview and logs state
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [logs, setLogs] = useState('');
+
+// Function to run generated code in WebContainer
+  // Function to run generated code in WebContainer
+async function runGeneratedCode(files: Record<string, any>) {
+  console.log("🔥 runGeneratedCode called");
+
+  const container = await getWebContainer();
+  console.log("✅ WebContainer instance received");
+
+  console.log("📦 Mounting files:", files);
+  await mountFiles(container, files);
+  console.log("📁 Files mounted successfully");
+
+  attachPreview(container, (url: string) => {
+    console.log("🌍 Preview server ready at:", url);
+    setPreviewUrl(url);
+  });
+
+  setLogs("");
+  console.log("▶️ Starting project (npm install + npm run dev)");
+
+  await runProject(container, (data: string) => {
+    console.log("🧾", data);
+    setLogs((prev) => prev + data);
+  });
+}
+
+*/}
+
+
+const [setupStep, setSetupStep] = useState(0);
+const [isBuilderLoading, setIsBuilderLoading] = useState(true);
+
+
+// Mobile view state
 type MobileView = "chat" | "code" | "preview";
 const [mobileView, setMobileView] = useState<MobileView>("chat");
 
 
+// Preview size state
+type PreviewSize = "desktop" | "tablet" | "mobile";
+const [previewSize, setPreviewSize] = useState<PreviewSize>("desktop");
 
-
-  type PreviewSize = "desktop" | "tablet" | "mobile";
-  const [previewSize, setPreviewSize] = useState<PreviewSize>("desktop");
-
-  
+// File attachments state  
 const fileInputRef = useRef<HTMLInputElement | null>(null);
 const initialFiles = location.state?.files || [];
 const [attachedFiles, setAttachedFiles] = useState<File[]>(initialFiles);
@@ -56,6 +152,27 @@ const [activeTab, setActiveTab] = useState<"preview" | "code">("preview");
 const [selectedFile, setSelectedFile] = useState<string>("src/pages/Index.tsx");
 
 
+// AUTO HIDE BUILDER LOADING AFTER 10s
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setIsBuilderLoading(false);
+  }, 10000); // 10 seconds
+
+  return () => clearTimeout(timer);
+}, []);
+
+
+// CYCLE SETUP STEPS WHILE LOADING
+useEffect(() => {
+  if (!isBuilderLoading) return;
+
+  const interval = setInterval(() => {
+    setSetupStep((prev) => (prev + 1) % SETUP_STEPS.length);
+  }, 2000);
+
+  return () => clearInterval(interval);
+}, [isBuilderLoading]);
+
 
 
   /* ===== INITIAL DATA FROM HERO ===== */
@@ -67,11 +184,12 @@ const [selectedFile, setSelectedFile] = useState<string>("src/pages/Index.tsx");
   const [messages, setMessages] = useState<any[]>([]);
   const [prompt, setPrompt] = useState(initialPrompt);
   const [attachedDesign, setAttachedDesign] = useState<any>(initialDesign);
+  const [isThinking, setIsThinking] = useState(false);
+
 
 
   /* ===== UI STATE ===== */
   const [previewOpen, setPreviewOpen] = useState(true);
-  const [textIndex, setTextIndex] = useState(0);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -86,42 +204,56 @@ const [selectedFile, setSelectedFile] = useState<string>("src/pages/Index.tsx");
 
 
   /* ===== INITIALIZE CHAT (FROM HERO) ===== */
- useEffect(() => {
-  if (!initialPrompt && initialFiles.length === 0 && !initialDesign) return;
+ // 1️⃣ Initialize chat
+const hasSavedRef = useRef(false);
 
-  const userMessage: any = {
-    role: "user",
-    content: initialPrompt,
-    files: initialFiles,
-    design: initialDesign,
+useEffect(() => {
+  if (!initialPrompt || !user || hasSavedRef.current) return;
+
+  hasSavedRef.current = true;
+
+  const saveProject = async () => {
+    const { data } = await supabase
+      .from("projects")
+      .insert({
+        user_id: user.id,
+        prompt: initialPrompt,
+        status: "recent",
+      })
+      .select()
+      .single();
+
+    if (data) setProjectId(data.id);
   };
 
+  saveProject();
+}, [initialPrompt, user]);
+
+
+useEffect(() => {
+  if (!initialPrompt && initialFiles.length === 0 && !initialDesign) return;
+
   setMessages([
-    userMessage,
+    {
+      role: "user",
+      content: initialPrompt,
+      files: initialFiles,
+      design: initialDesign,
+    },
     { role: "assistant", content: DEFAULT_ASSISTANT_MESSAGE },
   ]);
-
-/* ===== SAVE RECENT TASK ===== */
-const recentTask = {
-  id: Date.now().toString(),
-  prompt: initialPrompt,
-  createdAt: new Date().toISOString(),
-};
-
-const existing = JSON.parse(
-  localStorage.getItem("recentTasks") || "[]"
-);
-
-localStorage.setItem(
-  "recentTasks",
-  JSON.stringify([recentTask, ...existing])
-);
-
-
-
-  // 🔥 clear prompt attachments after first send
-  setAttachedFiles([]);
 }, [initialPrompt, initialDesign]);
+
+
+
+  //  clear prompt attachments after first send
+
+
+
+
+
+
+
 
   /* ===== AUTO SCROLL ===== */
   useEffect(() => {
@@ -129,33 +261,73 @@ localStorage.setItem(
   }, [messages]);
 
 
-  /* ===== PREVIEW TEXT ANIMATION ===== */
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTextIndex((prev) => (prev + 1) % ANIMATED_TEXTS.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
-
+  
 
   /* ===== SEND MESSAGE ===== */
   const handleSend = () => {
-    if (!prompt.trim()) return;
+  if (!prompt.trim() && attachedFiles.length === 0) return;
 
- setMessages((prev) => [
-  ...prev,
-  {
-  role: "user",
-  content: prompt,
-  files: attachedFiles,
-  design: attachedDesign,
-},
-]);
-
-setAttachedFiles([]);
-
-    setPrompt("");
+  const userMessage = {
+    role: "user",
+    content: prompt,
+    files: attachedFiles,
+    design: attachedDesign,
   };
+
+  setMessages((prev) => [...prev, userMessage]);
+  setPrompt("");
+  setAttachedFiles([]);
+  setIsThinking(true);
+
+  setTimeout(async () => {
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "assistant",
+      content: "I’m building this for you now…",
+    },
+  ]);
+
+  setIsThinking(false);
+
+  // 🔥 TEMP: mock generated project files
+ {/*const files = {
+  "package.json": {
+    file: {
+      contents: `{
+        ...
+      }`,
+    },
+  },
+
+  "index.html": {
+    file: {
+      contents: `<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>`,
+    },
+  },
+
+  "src/main.tsx": {
+    file: {
+      contents: `
+        import React from "react";
+        ...
+      `,
+    },
+  },
+};
+
+
+  // 🚀 Run inside WebContainer
+  await runGeneratedCode(files);
+  // 🔓 FORCE UI TO SHOW PREVIEW
+setIsBuilderLoading(false);
+setActiveTab("preview");*/}
+
+}, Math.random() * 3000 + 2000);
+ // 2–5 sec
+};
+
 
 
   /* ===== FIGMA IMPORT FLOW ===== */
@@ -257,7 +429,24 @@ setAttachedFiles([]);
       <div className="topbar-right">
         <button className="desktop-only" onClick={() => setInviteOpen(true)}>Invite</button>
         <button className="desktop-only" onClick={() => setShareOpen(true)}>Share</button>
-        <button className="desktop-only deploy-btn">Deploy</button>
+        <button
+  className="desktop-only deploy-btn"
+  onClick={async () => {
+    if (!projectId) return;
+
+    await supabase
+      .from("projects")
+      .update({
+        status: "deployed",
+        deployed_url: "https://your-deployed-url",
+        updated_at: new Date(),
+      })
+      .eq("id", projectId);
+  }}
+>
+  Deploy
+</button>
+
 
         {/* Mobile 3-dots */}
         <button className="mobile-only mobile-menu-btn" onClick={() => setShareOpen(true)}>
@@ -295,6 +484,14 @@ setAttachedFiles([]);
               <div>{msg.content}</div>
             </div>
           ))}
+          {isThinking && (
+  <div className="chat-bubble assistant thinking">
+    <span className="dot">.</span>
+    <span className="dot">.</span>
+    <span className="dot">.</span>
+  </div>
+)}
+
           <div ref={chatEndRef} />
         </div>
 
@@ -350,13 +547,51 @@ setAttachedFiles([]);
 
       {/* RIGHT */}
       <div className="builder-right">
+      {isBuilderLoading ? (
+    <div className="builder-setup-loader">
+      <div className="setup-spinner"></div>
+
+      <div className="setup-step">
+        {SETUP_STEPS[setupStep]}
+      </div>
+
+      {/*<div className="setup-icons">
+        📁 ⚙️ 🖼️ 📄
+      </div>*/}
+
+    </div>
+  ) : (
+    <>
         {activeTab === "preview" && (
-          <div className={`preview-panel ${previewSize}`}>
-            <div className="preview-content">
-              <p className="preview-animated">{ANIMATED_TEXTS[textIndex]}</p>
-            </div>
-          </div>
-        )}
+  <div className={`preview-panel ${previewSize}`}>
+    {/*{previewUrl ? (
+      <iframe
+  src={previewUrl}
+  className="preview-iframe"
+  sandbox="allow-scripts allow-same-origin allow-forms"
+  allow="cross-origin-isolated"
+/>
+
+    ) : (*/}
+      <div className="preview-content">
+        {/*<p className="preview-animated">
+          {ANIMATED_TEXTS[textIndex]}
+        </p>*/}
+     {compiled && (
+  <iframe
+    className="preview-iframe"
+    sandbox="allow-scripts"
+    srcDoc={iframeHtml(compiled)}
+  />
+)}
+
+
+
+      </div>
+    {/*)}*/}
+  </div>
+)}
+
 
         {activeTab === "code" && (
           <div className="code-panel">
@@ -370,15 +605,28 @@ setAttachedFiles([]);
 
             <div className="code-editor">
               <div className="editor-header">{selectedFile}</div>
-              <pre className="editor-content">
+              {/*<pre className="editor-content">
 {`export default function App() {
   return <div>Hello Ropeli</div>;
 }`}
-              </pre>
+              </pre>*/}
+<MonacoEditor value={code} onChange={setCode} />
+
+<button className="run-btn" onClick={handleRun}>
+  {isCompiling ? "Compiling…" : "Run"}
+</button>
+
+{compileError && (
+  <div className="compiler-error">
+    <pre>{compileError}</pre>
+  </div>
+)}
             </div>
           </div>
         )}
-      </div>
+    </>
+  )}
+    </div>
     </div>
 
     {/* ================= MOBILE BUILDER ================= */}
@@ -486,7 +734,7 @@ setAttachedFiles([]);
         <div className="builder-right">
           <div className={`preview-panel ${previewSize}`}>
             <div className="preview-content">
-              <p className="preview-animated">{ANIMATED_TEXTS[textIndex]}</p>
+              <p className="preview-empty">Run the project to see preview</p>
             </div>
           </div>
         </div>
