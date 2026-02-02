@@ -330,18 +330,18 @@ const handleConfigSubmit = async () => {
   const buildTypes = projectConfig.buildTypes;
   const integrations = projectConfig.integrations;
 
-  // Build ONE summary message
+  // Build ONE summary message 🧱🔌
   const summaryLines: string[] = [];
 
   if (buildTypes.length > 0) {
     summaryLines.push(
-      `🧱 Build type:\n${buildTypes.map(b => `• ${b}`).join("\n")}`
+      ` Build type:\n${buildTypes.map(b => `• ${b}`).join("\n")}`
     );
   }
 
   if (integrations.length > 0) {
     summaryLines.push(
-      `🔌 Integrations:\n${integrations.map(i => `• ${i}`).join("\n")}`
+      ` Integrations:\n${integrations.map(i => `• ${i}`).join("\n")}`
     );
   }
 
