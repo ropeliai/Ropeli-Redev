@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/hero.css";
-
+import { v4 as uuid } from "uuid";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -99,6 +99,7 @@ const handleFigmaClick = () => {
 
   /* ================= navigate to builder ================= */
   const handleBuild = () => {
+    const id = uuid();
     if (!text.trim()) return;
 
     navigate("/Builder", {

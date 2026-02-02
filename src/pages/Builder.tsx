@@ -10,6 +10,9 @@ import { compile } from "../compiler/esbuild";
 import { iframeHtml } from "../compiler/iframeRuntime";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import ChatPanel from "../components/builder/chat/ChatPanel";
+import { ProjectConfig } from "../components/builder/chat/chat.types";
+
 
 
 
@@ -182,6 +185,13 @@ useEffect(() => {
 
   /* ===== CHAT STATE ===== */
   const [messages, setMessages] = useState<any[]>([]);
+  const [projectConfig, setProjectConfig] = useState<ProjectConfig>({
+  buildTypes: [],
+  integrations: [],
+});
+const [configLocked, setConfigLocked] = useState(true);
+
+
   const [prompt, setPrompt] = useState(initialPrompt);
   const [attachedDesign, setAttachedDesign] = useState<any>(initialDesign);
   const [isThinking, setIsThinking] = useState(false);
@@ -235,23 +245,38 @@ useEffect(() => {
 
   setMessages([
     {
+      kind: "text",
       role: "user",
       content: initialPrompt,
-      files: initialFiles,
-      design: initialDesign,
     },
-    { role: "assistant", content: DEFAULT_ASSISTANT_MESSAGE },
+    {
+      kind: "text",
+      role: "assistant",
+      content: DEFAULT_ASSISTANT_MESSAGE,
+    },
   ]);
-}, [initialPrompt, initialDesign]);
+
+  // show typing first
+  setMessages((prev) => [
+    ...prev,
+    { kind: "typing", role: "assistant" },
+  ]);
+
+  // after 2s, replace typing with config form
+  const timer = setTimeout(() => {
+    setMessages((prev) => [
+      ...prev.filter((m) => m.kind !== "typing"),
+      { kind: "config_form", role: "assistant" },
+    ]);
+  }, 2000);
+
+  // cleanup (important for React strict mode)
+  return () => clearTimeout(timer);
+}, [initialPrompt, initialDesign, initialFiles]);
 
 
 
   //  clear prompt attachments after first send
-
-
-
-
-
 
 
 
@@ -262,71 +287,97 @@ useEffect(() => {
 
 
   
+/* ===== SEND MESSAGE ===== */
+const handleSend = () => {
+  if (
+    !prompt.trim() &&
+    attachedFiles.length === 0 &&
+    !attachedDesign
+  ) {
+    return;
+  }
 
-  /* ===== SEND MESSAGE ===== */
-  const handleSend = () => {
-  if (!prompt.trim() && attachedFiles.length === 0) return;
-
-  const userMessage = {
-    role: "user",
-    content: prompt,
-    files: attachedFiles,
-    design: attachedDesign,
-  };
-
-  setMessages((prev) => [...prev, userMessage]);
-  setPrompt("");
-  setAttachedFiles([]);
-  setIsThinking(true);
-
-  setTimeout(async () => {
-  setMessages((prev) => [
+  // ONE combined message
+  setMessages(prev => [
     ...prev,
     {
+      kind: "user_input",
+      role: "user",
+      content: prompt || undefined,
+      files: attachedFiles.length > 0 ? attachedFiles : undefined,
+      design: attachedDesign || undefined,
+    },
+  ]);
+
+  // reset
+  setPrompt("");
+  setAttachedFiles([]);
+  setAttachedDesign(null);
+
+  // typing
+  setMessages(prev => [
+    ...prev,
+    { kind: "typing", role: "assistant" },
+  ]);
+
+  setTimeout(() => {
+    setMessages(prev => [
+      ...prev.filter(m => m.kind !== "typing"),
+      {
+        kind: "text",
+        role: "assistant",
+        content: "I’m building this for you now…",
+      },
+    ]);
+  }, 2000);
+};
+
+
+
+const handleConfigSubmit = async () => {
+  setConfigLocked(false);
+
+  const buildTypes = projectConfig.buildTypes;
+  const integrations = projectConfig.integrations;
+
+  // Build ONE summary message
+  const summaryLines: string[] = [];
+
+  if (buildTypes.length > 0) {
+    summaryLines.push(
+      `🧱 Build type:\n${buildTypes.map(b => `• ${b}`).join("\n")}`
+    );
+  }
+
+  if (integrations.length > 0) {
+    summaryLines.push(
+      `🔌 Integrations:\n${integrations.map(i => `• ${i}`).join("\n")}`
+    );
+  }
+
+  const summaryMessage = summaryLines.join("\n\n");
+
+  setMessages(prev => [
+    ...prev,
+    {
+      kind: "text",
+      role: "assistant",
+      content: summaryMessage,
+    },
+  ]);
+
+  // Optional follow-up
+  setMessages(prev => [
+    ...prev,
+    {
+      kind: "text",
       role: "assistant",
       content: "I’m building this for you now…",
     },
   ]);
-
-  setIsThinking(false);
-
-  // 🔥 TEMP: mock generated project files
- {/*const files = {
-  "package.json": {
-    file: {
-      contents: `{
-        ...
-      }`,
-    },
-  },
-
-  "index.html": {
-    file: {
-      contents: `<div id="root"></div>
-<script type="module" src="/src/main.tsx"></script>`,
-    },
-  },
-
-  "src/main.tsx": {
-    file: {
-      contents: `
-        import React from "react";
-        ...
-      `,
-    },
-  },
 };
 
 
-  // 🚀 Run inside WebContainer
-  await runGeneratedCode(files);
-  // 🔓 FORCE UI TO SHOW PREVIEW
-setIsBuilderLoading(false);
-setActiveTab("preview");*/}
-
-}, Math.random() * 3000 + 2000);
- // 2–5 sec
-};
 
 
 
@@ -367,6 +418,16 @@ setActiveTab("preview");*/}
 
  return (
   <section className="builder-page">
+    
+    {/* ===== GLOBAL FILE INPUT (DO NOT MOVE) ===== */}
+    <input
+  ref={fileInputRef}
+  type="file"
+  multiple
+  className="file-input-hidden"
+  onChange={handleFileSelect}
+/>
+
     {/* ================= TOP BAR ================= */}
     <div className="builder-topbar-full">
       {/* LEFT */}
@@ -459,7 +520,14 @@ setActiveTab("preview");*/}
     <div className="builder-root desktop-only">
       {/* CHAT */}
       <div className="builder-left">
-        <div className="chat-area">
+        <ChatPanel
+  messages={messages}
+  projectConfig={projectConfig}
+  setProjectConfig={setProjectConfig}
+  onConfigSubmit={handleConfigSubmit}
+/>
+
+        {/*<div className="chat-area">
           {messages.map((msg, i) => (
             <div key={i} className={`chat-bubble ${msg.role}`}>
               {msg.design && (
@@ -493,7 +561,7 @@ setActiveTab("preview");*/}
 )}
 
           <div ref={chatEndRef} />
-        </div>
+        </div>*/}
 
         {/* PROMPT */}
         <div className="builder-prompt">
@@ -518,17 +586,25 @@ setActiveTab("preview");*/}
           )}
 
           <textarea
-            className="builder-textarea"
-            placeholder="Describe what you want to build…"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (prompt.trim() || attachedFiles.length > 0) handleSend();
-              }
-            }}
-          />
+  className="builder-textarea"
+  disabled={configLocked}
+  placeholder={
+    configLocked
+      ? "Complete setup to continue…"
+      : "Describe what you want to build…"
+  }
+  value={prompt}
+  onChange={(e) => setPrompt(e.target.value)}
+  onKeyDown={(e) => {
+    if (configLocked) return;
+
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (prompt.trim() || attachedFiles.length > 0) handleSend();
+    }
+  }}
+/>
+
 
           <div className="builder-prompt-footer">
             <div className="prompt-footer-left">
@@ -539,7 +615,10 @@ setActiveTab("preview");*/}
             </div>
 
             <div className="prompt-footer-right">
-              <button className="send-btn" onClick={handleSend}>↑</button>
+              <button className="send-btn" disabled={configLocked} onClick={() => !configLocked && handleSend()}>
+                 ↑
+              </button>
+
             </div>
           </div>
         </div>
@@ -630,126 +709,143 @@ setActiveTab("preview");*/}
     </div>
 
     {/* ================= MOBILE BUILDER ================= */}
-    <div className="builder-root mobile-only">
-      {mobileView === "chat" && (
-  <div className="builder-left">
-    <div className="chat-area">
-      {messages.map((msg, i) => (
-        <div key={i} className={`chat-bubble ${msg.role}`}>
-          {msg.design && (
-            <div className="chat-design-attachment">
-              Figma design attached
-              <a href={msg.design.url} target="_blank" rel="noreferrer">
-                Open in Figma
-              </a>
-            </div>
-          )}
+<div className="builder-root mobile-only">
 
-          {msg.files && msg.files.length > 0 && (
-            <div className="chat-file-attachments">
-              {msg.files.map((file: File, idx: number) => (
-                <div key={idx} className="chat-file">
-                  {file.name}
-                </div>
-              ))}
-            </div>
-          )}
+  {/* ===== CHAT VIEW ===== */}
+  {mobileView === "chat" && (
+    <div className="builder-left">
 
-          <div>{msg.content}</div>
-        </div>
-      ))}
-      <div ref={chatEndRef} />
-    </div>
-
-    {/* PROMPT */}
-    <div className="builder-prompt">
-      {attachedDesign && (
-        <div className="design-badge">
-          Figma design attached
-          <button onClick={() => setAttachedDesign(null)}>×</button>
-        </div>
-      )}
-
-      {attachedFiles.length > 0 && (
-        <div className="design-badge">
-          {attachedFiles.map((file, i) => (
-            <div key={i} className="file-chip">
-              {file.name}
-              <button
-                onClick={() =>
-                  setAttachedFiles((prev) =>
-                    prev.filter((_, idx) => idx !== i)
-                  )
-                }
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <textarea
-        className="builder-textarea"
-        placeholder="Describe what you want to build…"
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            if (prompt.trim() || attachedFiles.length > 0) {
-              handleSend();
-            }
-          }
-        }}
+      {/* CHAT PANEL (same as desktop) */}
+      <ChatPanel
+        messages={messages}
+        projectConfig={projectConfig}
+        setProjectConfig={setProjectConfig}
+        onConfigSubmit={handleConfigSubmit}
       />
 
-      <div className="builder-prompt-footer">
-        <div className="prompt-footer-left">
-          <button
-            className="icon-btn"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            +
-          </button>
-          
+      {/* PROMPT */}
+      <div className="builder-prompt">
+        {attachedDesign && (
+          <div className="design-badge">
+            Figma design attached
+            <button onClick={() => setAttachedDesign(null)}>×</button>
+          </div>
+        )}
 
-          <button className="figma-btn" onClick={() => setFigmaOpen(true)}>
-            <img src="/figma.png" alt="Figma" />
-          </button>
-        </div>
+        {attachedFiles.length > 0 && (
+          <div className="design-badge">
+            {attachedFiles.map((file, i) => (
+              <div key={i} className="file-chip">
+                {file.name}
+                <button
+                  onClick={() =>
+                    setAttachedFiles((prev) =>
+                      prev.filter((_, idx) => idx !== i)
+                    )
+                  }
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
-        <div className="prompt-footer-right">
-          <button className="send-btn" onClick={handleSend}>
-            ↑
-          </button>
+        <textarea
+          className="builder-textarea"
+          disabled={configLocked}
+          placeholder={
+            configLocked
+              ? "Complete setup to continue…"
+              : "Describe what you want to build…"
+          }
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (configLocked) return;
+
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (prompt.trim() || attachedFiles.length > 0) {
+                handleSend();
+              }
+            }
+          }}
+        />
+
+        <div className="builder-prompt-footer">
+          <div className="prompt-footer-left">
+            <button
+              className="icon-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={configLocked}
+            >
+              +
+            </button>
+
+            <button
+              className="figma-btn"
+              disabled={configLocked}
+              onClick={() => setFigmaOpen(true)}
+            >
+              <img src="/figma.png" alt="Figma" />
+            </button>
+          </div>
+
+          <div className="prompt-footer-right">
+            <button
+              className="send-btn"
+              disabled={configLocked}
+              onClick={() => !configLocked && handleSend()}
+            >
+              ↑
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-)}
+  )}
 
-
-      {mobileView === "preview" && (
-        <div className="builder-right">
-          <div className={`preview-panel ${previewSize}`}>
-            <div className="preview-content">
-              <p className="preview-empty">Run the project to see preview</p>
-            </div>
-          </div>
+  {/* ===== PREVIEW VIEW ===== */}
+  {mobileView === "preview" && (
+    <div className="builder-right">
+      <div className={`preview-panel ${previewSize}`}>
+        <div className="preview-content">
+          {compiled ? (
+            <iframe
+              className="preview-iframe"
+              sandbox="allow-scripts"
+              srcDoc={iframeHtml(compiled)}
+            />
+          ) : (
+            <p className="preview-empty">Run the project to see preview</p>
+          )}
         </div>
-      )}
-
-      {mobileView === "code" && (
-        <div className="builder-right">
-          <div className="code-panel">
-            <div className="code-editor">
-              <pre className="editor-content">Mobile code view</pre>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
+  )}
+
+  {/* ===== CODE VIEW ===== */}
+  {mobileView === "code" && (
+    <div className="builder-right">
+      <div className="code-panel">
+        <div className="code-editor">
+          <MonacoEditor value={code} onChange={setCode} />
+          <button className="run-btn" onClick={handleRun}>
+            {isCompiling ? "Compiling…" : "Run"}
+          </button>
+
+          {compileError && (
+            <div className="compiler-error">
+              <pre>{compileError}</pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
 
     {/* ================= MOBILE BOTTOM NAV ================= */}
     <div className="builder-mobile-nav mobile-only">

@@ -365,6 +365,19 @@
 }
 
 
+/* ===== FORCE HIDE FILE INPUT (MOBILE FIX) ===== */
+
+.file-input-hidden {
+    position: fixed;
+    top: -10000px;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+
 /* ===== FIGMA BUTTON ===== */
 
 .figma-btn {
