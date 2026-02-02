@@ -5,14 +5,14 @@ import "../styles/recentDeployed.css";
 import { supabase } from "../lib/supabase";
 
 
-type Tab = "recent" | "deployed" | "templates";
+type Tab =  "saved" | "deployed" | "templates";
 
 type Project = {
   id: string;
   taskNo?: number;
   name?: string;
   prompt?: string;
-  lastEdited: string;
+  updated_at: string;
   thumbnail: string;
 };
 
@@ -21,68 +21,49 @@ const templateData: Project[] = [
   {
     id: "t1",
     name: "All in one AI-CRM Dashboards",
-    lastEdited: "AI-powered dashboard to manage customers, sales, and insights.",
+    updated_at: "AI-powered dashboard to manage customers, sales, and insights.",
     thumbnail:  "/ARC portfolios.jpg",
   },
   {
     id: "t2",
     name:"Travel apps like makemytrip",
-    lastEdited: "Complete travel booking app for flights, hotels, and trips.",
+    updated_at: "Complete travel booking app for flights, hotels, and trips.",
     thumbnail: "/travel website.png",
   },
  {
     id: "t3",
     name:"Inventory management portals",
-    lastEdited:  "Track inventory, orders, and stock in real time.",
+    updated_at:  "Track inventory, orders, and stock in real time.",
     thumbnail: "/inventory management.png",
   },
    {
     id: "t4",
     name:"HRM tools",
-    lastEdited:"Manage employees, payroll, and HR workflows easily.",
+    updated_at:"Manage employees, payroll, and HR workflows easily.",
     thumbnail: "/HRM.png",
   },
   {
     id: "t5",
     name: "E-commerce platforms",
-    lastEdited:"Online store with products, payments, and orders.",
+    updated_at:"Online store with products, payments, and orders.",
     thumbnail:"/E-commerece.png",
   },
   {
     id: "t6",
     name: "Fitness trackers",
-    lastEdited:"Monitor workouts, health stats, and progress.",
+    updated_at:"Monitor workouts, health stats, and progress.",
     thumbnail: "/Fitness Tracker.webp",
   },
 ];
 
 const initialData: Record<Tab, Project[]> = {
-  recent: [
-    /*{
-      id: "8d72c6",
-      name: "smart-class-demo",
-      lastEdited: "3 days ago",
-      thumbnail: "",
-    },
-    {
-      id: "5bae65",
-      name: "luxury-soles-12",
-      lastEdited: "3 days ago",
-      thumbnail: "",
-    },
-    {
-      id: "e8deec",
-      name: "warm-treats-2",
-      lastEdited: "5 days ago",
-      thumbnail: "",
-    },*/
-  ],
+  saved: [], 
   deployed: [],
   templates: templateData,
 };
 
 export default function RecentDeployed() {
-  const [activeTab, setActiveTab] = useState<Tab>("recent");
+  const [activeTab, setActiveTab] = useState<Tab>("saved");
   const [projects, setProjects] = useState(initialData);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [modal, setModal] = useState<
@@ -102,6 +83,8 @@ useEffect(() => {
 }, [isGuest]);
 
 
+
+
 useEffect(() => {
   if (!user) return;
 
@@ -110,46 +93,25 @@ useEffect(() => {
       .from("projects")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+      .eq("status", activeTab)
+      .order("updated_at", { ascending: false });
 
     if (error) {
       console.error(error);
       return;
     }
 
+    // 🔥 KEY FIX: update ONLY the active tab
     setProjects((prev) => ({
       ...prev,
-      recent: data.filter(p => p.status === "recent"),
-      deployed: data.filter(p => p.status === "deployed"),
+      [activeTab]: data || [],
     }));
   };
 
   fetchProjects();
-}, [user]);
+}, [activeTab, user]);
 
 
-
-/*  BUILDER prompt to task 
-useEffect(() => {
-  const stored = JSON.parse(
-    localStorage.getItem("recentTasks") || "[]"
-  );
-
-  const formatted = stored.map(
-    (item: any, index: number) => ({
-      id: item.id,
-      taskNo: index + 1,
-      prompt: item.prompt,
-      lastEdited: "Just now",
-      thumbnail: "",
-    })
-  );
-
-  setProjects((prev) => ({
-    ...prev,
-    recent: formatted,
-  }));
-}, []);*/
 
 
   /* CLOSE MENU ON OUTSIDE CLICK */
@@ -260,8 +222,8 @@ const deleteProject = async (id: string) => {
       <span className="rd-divider">|</span>
 
       <button
-        className={activeTab === "recent" ? "active" : ""}
-        onClick={() => setActiveTab("recent")}
+        className={activeTab === "saved" ? "active" : ""}
+        onClick={() => setActiveTab("saved")}
       >
         My Projects
       </button>
@@ -319,7 +281,7 @@ const deleteProject = async (id: string) => {
                </div>
 
 
-                <span className="rd-modified">{project.lastEdited}</span>
+                <span className="rd-modified">{project.updated_at}</span>
 
                 <div className="rd-actions">
                   <button
@@ -372,7 +334,7 @@ const deleteProject = async (id: string) => {
                 <img src={t.thumbnail} className="recent-thumb" />
                 <div className="recent-info">
                   <strong>{t.name}</strong>
-                  <span>{t.lastEdited}</span>
+                  <span>{t.updated_at}</span>
                 </div>
               </div>
             ))}

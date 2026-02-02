@@ -18,9 +18,6 @@ import { ProjectConfig } from "../components/builder/chat/chat.types";
 
 const DEFAULT_ASSISTANT_MESSAGE = `
 Welcome to Ropeli - your single destination to build and deploy production-ready applications!
-It looks like you're aiming to create a delightful landing page for a home baking service, complete with all the sweet details like delicious photos, pricing, and a smooth ordering process.
-I'll make sure your vision for this warm and inviting space comes to life, so customers can easily browse and add their favorite treats to their cart.
-I'll start building this now.
 `;
 
 const ANIMATED_TEXTS = [
@@ -53,6 +50,11 @@ export default function Builder() {
   const { user } = useAuth();
   const [projectId, setProjectId] = useState<string | null>(null);
  
+const [builderState, setBuilderState] = useState<any>({})
+
+const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+
 
 
 
@@ -86,38 +88,8 @@ const handleRun = async () => {
   setIsCompiling(false);
 };
 
-{/*
-  // Preview and logs state
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [logs, setLogs] = useState('');
 
-// Function to run generated code in WebContainer
-  // Function to run generated code in WebContainer
-async function runGeneratedCode(files: Record<string, any>) {
-  console.log("🔥 runGeneratedCode called");
 
-  const container = await getWebContainer();
-  console.log("✅ WebContainer instance received");
-
-  console.log("📦 Mounting files:", files);
-  await mountFiles(container, files);
-  console.log("📁 Files mounted successfully");
-
-  attachPreview(container, (url: string) => {
-    console.log("🌍 Preview server ready at:", url);
-    setPreviewUrl(url);
-  });
-
-  setLogs("");
-  console.log("▶️ Starting project (npm install + npm run dev)");
-
-  await runProject(container, (data: string) => {
-    console.log("🧾", data);
-    setLogs((prev) => prev + data);
-  });
-}
-
-*/}
 
 
 const [setupStep, setSetupStep] = useState(0);
@@ -213,8 +185,9 @@ const [configLocked, setConfigLocked] = useState(true);
   const previewLink = "https://preview.ropeli.ai/generated-app";
 
 
-  /* ===== INITIALIZE CHAT (FROM HERO) ===== */
- // 1️⃣ Initialize chat
+
+/* ===== INITIALIZE CHAT (FROM HERO) ===== */
+
 const hasSavedRef = useRef(false);
 
 useEffect(() => {
@@ -222,39 +195,54 @@ useEffect(() => {
 
   hasSavedRef.current = true;
 
-  const saveProject = async () => {
-    const { data } = await supabase
+  const createProject = async () => {
+    const { data, error } = await supabase
       .from("projects")
       .insert({
         user_id: user.id,
         prompt: initialPrompt,
-        status: "recent",
+        status: "draft", // ✅ FIXED
+        chat_history: [],        // ✅ initialize
+        code_history: [],
+        builder_state: {},
       })
       .select()
       .single();
 
-    if (data) setProjectId(data.id);
+    if (error) {
+      console.error("Project creation failed:", error);
+      return;
+    }
+
+    setProjectId(data.id);
   };
 
-  saveProject();
+  createProject();
 }, [initialPrompt, user]);
+
+
 
 
 useEffect(() => {
   if (!initialPrompt && initialFiles.length === 0 && !initialDesign) return;
 
   setMessages([
-    {
-      kind: "text",
-      role: "user",
-      content: initialPrompt,
-    },
-    {
-      kind: "text",
-      role: "assistant",
-      content: DEFAULT_ASSISTANT_MESSAGE,
-    },
-  ]);
+  {
+    kind: "text",
+    role: "user",
+    content: initialPrompt,
+  },
+  {
+    kind: "text",
+    role: "assistant",
+    content: DEFAULT_ASSISTANT_MESSAGE,
+  },
+  {
+    kind: "typing",
+    role: "assistant",
+  },
+]);
+
 
   // show typing first
   setMessages((prev) => [
@@ -262,6 +250,8 @@ useEffect(() => {
     { kind: "typing", role: "assistant" },
   ]);
 
+
+  
   // after 2s, replace typing with config form
   const timer = setTimeout(() => {
     setMessages((prev) => [
@@ -376,6 +366,101 @@ const handleConfigSubmit = async () => {
     },
   ]);
 };
+
+
+//save all history in supabase
+const handleSaveProject = async () => {
+  if (!projectId || !user) return;
+
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      chat_history: messages,
+      code_history: {
+        file: selectedFile,
+        code,
+      },
+      builder_state: {
+        projectConfig,
+      },
+      status: "saved",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Save failed:", error);
+  }
+};
+
+
+//Auto-save every X seconds
+//Status = "draft"
+useEffect(() => {
+  const interval = setInterval(() => {
+    supabase.from("projects").upsert({
+      id: projectId,
+      chat_history: messages,
+      
+      status: "draft",
+    })
+  }, 5000)
+
+  return () => clearInterval(interval)
+}, [messages])
+
+//Navigation protection (VERY IMPORTANT for history loss)
+//if user does not click save and tries to leave
+useEffect(() => {
+  const handler = (e: BeforeUnloadEvent) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault()
+      e.returnValue = ""
+    }
+  }
+
+  window.addEventListener("beforeunload", handler)
+  return () => window.removeEventListener("beforeunload", handler)
+}, [hasUnsavedChanges])
+
+
+
+//You rehydrate builder on page load (commonly missed)
+//When opening /builder/:id, you MUST load saved data:
+useEffect(() => {
+  if (!projectId || !user) return;
+
+  supabase
+    .from("projects")
+    .select("*")
+    .eq("id", projectId)
+    .single()
+    .then(({ data, error }) => {
+      if (error || !data) return;
+
+      setMessages(data.chat_history ?? []);
+
+      if (data.code_history?.code) {
+        setCode(data.code_history.code);
+      }
+
+      if (data.builder_state?.projectConfig) {
+        setProjectConfig(data.builder_state.projectConfig);
+      }
+    });
+}, [projectId, user]);
+
+
+
+//AUTO-MARK UNSAVED CHANGES (SAFE)
+useEffect(() => {
+  if (projectId) {
+    // optional future use
+  }
+}, [messages, code, projectConfig]);
+
+
 
 
 
@@ -507,6 +592,13 @@ const handleConfigSubmit = async () => {
 >
   Deploy
 </button>
+<button
+  className="desktop-only save-btn"
+  onClick={handleSaveProject}
+>
+  Save
+</button>
+
 
 
         {/* Mobile 3-dots */}

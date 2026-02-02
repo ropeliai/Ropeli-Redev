@@ -32,6 +32,7 @@ const App = () => {
       <Route path="/founders" element={<Founders />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/builder/:projectId" element={<Builder />} />
       <Route path="/github" element={<GitHubIntegration />} />
       <Route path="/developers-playground" element={<DevelopersPlayground />} />
     </Routes>
