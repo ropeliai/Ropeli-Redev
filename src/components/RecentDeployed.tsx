@@ -87,6 +87,7 @@ useEffect(() => {
 
 useEffect(() => {
   if (!user) return;
+  if (activeTab === "templates") return; // No need to fetch templates from DB
 
   const fetchProjects = async () => {
     const { data, error } = await supabase
@@ -101,7 +102,7 @@ useEffect(() => {
       return;
     }
 
-    // 🔥 KEY FIX: update ONLY the active tab
+    //  KEY FIX: update ONLY the active tab
     setProjects((prev) => ({
       ...prev,
       [activeTab]: data || [],
@@ -267,8 +268,8 @@ const deleteProject = async (id: string) => {
             </div>
 
             {projects[activeTab].map((project) => (
-              <div className="rd-table-row" key={project.id}>
-                <span className="rd-id">EMT-{project.id}</span>
+              <div className="rd-table-row" key={project.id}  onClick={() => navigate(`/builder/${project.id}`)}>
+                <span className="rd-id">RPI-{project.id}</span>
 
                <div className="rd-task">
                 <strong>
@@ -281,7 +282,8 @@ const deleteProject = async (id: string) => {
                </div>
 
 
-                <span className="rd-modified">{project.updated_at}</span>
+                <span className="rd-modified"> {new Date(project.updated_at).toLocaleString()}</span>
+
 
                 <div className="rd-actions">
                   <button
@@ -341,9 +343,10 @@ const deleteProject = async (id: string) => {
           </div>
         )}
 
-        {projects[activeTab].length === 0 && (
+        {activeTab !== "templates" && projects[activeTab].length === 0 && (
           <div className="rd-empty">No projects yet</div>
-        )}
+         )}
+
       </div>
 
       {/* ================= MODAL ================= */}

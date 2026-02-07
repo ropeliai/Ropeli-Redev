@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import "../styles/builder.css";
 {/*import { getWebContainer } from '../compiler/webcontainer';
 import { mountFiles } from '../compiler/filesystem';
@@ -54,6 +54,13 @@ const [builderState, setBuilderState] = useState<any>({})
 
 const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+const { projectId: routeProjectId } = useParams<{ projectId: string }>();
+
+useEffect(() => {
+  if (routeProjectId) {
+    setProjectId(routeProjectId);
+  }
+}, [routeProjectId]);
 
 
 
@@ -191,6 +198,7 @@ const [configLocked, setConfigLocked] = useState(true);
 const hasSavedRef = useRef(false);
 
 useEffect(() => {
+  if (routeProjectId) return; //
   if (!initialPrompt || !user || hasSavedRef.current) return;
 
   hasSavedRef.current = true;
@@ -410,6 +418,7 @@ useEffect(() => {
   return () => clearInterval(interval)
 }, [messages])
 
+
 //Navigation protection (VERY IMPORTANT for history loss)
 //if user does not click save and tries to leave
 useEffect(() => {
@@ -431,25 +440,34 @@ useEffect(() => {
 useEffect(() => {
   if (!projectId || !user) return;
 
-  supabase
-    .from("projects")
-    .select("*")
-    .eq("id", projectId)
-    .single()
-    .then(({ data, error }) => {
-      if (error || !data) return;
+  const loadProject = async () => {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", projectId)
+      .eq("user_id", user.id) // 🔐 important for RLS
+      .single();
 
-      setMessages(data.chat_history ?? []);
+    if (error || !data) {
+      console.error("Failed to load project:", error);
+      return;
+    }
 
-      if (data.code_history?.code) {
-        setCode(data.code_history.code);
-      }
+    // 🔁 REHYDRATE BUILDER STATE
+    setMessages(data.chat_history ?? []);
 
-      if (data.builder_state?.projectConfig) {
-        setProjectConfig(data.builder_state.projectConfig);
-      }
-    });
+    if (data.code_history?.code) {
+      setCode(data.code_history.code);
+    }
+
+    if (data.builder_state?.projectConfig) {
+      setProjectConfig(data.builder_state.projectConfig);
+    }
+  };
+
+  loadProject();
 }, [projectId, user]);
+
 
 
 
