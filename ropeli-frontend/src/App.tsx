@@ -14,6 +14,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import GitHubIntegration from "./pages/GitHubIntegration";
 import DevelopersPlayground from "./pages/DevelopersPlayground";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 
 const App = () => {
@@ -25,14 +26,28 @@ const App = () => {
       <Route path="/community" element={<Community />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/integrations" element={<Integrations />} />
-      <Route path="/builder" element={<Builder />} />
+      <Route
+        path="/builder"
+        element={
+          <ProtectedRoute>
+            <Builder />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/careers" element={<Careers />} />
       <Route path="/blog" element={<Blog />} />
       <Route path="/docs" element={<Docs />} />
       <Route path="/founders" element={<Founders />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
-      <Route path="/builder/:projectId" element={<Builder />} />
+      <Route
+        path="/builder/:projectId"
+        element={
+          <ProtectedRoute>
+            <Builder />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/github" element={<GitHubIntegration />} />
       <Route path="/developers-playground" element={<DevelopersPlayground />} />
     </Routes>

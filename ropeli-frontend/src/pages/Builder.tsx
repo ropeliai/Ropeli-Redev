@@ -14,6 +14,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import ChatPanel from "../components/builder/chat/ChatPanel";
 import { ChatMessage as ChatMessageType, ProjectConfig } from "../components/builder/chat/chat.types";
+import { apiFetch } from "../lib/apiClient";
 
 
 
@@ -192,8 +193,8 @@ const hasAutoPromptRunRef = useRef(false);
 const hasInitialChatSeededRef = useRef(false);
 
 useEffect(() => {
-  // Warmup generation endpoint
-  fetch("/api/generate/warmup", { method: "POST" }).catch(() => {});
+  // Warmup generation endpoint (auth-only; silently no-ops for guests)
+  apiFetch("/api/generate/warmup", { method: "POST" }).catch(() => {});
 
   const autoPrompt = location.state?.autoPrompt;
   const existingId = location.state?.generatedProjectId;
@@ -339,7 +340,7 @@ const handleSend = async (overridePrompt?: string) => {
   if (!overridePrompt) setPrompt("");
 
   try {
-    const response = await fetch("/api/generate", {
+    const response = await apiFetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -367,7 +368,7 @@ const handleSend = async (overridePrompt?: string) => {
         setExpoLoading(true);
         setExpoMetroReady(false);
         setExpoQrUrl("");
-        const expoResponse = await fetch("/api/expo/start", {
+        const expoResponse = await apiFetch("/api/expo/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ project_id: projectIdToUse, files }),
@@ -380,7 +381,7 @@ const handleSend = async (overridePrompt?: string) => {
           } else {
             const pollId = setInterval(async () => {
               try {
-                const sr = await fetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`);
+                const sr = await apiFetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`);
                 const st = await sr.json();
                 if (st.metroReachable) {
                   setExpoMetroReady(true);
@@ -516,7 +517,7 @@ const handleRunOnDevice = async () => {
 
   const projectIdToUse = existingGeneratedProjectId || slugify(prompt);
   try {
-    const expoResponse = await fetch("/api/expo/start", {
+    const expoResponse = await apiFetch("/api/expo/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project_id: projectIdToUse, files: generatedFiles }),
@@ -529,7 +530,7 @@ const handleRunOnDevice = async () => {
       } else {
         const pollId = setInterval(async () => {
           try {
-            const sr = await fetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`);
+            const sr = await apiFetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`);
             const st = await sr.json();
             if (st.metroReachable) {
               setExpoMetroReady(true);

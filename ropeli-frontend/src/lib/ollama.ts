@@ -1,3 +1,5 @@
+import { apiFetch } from "./apiClient";
+
 export interface OllamaMessage {
   role: "user" | "assistant";
   content: string;
@@ -18,7 +20,7 @@ const OLLAMA_API_BASE = "/api/ollama"; // Routes through your backend
  */
 export async function askOllama(prompt: string): Promise<string> {
   try {
-    const response = await fetch(`${OLLAMA_API_BASE}/ask`, {
+    const response = await apiFetch(`${OLLAMA_API_BASE}/ask`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,7 +48,7 @@ export async function chatWithOllama(
   messages: OllamaMessage[]
 ): Promise<string> {
   try {
-    const response = await fetch(`${OLLAMA_API_BASE}/chat`, {
+    const response = await apiFetch(`${OLLAMA_API_BASE}/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -72,7 +74,7 @@ export async function chatWithOllama(
  */
 export async function checkOllamaHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${OLLAMA_API_BASE}/health`);
+    const response = await apiFetch(`${OLLAMA_API_BASE}/health`);
     return response.ok;
   } catch {
     return false;
@@ -84,7 +86,7 @@ export async function checkOllamaHealth(): Promise<boolean> {
  */
 export async function getOllamaModels(): Promise<any[]> {
   try {
-    const response = await fetch(`${OLLAMA_API_BASE}/models`);
+    const response = await apiFetch(`${OLLAMA_API_BASE}/models`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch models");
@@ -116,7 +118,7 @@ export async function generateCode(
   projectConfig?: { buildTypes?: string[]; integrations?: string[] }
 ): Promise<GenerateCodeResult | GenerateCodeError> {
   try {
-    const response = await fetch(`${OLLAMA_API_BASE}/generate-code`, {
+    const response = await apiFetch(`${OLLAMA_API_BASE}/generate-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt, projectConfig }),

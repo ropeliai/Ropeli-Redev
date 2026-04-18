@@ -1,7 +1,15 @@
 import express from "express";
 import { startExpo, stopExpo, getExpoStatus } from "./expo_runner.js";
+import { requireAuth } from "./auth.middleware.js";
+import { burstLimiter } from "./rate_limit.middleware.js";
 
 const router = express.Router();
+
+// All Expo endpoints require an authenticated user — starting a tunnel is
+// expensive and must never run for anonymous traffic, regardless of the
+// guest-generation policy.
+router.use(requireAuth);
+router.use(burstLimiter());
 
 router.post("/start", async (req, res) => {
   try {

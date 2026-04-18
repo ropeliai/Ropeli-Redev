@@ -1,6 +1,13 @@
 import express from "express";
 import axios from "axios";
 import OpenAI from "openai";
+import { requireGeneratedAccess, ACCESS_POLICY } from "./access_policy.js";
+import { requireAuth } from "./auth.middleware.js";
+import {
+  guestDailyLimiter,
+  burstLimiter,
+  enforceGuestInputCaps,
+} from "./rate_limit.middleware.js";
 
 const router = express.Router();
 
@@ -138,7 +145,8 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
   return { success: true, data: { files: parsed.files } };
 }
 
-router.post("/warmup", (_req, res) => {
+// Warmup: auth-only (not a demo endpoint) to avoid anonymous abuse waking Modal.
+router.post("/warmup", requireAuth, (_req, res) => {
   res.status(200).json({ warmed: true });
   axios
     .post(
@@ -149,99 +157,143 @@ router.post("/warmup", (_req, res) => {
     .catch(() => {});
 });
 
-router.post("/", async (req, res) => {
-  try {
-    const { prompt, type: rawType, existingFiles } = req.body;
-
-    if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
-      return res.status(400).json({ error: "Prompt is required" });
-    }
-
-    const type = rawType === "web" ? "web" : "native";
-    const trimmedPrompt = prompt.trim();
-
-    const webInstruction =
-      "IMPORTANT: Generate a React WEB app only. Use div, button, input, h1, p, ul, li - standard HTML elements only. Use inline styles or a styles object with standard CSS. Do NOT use View, Text, StyleSheet, TouchableOpacity, FlatList, react-native, expo, NavigationContainer, or any mobile library. The code must run in a browser with no dependencies except React.";
-    const nativeInstruction =
-      "IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.";
-
-    let modalPrompt;
-    if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
-      const filesContext = existingFiles
-        .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
-        .join("\n\n");
-      modalPrompt =
-        type === "web"
-          ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`
-          : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`;
-    } else {
-      modalPrompt =
-        type === "web"
-          ? `${webInstruction}\n\nUser request: ${trimmedPrompt}`
-          : `${nativeInstruction}\n\nUser request: ${trimmedPrompt}`;
-    }
-
-    let responseData = null;
-    let usedProvider = null;
-
-    // Try Modal first
+router.post(
+  "/",
+  requireGeneratedAccess({ allowGuests: true }),
+  burstLimiter(),
+  guestDailyLimiter(),
+  enforceGuestInputCaps,
+  async (req, res) => {
     try {
-      console.log("[generate] Trying Modal API...");
-      const modalResponse = await callModal(modalPrompt);
-      const { success, data } = modalResponse.data;
-      if (success && data && Array.isArray(data.files)) {
-        responseData = { success, data };
-        usedProvider = "modal";
-        console.log("[generate] Modal API succeeded");
-      } else {
-        throw new Error("Invalid Modal response structure");
+      const { prompt, type: rawType, existingFiles } = req.body;
+
+      if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+        return res.status(400).json({ error: "Prompt is required" });
       }
-    } catch (modalErr) {
-      console.warn("[generate] Modal API failed:", modalErr.message, "— trying OpenAI fallback...");
+
+      const type = rawType === "web" ? "web" : "native";
+      const trimmedPrompt = prompt.trim();
+
+      const webInstruction =
+        "IMPORTANT: Generate a React WEB app only. Use div, button, input, h1, p, ul, li - standard HTML elements only. Use inline styles or a styles object with standard CSS. Do NOT use View, Text, StyleSheet, TouchableOpacity, FlatList, react-native, expo, NavigationContainer, or any mobile library. The code must run in a browser with no dependencies except React.";
+      const nativeInstruction =
+        "IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.";
+
+      // Guests never get existing-file context (enforced again here in case
+      // policy changes). enforceGuestInputCaps already rejects non-empty arrays,
+      // but this defence keeps the downstream prompt building simple.
+      const safeExistingFiles =
+        req.isGuest || !Array.isArray(existingFiles) ? [] : existingFiles;
+
+      let modalPrompt;
+      if (safeExistingFiles.length > 0) {
+        const filesContext = safeExistingFiles
+          .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
+          .join("\n\n");
+        modalPrompt =
+          type === "web"
+            ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`
+            : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`;
+      } else {
+        modalPrompt =
+          type === "web"
+            ? `${webInstruction}\n\nUser request: ${trimmedPrompt}`
+            : `${nativeInstruction}\n\nUser request: ${trimmedPrompt}`;
+      }
+
+      let responseData = null;
+      let usedProvider = null;
 
       try {
-        const openAIPrompt = existingFiles && existingFiles.length > 0
-          ? `${trimmedPrompt}\n\nExisting files context:\n${existingFiles.map(f => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`
-          : trimmedPrompt;
+        console.log(
+          `[generate] Trying Modal API (user=${req.user?.id || "guest"})...`
+        );
+        const modalResponse = await callModal(modalPrompt);
+        const { success, data } = modalResponse.data;
+        if (success && data && Array.isArray(data.files)) {
+          responseData = { success, data };
+          usedProvider = "modal";
+          console.log("[generate] Modal API succeeded");
+        } else {
+          throw new Error("Invalid Modal response structure");
+        }
+      } catch (modalErr) {
+        console.warn(
+          "[generate] Modal API failed:",
+          modalErr.message,
+          "— trying OpenAI fallback..."
+        );
 
-        responseData = await generateWithOpenAI(openAIPrompt, type);
-        usedProvider = "openai";
-        console.log("[generate] OpenAI fallback succeeded");
-      } catch (openAIErr) {
-        console.error("[generate] OpenAI fallback also failed:", openAIErr.message);
-        return res.status(502).json({
-          error: "Generation failed",
-          details: `Modal: ${modalErr.message} | OpenAI: ${openAIErr.message}`,
-        });
-      }
-    }
-
-    let files = Array.isArray(responseData.data.files) ? responseData.data.files : [];
-
-    if (type === "native") {
-      files = sanitizeMobileFiles(files);
-
-      if (hasForbiddenNativeCode(files) && usedProvider === "openai") {
-        console.warn("[generate] Banned mobile patterns found — requesting OpenAI correction...");
         try {
-          const correctionPrompt =
-            `Fix this React Native app so it runs in Expo Go. Remove all browser APIs (localStorage, window, document, ReactDOM). Use @react-native-async-storage/async-storage for storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n${files.map(f => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`;
-          const fixResp = await generateWithOpenAI(correctionPrompt, type);
-          if (Array.isArray(fixResp.data.files)) {
-            files = sanitizeMobileFiles(fixResp.data.files);
-          }
-        } catch (e) {
-          console.error("[generate] OpenAI correction retry failed:", e.message);
+          const openAIPrompt =
+            safeExistingFiles.length > 0
+              ? `${trimmedPrompt}\n\nExisting files context:\n${safeExistingFiles
+                  .map(
+                    (f) =>
+                      `--- ${f.path} ---\n${(f.content ?? "").slice(0, 30000)}`
+                  )
+                  .join("\n\n")}`
+              : trimmedPrompt;
+
+          responseData = await generateWithOpenAI(openAIPrompt, type);
+          usedProvider = "openai";
+          console.log("[generate] OpenAI fallback succeeded");
+        } catch (openAIErr) {
+          console.error(
+            "[generate] OpenAI fallback also failed:",
+            openAIErr.message
+          );
+          return res.status(502).json({
+            error: "Generation failed",
+            details: `Modal: ${modalErr.message} | OpenAI: ${openAIErr.message}`,
+          });
         }
       }
-    }
 
-    const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
-    res.json({ success: true, project_name, files, provider: usedProvider });
-  } catch (error) {
-    console.error("[generate] Unexpected error:", error.message);
-    res.status(500).json({ error: "Failed to generate app", details: error.message });
+      let files = Array.isArray(responseData.data.files)
+        ? responseData.data.files
+        : [];
+
+      if (type === "native") {
+        files = sanitizeMobileFiles(files);
+
+        if (hasForbiddenNativeCode(files) && usedProvider === "openai") {
+          console.warn(
+            "[generate] Banned mobile patterns found — requesting OpenAI correction..."
+          );
+          try {
+            const correctionPrompt = `Fix this React Native app so it runs in Expo Go. Remove all browser APIs (localStorage, window, document, ReactDOM). Use @react-native-async-storage/async-storage for storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n${files
+              .map(
+                (f) =>
+                  `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 30000)}`
+              )
+              .join("\n\n")}`;
+            const fixResp = await generateWithOpenAI(correctionPrompt, type);
+            if (Array.isArray(fixResp.data.files)) {
+              files = sanitizeMobileFiles(fixResp.data.files);
+            }
+          } catch (e) {
+            console.error("[generate] OpenAI correction retry failed:", e.message);
+          }
+        }
+      }
+
+      const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
+      res.json({
+        success: true,
+        project_name,
+        files,
+        provider: usedProvider,
+        guest: Boolean(req.isGuest),
+        guestDailyLimit: req.isGuest ? ACCESS_POLICY.guestDailyLimit : undefined,
+      });
+    } catch (error) {
+      console.error("[generate] Unexpected error:", error.message);
+      res
+        .status(500)
+        .json({ error: "Failed to generate app", details: error.message });
+    }
   }
-});
+);
 
 export default router;
