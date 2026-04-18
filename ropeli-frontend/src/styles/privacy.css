@@ -1,0 +1,143 @@
+.privacy-page {
+    background: #000;
+    color: #fff;
+    min-height: 100vh;
+}
+
+
+/* Header */
+
+.privacy-header {
+    text-align: center;
+    padding: 60px 24px 40px;
+}
+
+.privacy-header h1 {
+    font-size: 42px;
+    font-weight: 500;
+}
+
+.privacy-header p {
+    opacity: 0.6;
+    margin-top: 6px;
+}
+
+.back-home {
+    display: inline-block;
+    margin-top: 24px;
+    padding: 10px 22px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 14px;
+}
+
+
+/* Layout */
+
+.privacy-layout {
+    max-width: 1400px;
+    margin: auto;
+    padding: 0 32px 120px;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 80px;
+}
+
+
+/* Sidebar */
+
+.privacy-sidebar {
+    position: sticky;
+    top: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    opacity: 0.7;
+}
+
+.privacy-sidebar a {
+    font-size: 14px;
+}
+
+.privacy-sidebar a:hover {
+    opacity: 1;
+}
+
+
+/* Content */
+
+.privacy-content section {
+    margin-bottom: 48px;
+}
+
+.privacy-content h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.privacy-content h3 {
+    font-size: 18px;
+    margin: 20px 0 8px;
+}
+
+.privacy-content p,
+.privacy-content li {
+    font-size: 15px;
+    line-height: 1.8;
+    opacity: 0.85;
+}
+
+.privacy-content ul {
+    margin: 12px 0 12px 18px;
+}
+
+
+/* =========================
+   PRIVACY – Mobile Responsive
+   ========================= */
+
+@media (max-width: 768px) {
+    /* Hide sidebar */
+    .privacy-sidebar {
+        display: none;
+    }
+    /* Single column layout */
+    .privacy-layout {
+        grid-template-columns: 1fr;
+        gap: 0;
+        padding: 0 20px 80px;
+    }
+    /* Header */
+    .privacy-header {
+        padding: 20px 20px 30px;
+    }
+    .privacy-header h1 {
+        font-size: 28px;
+        line-height: 1.3;
+    }
+    .privacy-header p {
+        font-size: 13px;
+    }
+    /* Back button */
+    .back-home {
+        font-size: 13px;
+        padding: 8px 18px;
+    }
+    /* Content typography */
+    .privacy-content h2 {
+        font-size: 20px;
+    }
+    .privacy-content h3 {
+        font-size: 16px;
+    }
+    .privacy-content p,
+    .privacy-content li {
+        font-size: 14px;
+        line-height: 1.7;
+    }
+    /* Spacing */
+    .privacy-content section {
+        margin-bottom: 36px;
+    }
+}

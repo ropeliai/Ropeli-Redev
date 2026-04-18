@@ -1,0 +1,12 @@
+kind = "web"
+previewPath = "/"
+title = "Ropeli AI"
+version = "1.0.0"
+
+[[services]]
+localPort = 5173
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "cd /home/runner/workspace/artifacts/ropeli-frontend && npm run dev"
