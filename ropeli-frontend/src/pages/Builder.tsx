@@ -218,22 +218,27 @@ useEffect(() => {
       setSelectedFile(preparedFiles[0]?.path || "");
       setCode(preparedFiles[0]?.content || "");
     } else {
-      (async () => {
-        const { data, error } = await supabase
-          .from("generated_projects")
-          .select("project_name,prompt,files")
-          .eq("id", existingId)
-          .single();
-        if (!error && data) {
-          setGeneratedProjectName(data.project_name || "");
-          setPrompt(data.prompt || "");
-          if (Array.isArray(data.files)) {
-            setGeneratedFiles(data.files);
-            setSelectedFile(data.files[0]?.path || "");
-            setCode(data.files[0]?.content || "");
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(existingId));
+      if (isUUID) {
+        (async () => {
+          const { data, error } = await supabase
+            .from("generated_projects")
+            .select("project_name,prompt,files")
+            .eq("id", existingId)
+            .single();
+          if (!error && data) {
+            setGeneratedProjectName(data.project_name || "");
+            setPrompt(data.prompt || "");
+            if (Array.isArray(data.files)) {
+              setGeneratedFiles(data.files);
+              setSelectedFile(data.files[0]?.path || "");
+              setCode(data.files[0]?.content || "");
+            }
           }
-        }
-      })();
+        })();
+      } else {
+        console.warn("Invalid UUID for generatedProjectId:", existingId);
+      }
     }
   }
 

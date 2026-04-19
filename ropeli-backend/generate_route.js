@@ -4,23 +4,11 @@ import OpenAI from "openai";
 
 const router = express.Router();
 
-const MODAL_API_URL =
-  process.env.MODAL_API_URL ||
-  "https://coutinhoandrew0--my-coder-model-generate.modal.run";
-
-const MODAL_TIMEOUT_MS = 60000;
-
-let openaiClient = null;
-function getOpenAI() {
-  if (!openaiClient) {
-    const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-    if (baseURL && apiKey) {
-      openaiClient = new OpenAI({ baseURL, apiKey });
-    }
-  }
-  return openaiClient;
-}
+const USE_OPENAI = process.env.USE_OPENAI === "true";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:3b";
+const AI_TIMEOUT_MS = 600000;
 
 const BANNED_MOBILE = [
   "localStorage",
@@ -73,80 +61,85 @@ function deriveProjectNameFromPrompt(prompt) {
   return `${words.join("-")}-app`;
 }
 
-function extractJsonFromText(text) {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    try {
-      return JSON.parse(jsonMatch[0]);
-    } catch {}
-  }
-  return null;
-}
+async function callOpenAI(prompt) {
+  const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-async function callModal(prompt, retryCount = 0) {
-  const response = await axios.post(
-    MODAL_API_URL,
-    { prompt },
-    { timeout: MODAL_TIMEOUT_MS }
-  );
-  return response;
-}
-
-async function generateWithOpenAI(userPrompt, type) {
-  const client = getOpenAI();
-  if (!client) throw new Error("OpenAI client not configured");
-
-  const webInstruction = `You are a code generator. Generate a React WEB app. Use only standard HTML elements (div, button, input, h1, p, ul, li) and inline styles or a styles object. Do NOT use any React Native or mobile libraries. The code must run in a browser with only React as a dependency.`;
-
-  const nativeInstruction = `You are a code generator. Generate an Expo React Native MOBILE app. Use only React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries. Do NOT use browser APIs like localStorage, sessionStorage, window, document, ReactDOM, or HTML tags. For storage use AsyncStorage from @react-native-async-storage/async-storage. Always import React like: import React, { useState, useEffect } from 'react'. Always import AsyncStorage like: import AsyncStorage from '@react-native-async-storage/async-storage' (never destructured).`;
-
-  const systemPrompt =
-    type === "web" ? webInstruction : nativeInstruction;
-
-  const userMessage = `${userPrompt}
-
-Return ONLY a valid JSON object with this exact structure (no markdown, no explanation, just the JSON):
+  const systemPrompt = `You are a professional code generator. 
+Return a complete set of project files in JSON format.
+Output ONLY a raw JSON object with this structure:
 {
-  "files": [
-    {"path": "App.js", "content": "...full file content..."},
-    {"path": "components/MyComponent.js", "content": "...full file content..."}
-  ]
-}`;
+  "success": true,
+  "data": {
+    "files": [
+      { "path": "filename", "content": "file content" }
+    ]
+  }
+}
+Only return the JSON. No markdown fences.`;
 
-  const response = await client.chat.completions.create({
-    model: "gpt-5.2",
-    max_completion_tokens: 8192,
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage },
+      { role: "user", content: prompt }
     ],
-    response_format: { type: "json_object" },
+    response_format: { type: "json_object" }
   });
 
-  const content = response.choices[0]?.message?.content || "";
-  let parsed;
+  return { data: JSON.parse(response.choices[0].message.content) };
+}
+
+async function callOllama(prompt) {
+  const systemPrompt = `You are a professional code generator. 
+Your goal is to return a complete set of project files in JSON format.
+Output ONLY a raw JSON object with the following structure:
+{
+  "success": true,
+  "data": {
+    "files": [
+      { "path": "filename", "content": "file content" }
+    ]
+  }
+}
+Do not use markdown blocks, do not add explanation. Only return pure JSON.`;
+
   try {
-    parsed = JSON.parse(content);
-  } catch {
-    parsed = extractJsonFromText(content);
-  }
+    const response = await axios.post(
+      `${OLLAMA_API_URL}/api/generate`,
+      {
+        model: OLLAMA_MODEL,
+        prompt: `${systemPrompt}\n\nTask: ${prompt}`,
+        stream: false,
+        format: "json"
+      },
+      { timeout: AI_TIMEOUT_MS }
+    );
 
-  if (!parsed || !Array.isArray(parsed.files)) {
-    throw new Error("OpenAI did not return valid files JSON");
-  }
+    let jsonString = response.data.response.trim();
+    
+    // Robust extraction: find the first { and the last }
+    const firstBrace = jsonString.indexOf('{');
+    const lastBrace = jsonString.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+    }
 
-  return { success: true, data: { files: parsed.files } };
+    try {
+        const parsedData = JSON.parse(jsonString);
+        return { data: parsedData };
+    } catch (parseErr) {
+        console.error("JSON Parse Error. Cleaned string:", jsonString);
+        throw parseErr;
+    }
+  } catch (err) {
+    console.error("Ollama Error:", err.message);
+    throw err;
+  }
 }
 
 router.post("/warmup", (_req, res) => {
   res.status(200).json({ warmed: true });
-  axios
-    .post(
-      MODAL_API_URL,
-      { prompt: "Hello. Return a minimal app with one file." },
-      { timeout: 10000 }
-    )
-    .catch(() => {});
 });
 
 router.post("/", async (req, res) => {
@@ -165,81 +158,61 @@ router.post("/", async (req, res) => {
     const nativeInstruction =
       "IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.";
 
-    let modalPrompt;
+    let aiPrompt;
     if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
       const filesContext = existingFiles
         .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
         .join("\n\n");
-      modalPrompt =
+      aiPrompt =
         type === "web"
-          ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`
-          : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`;
+          ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files (include any unchanged files and all new or modified files).`
+          : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files (include any unchanged files and all new or modified files).`;
     } else {
-      modalPrompt =
+      aiPrompt =
         type === "web"
           ? `${webInstruction}\n\nUser request: ${trimmedPrompt}`
           : `${nativeInstruction}\n\nUser request: ${trimmedPrompt}`;
     }
 
-    let responseData = null;
-    let usedProvider = null;
-
-    // Try Modal first
-    try {
-      console.log("[generate] Trying Modal API...");
-      const modalResponse = await callModal(modalPrompt);
-      const { success, data } = modalResponse.data;
-      if (success && data && Array.isArray(data.files)) {
-        responseData = { success, data };
-        usedProvider = "modal";
-        console.log("[generate] Modal API succeeded");
-      } else {
-        throw new Error("Invalid Modal response structure");
-      }
-    } catch (modalErr) {
-      console.warn("[generate] Modal API failed:", modalErr.message, "— trying OpenAI fallback...");
-
-      try {
-        const openAIPrompt = existingFiles && existingFiles.length > 0
-          ? `${trimmedPrompt}\n\nExisting files context:\n${existingFiles.map(f => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`
-          : trimmedPrompt;
-
-        responseData = await generateWithOpenAI(openAIPrompt, type);
-        usedProvider = "openai";
-        console.log("[generate] OpenAI fallback succeeded");
-      } catch (openAIErr) {
-        console.error("[generate] OpenAI fallback also failed:", openAIErr.message);
-        return res.status(502).json({
-          error: "Generation failed",
-          details: `Modal: ${modalErr.message} | OpenAI: ${openAIErr.message}`,
-        });
-      }
+    let response;
+    if (USE_OPENAI && OPENAI_API_KEY) {
+      console.log("Calling OpenAI (gpt-4o)...");
+      response = await callOpenAI(aiPrompt);
+    } else {
+      console.log("Calling local Ollama...");
+      response = await callOllama(aiPrompt);
     }
 
-    let files = Array.isArray(responseData.data.files) ? responseData.data.files : [];
+    const { success, data } = response.data;
+    if (!success || !data) {
+      return res.status(502).json({
+        error: "Invalid response from AI provider",
+        details: "Missing success or data in JSON response",
+      });
+    }
 
+    let files = Array.isArray(data.files) ? data.files : [];
     if (type === "native") {
       files = sanitizeMobileFiles(files);
+      if (hasForbiddenNativeCode(files)) {
+        console.warn("Banned mobile patterns remain — requesting correction");
+        const badCtx = files.map((f) => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 50000)}`).join("\n\n");
+        const correctionPrompt = `${nativeInstruction}\n\nCRITICAL FIX: Rewrite the app so it runs in Expo Go with React Native only. Use @react-native-async-storage/async-storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n\n${badCtx}\n\nReturn complete fixed files in JSON format.`;
 
-      if (hasForbiddenNativeCode(files) && usedProvider === "openai") {
-        console.warn("[generate] Banned mobile patterns found — requesting OpenAI correction...");
         try {
-          const correctionPrompt =
-            `Fix this React Native app so it runs in Expo Go. Remove all browser APIs (localStorage, window, document, ReactDOM). Use @react-native-async-storage/async-storage for storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n${files.map(f => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`;
-          const fixResp = await generateWithOpenAI(correctionPrompt, type);
-          if (Array.isArray(fixResp.data.files)) {
-            files = sanitizeMobileFiles(fixResp.data.files);
-          }
+          const fixResp = USE_OPENAI ? await callOpenAI(correctionPrompt) : await callOllama(correctionPrompt);
+          const fixedFiles = fixResp?.data?.data?.files;
+          if (Array.isArray(fixedFiles)) files = sanitizeMobileFiles(fixedFiles);
         } catch (e) {
-          console.error("[generate] OpenAI correction retry failed:", e.message);
+          console.error("Correction retry failed:", e.message);
         }
       }
     }
 
     const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
-    res.json({ success: true, project_name, files, provider: usedProvider });
+    res.json({ success: true, project_name, files });
   } catch (error) {
-    console.error("[generate] Unexpected error:", error.message);
+    console.error("FULL ERROR STACK:", error);
     res.status(500).json({ error: "Failed to generate app", details: error.message });
   }
 });

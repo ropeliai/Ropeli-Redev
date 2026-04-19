@@ -1,13 +1,14 @@
 import express from "express";
 import axios from "axios";
+import OpenAI from "openai";
 
 const router = express.Router();
 
-const MODAL_API_URL =
-  process.env.MODAL_API_URL ||
-  "https://coutinhoandrew0--my-coder-model-generate.modal.run";
-
-const MODAL_TIMEOUT_MS = 600000;
+const USE_OPENAI = process.env.USE_OPENAI === "true";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:3b";
+const AI_TIMEOUT_MS = 600000;
 
 const BANNED_MOBILE = [
   "localStorage",
@@ -60,42 +61,85 @@ function deriveProjectNameFromPrompt(prompt) {
   return `${words.join("-")}-app`;
 }
 
-async function callModal(prompt, retryCount = 0) {
+async function callOpenAI(prompt) {
+    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    
+    const systemPrompt = `You are a professional code generator. 
+Return a complete set of project files in JSON format.
+Output ONLY a raw JSON object with this structure:
+{
+  "success": true,
+  "data": {
+    "files": [
+      { "path": "filename", "content": "file content" }
+    ]
+  }
+}
+Only return the JSON. No markdown fences.`;
+
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+    });
+
+    return { data: JSON.parse(response.choices[0].message.content) };
+}
+
+async function callOllama(prompt) {
+  const systemPrompt = `You are a professional code generator. 
+Your goal is to return a complete set of project files in JSON format.
+Output ONLY a raw JSON object with the following structure:
+{
+  "success": true,
+  "data": {
+    "files": [
+      { "path": "filename", "content": "file content" }
+    ]
+  }
+}
+Do not use markdown blocks, do not add explanation. Only return pure JSON.`;
+
   try {
     const response = await axios.post(
-      MODAL_API_URL,
-      { prompt },
-      { timeout: MODAL_TIMEOUT_MS }
+      `${OLLAMA_API_URL}/api/generate`,
+      {
+        model: OLLAMA_MODEL,
+        prompt: `${systemPrompt}\n\nTask: ${prompt}`,
+        stream: false,
+        format: "json"
+      },
+      { timeout: AI_TIMEOUT_MS }
     );
-    return response;
+
+    let jsonString = response.data.response.trim();
+    
+    // Robust extraction: find the first { and the last }
+    const firstBrace = jsonString.indexOf('{');
+    const lastBrace = jsonString.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        jsonString = jsonString.substring(firstBrace, lastBrace + 1);
+    }
+
+    try {
+        const parsedData = JSON.parse(jsonString);
+        return { data: parsedData };
+    } catch (parseErr) {
+        console.error("JSON Parse Error. Cleaned string:", jsonString);
+        throw parseErr;
+    }
   } catch (err) {
-    const status = err.response?.status;
-    if (status === 500 && retryCount < 1) {
-      console.log("Modal 500 — retrying in 5s...");
-      await new Promise((r) => setTimeout(r, 5000));
-      return callModal(prompt, retryCount + 1);
-    }
-    const isTimeout =
-      err.code === "ECONNABORTED" ||
-      (err.message && err.message.includes("timeout"));
-    if (isTimeout && retryCount < 1) {
-      console.log("Modal timeout (cold start) — retrying in 5s...");
-      await new Promise((r) => setTimeout(r, 5000));
-      return callModal(prompt, retryCount + 1);
-    }
+    console.error("Ollama Error:", err.message);
     throw err;
   }
 }
 
 router.post("/warmup", (_req, res) => {
   res.status(200).json({ warmed: true });
-  axios
-    .post(
-      MODAL_API_URL,
-      { prompt: "Hello. Return a minimal app with one file." },
-      { timeout: MODAL_TIMEOUT_MS }
-    )
-    .catch(() => {});
 });
 
 router.post("/", async (req, res) => {
@@ -114,73 +158,51 @@ router.post("/", async (req, res) => {
     const nativeInstruction =
       "IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.";
 
-    let modalPrompt;
-    if (
-      existingFiles &&
-      Array.isArray(existingFiles) &&
-      existingFiles.length > 0
-    ) {
+    let aiPrompt;
+    if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
       const filesContext = existingFiles
-        .map(
-          (f) =>
-            `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`
-        )
+        .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
         .join("\n\n");
-      modalPrompt =
+      aiPrompt =
         type === "web"
           ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files (include any unchanged files and all new or modified files).`
           : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files (include any unchanged files and all new or modified files).`;
     } else {
-      modalPrompt =
+      aiPrompt =
         type === "web"
           ? `${webInstruction}\n\nUser request: ${trimmedPrompt}`
           : `${nativeInstruction}\n\nUser request: ${trimmedPrompt}`;
     }
 
-    const response = await callModal(modalPrompt);
-
-    console.log(
-      "Modal API raw response:",
-      JSON.stringify(response.data, null, 2)
-    );
+    let response;
+    if (USE_OPENAI && OPENAI_API_KEY) {
+        console.log("Calling OpenAI (gpt-4o)...");
+        response = await callOpenAI(aiPrompt);
+    } else {
+        console.log("Calling local Ollama...");
+        response = await callOllama(aiPrompt);
+    }
 
     const { success, data } = response.data;
-
     if (!success || !data) {
       return res.status(502).json({
-        error: "Invalid response from generate API",
-        details: "Missing success or data in response",
+        error: "Invalid response from AI provider",
+        details: "Missing success or data in JSON response",
       });
     }
 
     let files = Array.isArray(data.files) ? data.files : [];
-
     if (type === "native") {
       files = sanitizeMobileFiles(files);
-
       if (hasForbiddenNativeCode(files)) {
-        console.warn(
-          "Banned mobile patterns remain after sanitize — requesting correction"
-        );
-        const badCtx = files
-          .map(
-            (f) =>
-              `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 50000)}`
-          )
-          .join("\n\n");
-        const correctionPrompt =
-          `${nativeInstruction}\n\n` +
-          "CRITICAL FIX REQUIRED: The previous output used browser-only APIs (like localStorage/window/document/ReactDOM). " +
-          "Rewrite the app so it runs in Expo Go with React Native only. " +
-          "Use @react-native-async-storage/async-storage instead of localStorage.\n\n" +
-          `User request: ${trimmedPrompt}\n\nCurrent broken files:\n\n${badCtx}\n\nReturn complete fixed files.`;
+        console.warn("Banned mobile patterns remain — requesting correction");
+        const badCtx = files.map((f) => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 50000)}`).join("\n\n");
+        const correctionPrompt = `${nativeInstruction}\n\nCRITICAL FIX: Rewrite the app so it runs in Expo Go with React Native only. Use @react-native-async-storage/async-storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n\n${badCtx}\n\nReturn complete fixed files in JSON format.`;
 
         try {
-          const fixResp = await callModal(correctionPrompt);
+          const fixResp = USE_OPENAI ? await callOpenAI(correctionPrompt) : await callOllama(correctionPrompt);
           const fixedFiles = fixResp?.data?.data?.files;
-          if (Array.isArray(fixedFiles)) {
-            files = sanitizeMobileFiles(fixedFiles);
-          }
+          if (Array.isArray(fixedFiles)) files = sanitizeMobileFiles(fixedFiles);
         } catch (e) {
           console.error("Correction retry failed:", e.message);
         }
@@ -190,23 +212,8 @@ router.post("/", async (req, res) => {
     const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
     res.json({ success: true, project_name, files });
   } catch (error) {
-    console.error("Generate API Error:", error.message);
-
-    if (error.response) {
-      return res.status(error.response.status || 500).json({
-        error: "Generate API request failed",
-        details: error.response.data || error.message,
-      });
-    }
-    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
-      return res.status(503).json({
-        error: "Could not reach generate service",
-        details: error.message,
-      });
-    }
-    res
-      .status(500)
-      .json({ error: "Failed to generate app", details: error.message });
+    console.error("FULL ERROR STACK:", error);
+    res.status(500).json({ error: "Failed to generate app", details: error.message });
   }
 });
 

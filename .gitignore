@@ -3,3 +3,8 @@ dist/
 .env
 *.log
 .DS_Store
+temp-expo-*/
+ropeli-backend/temp-expo-*/
+setup_and_run.bat
+start_backend.bat
+start_frontend.bat
