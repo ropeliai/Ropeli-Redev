@@ -248,25 +248,34 @@ useEffect(() => {
   hasSavedRef.current = true;
 
   const createProject = async () => {
-    const { data, error } = await supabase
-      .from("projects")
-      .insert({
-        user_id: user.id,
-        prompt: initialPrompt,
-        status: "draft", // ✅ FIXED
-        chat_history: [],        // ✅ initialize
-        code_history: [],
-        builder_state: {},
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Project creation failed:", error);
+    if (!user || !user.id) {
+      console.error("Cannot create project: no authenticated user");
       return;
     }
 
-    setProjectId(data.id);
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .insert({
+          user_id: user.id,
+          prompt: initialPrompt,
+          status: "draft",
+          chat_history: [],
+          code_history: [],
+          builder_state: {},
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Project creation failed:", error);
+        return;
+      }
+
+      setProjectId(data.id);
+    } catch (err) {
+      console.error("Unexpected error creating project:", err);
+    }
   };
 
   createProject();
@@ -556,27 +565,37 @@ const handleRunOnDevice = async () => {
 
 //save all history in supabase
 const handleSaveProject = async () => {
-  if (!projectId || !user) return;
+  if (!projectId || !user) {
+    console.warn("Save skipped: missing projectId or user");
+    return;
+  }
 
-  const { error } = await supabase
-    .from("projects")
-    .update({
-      chat_history: messages,
-      code_history: {
-        file: selectedFile,
-        code,
-      },
-      builder_state: {
-        projectConfig,
-      },
-      status: "saved",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", projectId)
-    .eq("user_id", user.id);
+  try {
+    const { error, data } = await supabase
+      .from("projects")
+      .update({
+        chat_history: messages,
+        code_history: {
+          file: selectedFile,
+          code,
+        },
+        builder_state: {
+          projectConfig,
+        },
+        status: "saved",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .select();
 
-  if (error) {
-    console.error("Save failed:", error);
+    if (error) {
+      console.error("Save failed:", error);
+    } else {
+      console.log("Project saved", data);
+    }
+  } catch (err) {
+    console.error("Unexpected error during save:", err);
   }
 };
 
@@ -584,16 +603,27 @@ const handleSaveProject = async () => {
 //Auto-save every X seconds
 //Status = "draft"
 useEffect(() => {
-  const interval = setInterval(() => {
-    supabase.from("projects").upsert({
-      id: projectId,
-      chat_history: messages,
-      
-      status: "draft",
-    })
-  }, 5000)
+  // Only run autosave when we have a valid project and authenticated user
+  if (!projectId || !user) return;
 
-  return () => clearInterval(interval)
+  const interval = setInterval(async () => {
+    try {
+      const { data, error } = await supabase.from("projects").upsert({
+        id: projectId,
+        user_id: user.id,
+        chat_history: messages,
+        status: "draft",
+      });
+
+      if (error) {
+        console.error("Auto-save upsert failed:", error);
+      }
+    } catch (err) {
+      console.error("Auto-save error:", err);
+    }
+  }, 5000);
+
+  return () => clearInterval(interval);
 }, [messages])
 
 
@@ -619,27 +649,31 @@ useEffect(() => {
   if (!projectId || !user) return;
 
   const loadProject = async () => {
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", projectId)
-      .eq("user_id", user.id) // 🔐 important for RLS
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .eq("user_id", user.id) // 🔐 important for RLS
+        .single();
 
-    if (error || !data) {
-      console.error("Failed to load project:", error);
-      return;
-    }
+      if (error || !data) {
+        console.error("Failed to load project:", error);
+        return;
+      }
 
-    // 🔁 REHYDRATE BUILDER STATE
-    setMessages(data.chat_history ?? []);
+      // 🔁 REHYDRATE BUILDER STATE
+      setMessages(data.chat_history ?? []);
 
-    if (data.code_history?.code) {
-      setCode(data.code_history.code);
-    }
+      if (data.code_history?.code) {
+        setCode(data.code_history.code);
+      }
 
-    if (data.builder_state?.projectConfig) {
-      setProjectConfig(data.builder_state.projectConfig);
+      if (data.builder_state?.projectConfig) {
+        setProjectConfig(data.builder_state.projectConfig);
+      }
+    } catch (err) {
+      console.error("Unexpected error loading project:", err);
     }
   };
 

@@ -16,6 +16,23 @@ type PaymentParams = {
   onFailure: () => void;
 };
 
+// Load Razorpay script dynamically
+const loadRazorpayScript = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+    document.body.appendChild(script);
+  });
+};
+
 export const initiatePayment = async ({
   planName,
   billing,
@@ -26,6 +43,9 @@ export const initiatePayment = async ({
   onFailure,
 }: PaymentParams) => {
   try {
+    // 0️⃣ Load Razorpay SDK if not already loaded
+    await loadRazorpayScript();
+
     // 1️⃣ Create order on backend
     const payload = {
       planName,

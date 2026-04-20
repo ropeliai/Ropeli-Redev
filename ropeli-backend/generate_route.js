@@ -8,7 +8,8 @@ const USE_OPENAI = process.env.USE_OPENAI === "true";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:3b";
-const AI_TIMEOUT_MS = 600000;
+// Increased timeout from 600s to 1200s (20 minutes) for large model responses
+const AI_TIMEOUT_MS = parseInt(process.env.AI_TIMEOUT_MS || "1200000", 10);
 
 const BANNED_MOBILE = [
   "localStorage",
@@ -22,7 +23,7 @@ const BANNED_MOBILE = [
 
 function sanitizeMobileFiles(files) {
   return files.map((file) => {
-    let content = file.content
+    let content = String(file.content || "")
       .replace(
         /localStorage\.(getItem|setItem|removeItem|clear)\([^)]*\)/g,
         "/* localStorage removed */"
