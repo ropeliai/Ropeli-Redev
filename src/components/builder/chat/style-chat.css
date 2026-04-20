@@ -1,0 +1,303 @@
+/* ============================= */
+
+
+/* CONFIG FORM CONTAINER */
+
+
+/* ============================= */
+
+.config-card {
+    background: linear-gradient(180deg, #0f0f0f, #0b0b0b);
+    border: 1px solid #1f1f1f;
+    border-radius: 16px;
+    padding: 20px 18px;
+    margin-top: 12px;
+}
+
+
+/* ============================= */
+
+
+/* SECTION TITLES */
+
+
+/* ============================= */
+
+.config-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 18px 0 12px;
+}
+
+
+/* ============================= */
+
+
+/* GROUP WRAPPER */
+
+
+/* ============================= */
+
+.config-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+
+/* ============================= */
+
+
+/* CHECKBOX ROW */
+
+
+/* ============================= */
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+
+/* hide native checkbox */
+
+.checkbox-item input {
+    display: none;
+}
+
+
+/* custom checkbox box */
+
+.checkbox-ui {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 5px;
+    border: 1.5px solid #555;
+    background: #0b0b0b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+
+/* checked state */
+
+.checkbox-item input:checked+.checkbox-ui {
+    background: #11352e;
+    border-color: #535958;
+}
+
+
+/* checkmark */
+
+.checkbox-item input:checked+.checkbox-ui::after {
+    content: "✓";
+    font-size: 12px;
+    font-weight: 700;
+    color: #000;
+}
+
+
+/* disabled checkbox */
+
+.checkbox-item input:disabled+.checkbox-ui {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* label text */
+
+.checkbox-label {
+    font-size: 14px;
+    color: #e5e5e5;
+    text-transform: capitalize;
+}
+
+
+/* ============================= */
+
+
+/* CONTINUE BUTTON */
+
+
+/* ============================= */
+
+.config-continue-btn {
+    margin-top: 22px;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    background: linear-gradient(180deg, #ffffff, #e5e5e5);
+    color: #000;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.config-continue-btn:hover:not(:disabled) {
+    background: #ffffff;
+    transform: translateY(-1px);
+}
+
+.config-continue-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.config-continue-btn:disabled {
+    background: #2a2a2a;
+    color: #777;
+    cursor: not-allowed;
+}
+
+
+/* ============================= */
+
+
+/* OPTIONAL: LOCKED STATE LOOK */
+
+
+/* ============================= */
+
+.builder-textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* ============================= */
+
+
+/* CHAT ROW ALIGNMENT (KEY FIX) */
+
+
+/* ============================= */
+
+.chat-row {
+    display: flex;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.chat-row.assistant {
+    justify-content: flex-start;
+}
+
+
+/* ============================= */
+
+
+/* USER CHAT BUBBLE */
+
+
+/* ============================= */
+
+.chat-bubble.user {
+    background: #0f2f2b;
+    border-radius: 16px 16px 4px 16px;
+    padding: 12px;
+    color: #eafffb;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 72%;
+}
+
+
+/* mobile tweak */
+
+@media (max-width: 768px) {
+    .chat-bubble.user {
+        max-width: 85%;
+    }
+}
+
+
+/* ============================= */
+
+
+/* USER ATTACHMENTS UI */
+
+
+/* ============================= */
+
+
+/* ===== FIGMA CARD ===== */
+
+.figma-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #123c37;
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-decoration: none;
+    color: #eafffb;
+    transition: background 0.2s ease;
+}
+
+.figma-card:hover {
+    background: #18544d;
+}
+
+.figma-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.figma-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.figma-title {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.figma-sub {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+
+/* ===== FILE CHIPS ===== */
+
+.file-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.file-chip {
+    background: #1b4d47;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+/* ===== USER TEXT ===== */
+
+.user-text {
+    font-size: 14px;
+    line-height: 1.4;
+}

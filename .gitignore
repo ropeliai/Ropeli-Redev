@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules/
 dist/
 .env
@@ -8,3 +9,29 @@ ropeli-backend/temp-expo-*/
 setup_and_run.bat
 start_backend.bat
 start_frontend.bat
+=======
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+>>>>>>> 66be85f39fd7c7d6e38ddda5d5287c9ea594c878

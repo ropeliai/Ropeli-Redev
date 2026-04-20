@@ -1,0 +1,321 @@
+.pricing {
+    width: 100%;
+    background: radial-gradient(circle at top, #1a1a1a, #000);
+    padding: 2rem 2rem;
+    color: white;
+}
+
+
+/* HEADER */
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.pricing-subtitle {
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+
+/* TOGGLE */
+
+.billing-toggle {
+    display: inline-flex;
+    background: #111;
+    height: 50px;
+    border-radius: 999px;
+}
+
+.billing-toggle button {
+    flex: 1;
+    min-width: 110px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    margin: 0px;
+    color: #aaa;
+    padding: 10px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.25s ease;
+}
+
+.billing-toggle .active {
+    background: white;
+    color: black;
+}
+
+
+/* GRID */
+
+.pricing-grid {
+    max-width: 1450px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    max-width: 1450px;
+    margin: 0 auto;
+    /* ✅ CENTER GRID */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    width: 100%;
+    /* ✅ PREVENT OVERFLOW */
+    box-sizing: border-box;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #666;
+    font-size: 2rem;
+    margin-right: 0.5rem;
+}
+
+.discounted-price {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+
+/* CARD */
+
+.pricing-card {
+    background: rgba(15, 15, 15, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid #222;
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card h2 {
+    margin: 2rem 0;
+    font-size: 2rem;
+}
+
+.pricing-card h3 {
+    margin-top: 0.5rem;
+    font-size: 1.4rem;
+}
+
+.pricing-card h2 .original-price {
+    margin-top: 2rem 0;
+    font-size: 1.2rem;
+    color: #797777;
+}
+
+.pricing-card h2 span {
+    font-size: 2rem;
+    color: #ffffff;
+}
+
+.pricing-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+}
+
+.pricing-card:hover {
+    transform: translateY(-8px);
+    border-color: #e3e7ed63;
+    box-shadow: 0 0 40px rgba(138, 180, 248, 0.25);
+}
+
+.badge {
+    align-self: flex-start;
+    background: #222;
+    border: 1px solid #333;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    color: #d1d5db;
+}
+
+
+/* FEATURED */
+
+.pricing-card.featured {
+    border-color: #8ab4f8;
+    box-shadow: 0 0 40px rgba(138, 180, 248, 0.25);
+}
+
+
+/* LIST */
+
+.pricing-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+    flex: 1;
+}
+
+.pricing-card li {
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
+    color: #cbd5f5;
+}
+
+
+/* SELECT */
+
+.token-select {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 10px;
+    color: white;
+    padding: 0.4rem;
+}
+
+
+/* BUTTONS */
+
+.primary-btn {
+    background: white;
+    color: black;
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.secondary-btn {
+    background: #1f1f1f;
+    color: white;
+    margin-top: auto;
+    border: 1px solid #333;
+    border-radius: 999px;
+    padding: 0.6rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondary-btn:active {
+    background: white;
+    color: #1f1f1f;
+    border-color: white;
+}
+
+.secondary-btn:focus {
+    background: white;
+    color: #1f1f1f;
+    border-color: white;
+    outline: none;
+}
+
+
+/* CUSTOM */
+
+.custom-text {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin: 1rem 0 2rem;
+}
+
+
+/* MOBILE RESPONSIVENESS FIXES   */
+
+
+/* Tablets */
+
+@media (max-width: 900px) {
+    .pricing {
+        padding: 2rem 1.2rem;
+    }
+    .pricing-header {
+        margin-bottom: 2rem;
+    }
+    .billing-toggle {
+        width: 70%;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+    .billing-toggle button {
+        min-width: unset;
+        font-size: 14px;
+        padding: 8px 10px;
+    }
+    .pricing-grid {
+        gap: 1.5rem;
+    }
+    .pricing-card {
+        padding: 1.6rem;
+    }
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+    .pricing {
+        padding: 1.5rem 1rem;
+    }
+    .pricing-header h1 {
+        font-size: 1.8rem;
+    }
+    .pricing-subtitle {
+        font-size: 0.85rem;
+    }
+    .billing-toggle {
+        height: 44px;
+    }
+    .billing-toggle button {
+        font-size: 13px;
+        padding: 6px 8px;
+    }
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+    .pricing-card {
+        border-radius: 16px;
+        padding: 1.4rem;
+    }
+    .pricing-card h3 {
+        font-size: 1.2rem;
+    }
+    .pricing-card ul {
+        margin: 1rem 0;
+    }
+    .pricing-card li {
+        font-size: 0.8rem;
+    }
+    .token-select {
+        width: 100%;
+        margin: 0.8rem 0;
+    }
+    .primary-btn,
+    .secondary-btn {
+        width: 100%;
+        padding: 0.7rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 700px) {
+    .pricing {
+        padding: 1.5rem 1rem;
+        overflow-x: hidden;
+        /* ✅ STOP SIDE CLIPPING */
+    }
+    .pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+    .pricing-card {
+        width: 80%;
+    }
+}
+
+
+/* Small phones */
+
+@media (max-width: 400px) {
+    .pricing-card h2 {
+        font-size: 2rem;
+    }
+    .pricing-card li {
+        font-size: 0.78rem;
+    }
+}
