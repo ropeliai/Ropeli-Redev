@@ -1,6 +1,9 @@
 import express from "express";
 import axios from "axios";
 import OpenAI from "openai";
+import { createLogger } from "./logger.js";
+
+const log = createLogger("generate");
 
 const router = express.Router();
 
@@ -186,18 +189,20 @@ router.post("/", async (req, res) => {
 
     // Try Modal first
     try {
-      console.log("[generate] Trying Modal API...");
+      log.info("Trying Modal API");
       const modalResponse = await callModal(modalPrompt);
       const { success, data } = modalResponse.data;
       if (success && data && Array.isArray(data.files)) {
         responseData = { success, data };
         usedProvider = "modal";
-        console.log("[generate] Modal API succeeded");
+        log.info("Modal API succeeded");
       } else {
         throw new Error("Invalid Modal response structure");
       }
     } catch (modalErr) {
-      console.warn("[generate] Modal API failed:", modalErr.message, "— trying OpenAI fallback...");
+      log.warn("Modal API failed — trying OpenAI fallback", {
+        err: modalErr.message,
+      });
 
       try {
         const openAIPrompt = existingFiles && existingFiles.length > 0
@@ -206,9 +211,9 @@ router.post("/", async (req, res) => {
 
         responseData = await generateWithOpenAI(openAIPrompt, type);
         usedProvider = "openai";
-        console.log("[generate] OpenAI fallback succeeded");
+        log.info("OpenAI fallback succeeded");
       } catch (openAIErr) {
-        console.error("[generate] OpenAI fallback also failed:", openAIErr.message);
+        log.error("OpenAI fallback also failed", { err: openAIErr.message });
         return res.status(502).json({
           error: "Generation failed",
           details: `Modal: ${modalErr.message} | OpenAI: ${openAIErr.message}`,
@@ -222,7 +227,7 @@ router.post("/", async (req, res) => {
       files = sanitizeMobileFiles(files);
 
       if (hasForbiddenNativeCode(files) && usedProvider === "openai") {
-        console.warn("[generate] Banned mobile patterns found — requesting OpenAI correction...");
+        log.warn("Banned mobile patterns found — requesting OpenAI correction");
         try {
           const correctionPrompt =
             `Fix this React Native app so it runs in Expo Go. Remove all browser APIs (localStorage, window, document, ReactDOM). Use @react-native-async-storage/async-storage for storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n${files.map(f => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`;
@@ -231,7 +236,7 @@ router.post("/", async (req, res) => {
             files = sanitizeMobileFiles(fixResp.data.files);
           }
         } catch (e) {
-          console.error("[generate] OpenAI correction retry failed:", e.message);
+          log.error("OpenAI correction retry failed", { err: e.message });
         }
       }
     }
@@ -239,7 +244,7 @@ router.post("/", async (req, res) => {
     const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
     res.json({ success: true, project_name, files, provider: usedProvider });
   } catch (error) {
-    console.error("[generate] Unexpected error:", error.message);
+    log.error("Unexpected error", { err: error.message });
     res.status(500).json({ error: "Failed to generate app", details: error.message });
   }
 });

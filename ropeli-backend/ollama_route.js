@@ -1,5 +1,8 @@
 import express from "express";
 import axios from "axios";
+import { createLogger } from "./logger.js";
+
+const log = createLogger("ollama");
 
 const router = express.Router();
 
@@ -35,7 +38,7 @@ router.post("/ask", async (req, res) => {
       model: OLLAMA_MODEL,
     });
   } catch (error) {
-    console.error("Ollama API Error:", error.message);
+    log.error("Ollama API error", { err: error.message });
 
     if (error.code === "ECONNREFUSED") {
       return res.status(503).json({
@@ -88,7 +91,7 @@ router.post("/generate-code", async (req, res) => {
     const code = response.data.response?.trim() ?? "";
     res.json({ success: true, code });
   } catch (error) {
-    console.error("Ollama generate-code Error:", error.message);
+    log.error("Ollama generate-code error", { err: error.message });
 
     if (error.code === "ECONNREFUSED") {
       return res.status(503).json({
@@ -142,7 +145,7 @@ router.post("/chat", async (req, res) => {
       model: OLLAMA_MODEL,
     });
   } catch (error) {
-    console.error("Ollama Chat API Error:", error.message);
+    log.error("Ollama chat API error", { err: error.message });
 
     if (error.code === "ECONNREFUSED") {
       return res.status(503).json({
@@ -174,7 +177,7 @@ router.get("/models", async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error("Ollama Models API Error:", error.message);
+    log.error("Ollama models API error", { err: error.message });
 
     res.status(500).json({
       error: "Failed to fetch models from Ollama",

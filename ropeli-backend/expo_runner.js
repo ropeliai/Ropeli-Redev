@@ -2,6 +2,16 @@ import { spawn, execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { networkInterfaces } from "os";
+import { createLogger } from "./logger.js";
+
+const log = createLogger("expo");
+
+const STREAM_LOG_MAX = 500;
+function trunc(s) {
+  const t = String(s).trim();
+  if (t.length <= STREAM_LOG_MAX) return t;
+  return t.slice(0, STREAM_LOG_MAX) + "…";
+}
 
 const BASE_DIR = process.env.EXPO_BASE_DIR || "/tmp/expo-projects";
 const BASE_PROJECT = path.join(BASE_DIR, "base");
@@ -78,7 +88,7 @@ async function safeDelete(dir, retries = 3) {
       fs.rmSync(dir, { recursive: true, force: true });
       return true;
     } catch (e) {
-      console.warn(`[expo] Delete retry ${i + 1}/${retries}:`, e.message);
+      log.warn("Delete retry", { attempt: i + 1, retries, err: e.message });
       if (i < retries - 1) await sleep(1000);
     }
   }
@@ -105,7 +115,7 @@ function ensureBaseProject() {
 
   const pkgPath = path.join(BASE_PROJECT, "package.json");
   if (!fs.existsSync(pkgPath)) {
-    console.log("[expo] Creating base Expo project...");
+    log.info("Creating base Expo project");
     const pkg = {
       name: "ropeli-base",
       version: "1.0.0",
@@ -149,7 +159,7 @@ function ensureBaseProject() {
       "utf8"
     );
 
-    console.log("[expo] Installing base Expo project dependencies (this takes a while first time)...");
+    log.info("Installing base Expo project dependencies (this takes a while first time)");
     try {
       execSync("npm install --legacy-peer-deps", {
         cwd: BASE_PROJECT,
@@ -157,9 +167,9 @@ function ensureBaseProject() {
         timeout: 120000,
         env: SPAWN_ENV,
       });
-      console.log("[expo] Base project dependencies installed.");
+      log.info("Base project dependencies installed");
     } catch (e) {
-      console.error("[expo] npm install failed:", e.message);
+      log.error("npm install failed", { err: e.message });
     }
   }
 }
@@ -168,7 +178,7 @@ export async function startExpo(projectId, files) {
   const safeId = projectId.replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 64) || "expo-app";
   const projectDir = path.join(BASE_DIR, safeId);
 
-  console.log(`\n=== Starting Expo for ${safeId} ===`);
+  log.info(`Starting Expo for ${safeId}`);
   stopExpo(safeId);
 
   if (fs.existsSync(projectDir)) {
@@ -177,16 +187,16 @@ export async function startExpo(projectId, files) {
 
   ensureBaseProject();
   copyDirRecursive(BASE_PROJECT, projectDir);
-  console.log("[expo] Base project copied");
+  log.info("Base project copied");
 
   const baseModules = path.join(BASE_PROJECT, "node_modules");
   const projModules = path.join(projectDir, "node_modules");
   if (fs.existsSync(baseModules) && !fs.existsSync(projModules)) {
     try {
       fs.symlinkSync(baseModules, projModules, "dir");
-      console.log("[expo] node_modules symlinked from base");
+      log.info("node_modules symlinked from base");
     } catch {
-      console.log("[expo] Symlink failed — using base node_modules directly");
+      log.info("Symlink failed — using base node_modules directly");
     }
   }
 
@@ -196,7 +206,7 @@ export async function startExpo(projectId, files) {
   const localIP = getLocalIP();
   const port = 8081;
 
-  console.log(`[expo] Starting Expo tunnel... (this takes 30-60 seconds)`);
+  log.info("Starting Expo tunnel (this takes 30-60 seconds)");
 
   return new Promise((resolve, reject) => {
     const child = spawn(
@@ -225,7 +235,7 @@ export async function startExpo(projectId, files) {
     const timeout = setTimeout(() => {
       if (settled) return;
       settled = true;
-      console.error("[expo] Tunnel timed out after 3 minutes");
+      log.error("Tunnel timed out after 3 minutes");
       stopExpo(safeId);
       reject(new Error("Expo tunnel timed out — try again or use web preview instead"));
     }, START_TIMEOUT_MS);
@@ -240,7 +250,7 @@ export async function startExpo(projectId, files) {
     const onData = (chunk) => {
       const text = chunk.toString();
       fullOutput += text;
-      console.log("[expo]", text.trim());
+      log.debug("expo stream", { line: trunc(text) });
 
       const tunnelMatch =
         text.match(/exp:\/\/[a-zA-Z0-9\-\.]+\.exp\.direct(:\d+)?/) ||
@@ -248,7 +258,7 @@ export async function startExpo(projectId, files) {
 
       if (tunnelMatch && !settled) {
         const qrUrl = tunnelMatch[0].trim();
-        console.log("[expo] Tunnel URL found:", qrUrl);
+        log.info("Tunnel URL found", { qrUrl });
         const state = EXPO_STATE.get(safeId);
         if (state) { state.qrUrl = qrUrl; state.metroReachable = true; }
         finish(() => resolve({ success: true, qr_url: qrUrl, metroReachable: true }));
@@ -256,14 +266,14 @@ export async function startExpo(projectId, files) {
       }
 
       if (text.includes("Tunnel ready") && !settled) {
-        console.log("[expo] Tunnel ready — waiting 8s for URL...");
+        log.info("Tunnel ready — waiting 8s for URL");
         setTimeout(() => {
           if (!settled) {
             const fullMatch =
               fullOutput.match(/exp:\/\/[a-zA-Z0-9\-\.]+\.exp\.direct(:\d+)?/) ||
               fullOutput.match(/https:\/\/[a-zA-Z0-9\-\.]+\.exp\.direct/);
             const qrUrl = fullMatch ? fullMatch[0].trim() : `exp://${localIP}:${port}`;
-            console.log("[expo] Using URL:", qrUrl);
+            log.info("Using URL", { qrUrl });
             const state = EXPO_STATE.get(safeId);
             if (state) { state.qrUrl = qrUrl; state.metroReachable = true; }
             finish(() => resolve({ success: true, qr_url: qrUrl, metroReachable: true }));
@@ -279,7 +289,7 @@ export async function startExpo(projectId, files) {
               fullOutput.match(/https:\/\/[a-zA-Z0-9\-\.]+\.exp\.direct/);
             if (fullMatch) {
               const qrUrl = fullMatch[0].trim();
-              console.log("[expo] Late tunnel URL found:", qrUrl);
+              log.info("Late tunnel URL found", { qrUrl });
               finish(() => resolve({ success: true, qr_url: qrUrl, metroReachable: true }));
             }
           }
@@ -320,7 +330,7 @@ export function stopExpo(projectId) {
   if (child) {
     try { child.kill("SIGTERM"); } catch {}
     RUNNING_PROCESSES.delete(safeId);
-    console.log(`[expo] Stopped Expo for ${safeId}`);
+    log.info(`Stopped Expo for ${safeId}`);
   }
   const state = EXPO_STATE.get(safeId);
   if (state) state.running = false;
