@@ -27,8 +27,13 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchRepos = async () => {
     if (!token) return;
     try {
-      const response = await fetch("https://api.github.com/user/repos?sort=updated&per_page=100", {
-        headers: { Authorization: `token ${token}` },
+      const response = await fetch("http://localhost:5000/api/github/proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: "https://api.github.com/user/repos?sort=updated&per_page=100",
+          token
+        })
       });
       if (response.ok) {
         const data = await response.json();
@@ -61,27 +66,29 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
     if (!token || !username) return { success: false, message: "Not connected to GitHub" };
 
     try {
-      // 1. Create repo if it doesn't exist (simplification: assume we create it or it exists)
-      // For a robust implementation, we use the GitHub API to check and create.
-      
-      // We'll use the "create or update file contents" API one by one for simplicity, 
-      // or a more advanced Git tree API for multiple files.
-      // Let's use the simple one-by-one approach for now.
+      const proxyUrl = "http://localhost:5000/api/github/proxy";
 
-      // Check if repo exists
-      const repoCheck = await fetch(`https://api.github.com/repos/${username}/${repoName}`, {
-        headers: { Authorization: `token ${token}` },
+      // 1. Check if repo exists
+      const repoCheck = await fetch(proxyUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: `https://api.github.com/repos/${username}/${repoName}`,
+          token
+        })
       });
 
       if (!repoCheck.ok) {
         // Create repo
-        const createRepo = await fetch(`https://api.github.com/user/repos`, {
+        const createRepo = await fetch(proxyUrl, {
           method: "POST",
-          headers: {
-            Authorization: `token ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name: repoName, private: false }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: `https://api.github.com/user/repos`,
+            method: "POST",
+            token,
+            body: { name: repoName, private: false }
+          })
         });
         if (!createRepo.ok) throw new Error("Failed to create repository");
       }
@@ -89,8 +96,13 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
       // Upload files
       for (const file of files) {
         // Get SHA if file exists
-        const fileCheck = await fetch(`https://api.github.com/repos/${username}/${repoName}/contents/${file.path}`, {
-          headers: { Authorization: `token ${token}` },
+        const fileCheck = await fetch(proxyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: `https://api.github.com/repos/${username}/${repoName}/contents/${file.path}`,
+            token
+          })
         });
         
         let sha = "";
@@ -99,17 +111,19 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
           sha = data.sha;
         }
 
-        const upload = await fetch(`https://api.github.com/repos/${username}/${repoName}/contents/${file.path}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `token ${token}`,
-            "Content-Type": "application/json",
-          },
+        const upload = await fetch(proxyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            message: `Update ${file.path} from Ropeli AI`,
-            content: btoa(unescape(encodeURIComponent(file.content))), // Base64 encoding handle utf-8
-            sha: sha || undefined,
-          }),
+            url: `https://api.github.com/repos/${username}/${repoName}/contents/${file.path}`,
+            method: "PUT",
+            token,
+            body: {
+              message: `Update ${file.path} from Ropeli AI`,
+              content: btoa(unescape(encodeURIComponent(file.content))), // Base64 encoding handle utf-8
+              sha: sha || undefined,
+            }
+          })
         });
 
         if (!upload.ok) {
@@ -135,17 +149,30 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!owner || !repo) throw new Error("Invalid GitHub URL. Use format: https://github.com/owner/repo");
 
+      const proxyUrl = "http://localhost:5000/api/github/proxy"; // Use our new backend proxy
+
       // 1. Get repo details to find default branch
-      const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-        headers: { Authorization: `token ${token}` },
+      const repoRes = await fetch(proxyUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            url: `https://api.github.com/repos/${owner}/${repo}`,
+            token
+        })
       });
+      
       if (!repoRes.ok) throw new Error("Repository not found or access denied");
       const repoData = await repoRes.json();
       const defaultBranch = repoData.default_branch || "main";
 
       // 2. Fetch file tree recursively for the default branch
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`, {
-        headers: { Authorization: `token ${token}` },
+      const response = await fetch(proxyUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            url: `https://api.github.com/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`,
+            token
+        })
       });
 
       if (!response.ok) throw new Error(`Failed to fetch repository tree for branch ${defaultBranch}`);
@@ -153,26 +180,60 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
       const tree = await response.json();
       const files: { path: string; content: string }[] = [];
 
-      // Only fetch files (blobs), ignore directories (they are implicitly created by paths)
-      const fileEntries = tree.tree.filter((item: any) => item.type === "blob");
+      // Filter out unnecessary files and directories
+      const fileEntries = tree.tree.filter((item: any) => {
+        const path = item.path.toLowerCase();
+        return (
+          item.type === "blob" && 
+          !path.includes("node_modules/") &&
+          !path.includes(".git/") &&
+          !path.includes("dist/") &&
+          !path.includes("build/") &&
+          !path.includes(".next/") &&
+          !path.includes("package-lock.json") &&
+          !path.includes("yarn.lock") &&
+          !path.endsWith(".png") &&
+          !path.endsWith(".jpg") &&
+          !path.endsWith(".jpeg") &&
+          !path.endsWith(".gif") &&
+          !path.endsWith(".ico") &&
+          !path.endsWith(".woff") &&
+          !path.endsWith(".woff2") &&
+          !path.endsWith(".ttf") &&
+          !path.endsWith(".pdf")
+        );
+      });
 
-      for (const item of fileEntries) {
-        const fileRes = await fetch(item.url, {
-          headers: { Authorization: `token ${token}` },
+      // Process in batches of 10 through the proxy
+      for (let i = 0; i < fileEntries.length; i += 10) {
+        const batch = fileEntries.slice(i, i + 10);
+        const batchPromises = batch.map(async (item) => {
+          try {
+            const fileRes = await fetch(proxyUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    url: item.url,
+                    token
+                })
+            });
+            if (!fileRes.ok) return null;
+            const fileData = await fileRes.json();
+            const content = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ""))));
+            return { path: item.path, content };
+          } catch (e) {
+            console.warn(`Failed to fetch ${item.path}:`, e);
+            return null;
+          }
         });
-        const fileData = await fileRes.json();
-        
-        // GitHub API returns content in base64
-        try {
-          const content = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ""))));
-          files.push({
-            path: item.path,
-            content: content,
-          });
-        } catch (e) {
-          console.warn(`Skipping binary or incompatible file: ${item.path}`);
-        }
+
+        const results = await Promise.all(batchPromises);
+        results.forEach(res => {
+          if (res) files.push(res);
+        });
       }
+
+      if (files.length === 0) throw new Error("No readable files found in repository");
 
       return { success: true, files };
     } catch (err: any) {

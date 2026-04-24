@@ -68,6 +68,7 @@ export default function Builder() {
   const [ghImportUrl, setGhImportUrl] = useState("");
   const [ghStatus, setGhStatus] = useState<{ type: "idle" | "loading" | "success" | "error"; message?: string; url?: string }>({ type: "idle" });
   const [ghActionModal, setGhActionModal] = useState<{ open: boolean; type: "export" | "import" }>({ open: false, type: "export" });
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["src", "public", "components"]));
  
 const [builderState, setBuilderState] = useState<any>({})
 
@@ -796,15 +797,40 @@ useEffect(() => {
     }, 1500);
   };
 
-  const groupedFiles = Object.entries(
-    generatedFiles.reduce<Record<string, GeneratedFile[]>>((acc, file) => {
+  interface FileNode {
+    name: string;
+    path: string;
+    type: "file" | "folder";
+    children?: FileNode[];
+    content?: string;
+  }
+
+  const buildFileTree = (files: GeneratedFile[]): FileNode[] => {
+    const root: FileNode[] = [];
+    files.forEach((file) => {
       const parts = file.path.split("/");
-      const folder = parts.length > 1 ? parts[0] : "";
-      if (!acc[folder]) acc[folder] = [];
-      acc[folder].push(file);
-      return acc;
-    }, {})
-  ).map(([folder, files]) => ({ folder, files }));
+      let currentLevel = root;
+      parts.forEach((part, index) => {
+        const isFile = index === parts.length - 1;
+        const path = parts.slice(0, index + 1).join("/");
+        let node = currentLevel.find((n) => n.name === part);
+        if (!node) {
+          node = { name: part, path, type: isFile ? "file" : "folder" };
+          if (isFile) node.content = file.content;
+          else node.children = [];
+          currentLevel.push(node);
+          currentLevel.sort((a, b) => {
+            if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
+            return a.name.localeCompare(b.name);
+          });
+        }
+        if (!isFile) currentLevel = node.children!;
+      });
+    });
+    return root;
+  };
+
+  const fileTree = buildFileTree(generatedFiles);
 
   const sandpackFiles = generatedFiles.reduce((acc, f) => {
     acc[`/${f.path}`] = { code: f.content };
@@ -1238,24 +1264,60 @@ useEffect(() => {
               <div className="explorer-header">Files</div>
               <div className="file-tree-vertical">
                 {generatedFiles.length === 0 && <div className="file-empty">No files yet</div>}
-                {groupedFiles.map(({ folder, files }) => (
-                  <div key={folder || "root"}>
-                    {folder && <div className="file-folder-row">📁 {folder}</div>}
-                    {files.map((file) => (
-                      <button
-                        key={file.path}
-                        className={`file-row ${file.path === selectedFile ? "active" : ""}`}
-                        onClick={() => {
-                          setSelectedFile(file.path);
-                          setCode(file.content);
-                        }}
-                      >
-                        <span className="file-icon">📄</span>
-                        <span className="file-name">{file.path.split("/").pop()}</span>
-                      </button>
-                    ))}
-                  </div>
-                ))}
+                
+                {(() => {
+                  const toggleFolder = (path: string) => {
+                    setExpandedFolders((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(path)) next.delete(path);
+                      else next.add(path);
+                      return next;
+                    });
+                  };
+
+                  const renderNode = (node: any, depth = 0) => {
+                    const isSelected = node.path === selectedFile;
+                    const isFolder = node.type === "folder";
+                    const isExpanded = expandedFolders.has(node.path);
+                    const extension = node.name.split(".").pop();
+                    
+                    const getIcon = () => {
+                      if (isFolder) return isExpanded ? "📂" : "📁";
+                      if (["js", "jsx", "ts", "tsx"].includes(extension)) return "⚛️";
+                      if (extension === "css") return "🎨";
+                      if (extension === "html") return "🌐";
+                      if (extension === "json") return "⚙️";
+                      return "📄";
+                    };
+
+                    return (
+                      <div key={node.path}>
+                        <button
+                          className={`file-row ${isSelected ? "active" : ""} ${isFolder ? "folder" : ""}`}
+                          style={{ paddingLeft: `${depth * 12 + 12}px` }}
+                          onClick={() => {
+                            if (isFolder) {
+                              toggleFolder(node.path);
+                            } else {
+                              setSelectedFile(node.path);
+                              setCode(node.content || "");
+                            }
+                          }}
+                        >
+                          {isFolder && (
+                            <span className={`folder-arrow ${isExpanded ? "expanded" : ""}`}>
+                              ▶
+                            </span>
+                          )}
+                          <span className="file-icon">{getIcon()}</span>
+                          <span className="file-name">{node.name}</span>
+                        </button>
+                        {isFolder && isExpanded && node.children.map((child: any) => renderNode(child, depth + 1))}
+                      </div>
+                    );
+                  };
+                  return fileTree.map((node) => renderNode(node));
+                })()}
               </div>
             </div>
 
@@ -1622,6 +1684,8 @@ useEffect(() => {
               setSelectedFile(res.files[0].path);
               setCode(res.files[0].content);
             }
+            setActiveTab("code");
+            setMobileView("code");
             setGhStatus({ type: "success", message: "Imported successfully!" });
             setGhActionModal({ ...ghActionModal, open: false });
             setTimeout(() => setGhStatus({ type: "idle" }), 3000);
