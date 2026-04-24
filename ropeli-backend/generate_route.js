@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 import OpenAI from "openai";
+import { enhancePromptForGeneration } from "./prompt_enhancer.js";
 
 const router = express.Router();
 
@@ -10,16 +11,20 @@ const MODAL_API_URL =
 
 const MODAL_TIMEOUT_MS = 60000;
 
-let openaiClient = null;
-function getOpenAI() {
-  if (!openaiClient) {
-    const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-    if (baseURL && apiKey) {
-      openaiClient = new OpenAI({ baseURL, apiKey });
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+let groqClient = null;
+function getGroq() {
+  if (!groqClient) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (apiKey) {
+      groqClient = new OpenAI({
+        baseURL: "https://api.groq.com/openai/v1",
+        apiKey,
+      });
     }
   }
-  return openaiClient;
+  return groqClient;
 }
 
 const BANNED_MOBILE = [
@@ -92,9 +97,9 @@ async function callModal(prompt, retryCount = 0) {
   return response;
 }
 
-async function generateWithOpenAI(userPrompt, type) {
-  const client = getOpenAI();
-  if (!client) throw new Error("OpenAI client not configured");
+async function generateWithGroq(userPrompt, type) {
+  const client = getGroq();
+  if (!client) throw new Error("GROQ_API_KEY not set");
 
   const webInstruction = `You are a code generator. Generate a React WEB app. Use only standard HTML elements (div, button, input, h1, p, ul, li) and inline styles or a styles object. Do NOT use any React Native or mobile libraries. The code must run in a browser with only React as a dependency.`;
 
@@ -114,8 +119,8 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
 }`;
 
   const response = await client.chat.completions.create({
-    model: "gpt-5.2",
-    max_completion_tokens: 8192,
+    model: GROQ_MODEL,
+    max_tokens: 8192,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
@@ -132,7 +137,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
   }
 
   if (!parsed || !Array.isArray(parsed.files)) {
-    throw new Error("OpenAI did not return valid files JSON");
+    throw new Error("Groq did not return valid files JSON");
   }
 
   return { success: true, data: { files: parsed.files } };
@@ -160,58 +165,68 @@ router.post("/", async (req, res) => {
     const type = rawType === "web" ? "web" : "native";
     const trimmedPrompt = prompt.trim();
 
+    const { enhancedIntent } = enhancePromptForGeneration({
+      rawPrompt: trimmedPrompt,
+      type,
+      hasExistingFiles: Boolean(
+        existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0
+      ),
+    });
+
     const webInstruction =
       "IMPORTANT: Generate a React WEB app only. Use div, button, input, h1, p, ul, li - standard HTML elements only. Use inline styles or a styles object with standard CSS. Do NOT use View, Text, StyleSheet, TouchableOpacity, FlatList, react-native, expo, NavigationContainer, or any mobile library. The code must run in a browser with no dependencies except React.";
     const nativeInstruction =
       "IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.";
 
-    let modalPrompt;
+    let fullPrompt;
     if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
       const filesContext = existingFiles
         .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
         .join("\n\n");
-      modalPrompt =
+      fullPrompt =
         type === "web"
-          ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`
-          : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to: ${trimmedPrompt}\n\nReturn the complete updated files.`;
+          ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to:\n${enhancedIntent}\n\nReturn the complete updated files.`
+          : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to:\n${enhancedIntent}\n\nReturn the complete updated files.`;
     } else {
-      modalPrompt =
+      fullPrompt =
         type === "web"
-          ? `${webInstruction}\n\nUser request: ${trimmedPrompt}`
-          : `${nativeInstruction}\n\nUser request: ${trimmedPrompt}`;
+          ? `${webInstruction}\n\nUser request:\n${enhancedIntent}`
+          : `${nativeInstruction}\n\nUser request:\n${enhancedIntent}`;
     }
 
     let responseData = null;
     let usedProvider = null;
 
-    // Try Modal first
     try {
-      console.log("[generate] Trying Modal API...");
-      const modalResponse = await callModal(modalPrompt);
-      const { success, data } = modalResponse.data;
-      if (success && data && Array.isArray(data.files)) {
-        responseData = { success, data };
-        usedProvider = "modal";
-        console.log("[generate] Modal API succeeded");
-      } else {
-        throw new Error("Invalid Modal response structure");
-      }
-    } catch (modalErr) {
-      console.warn("[generate] Modal API failed:", modalErr.message, "— trying OpenAI fallback...");
+      console.log("[generate] Trying Groq...");
+      responseData = await generateWithGroq(fullPrompt, type);
+      usedProvider = "groq";
+      console.log("[generate] Groq succeeded");
+    } catch (groqErr) {
+      console.warn(
+        "[generate] Groq failed:",
+        groqErr.message,
+        "— trying Modal fallback..."
+      );
 
       try {
-        const openAIPrompt = existingFiles && existingFiles.length > 0
-          ? `${trimmedPrompt}\n\nExisting files context:\n${existingFiles.map(f => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`
-          : trimmedPrompt;
-
-        responseData = await generateWithOpenAI(openAIPrompt, type);
-        usedProvider = "openai";
-        console.log("[generate] OpenAI fallback succeeded");
-      } catch (openAIErr) {
-        console.error("[generate] OpenAI fallback also failed:", openAIErr.message);
+        const modalResponse = await callModal(fullPrompt);
+        const { success, data } = modalResponse.data;
+        if (success && data && Array.isArray(data.files)) {
+          responseData = { success, data };
+          usedProvider = "modal";
+          console.log("[generate] Modal fallback succeeded");
+        } else {
+          throw new Error("Invalid Modal response structure");
+        }
+      } catch (modalErr) {
+        console.error(
+          "[generate] Modal fallback also failed:",
+          modalErr.message
+        );
         return res.status(502).json({
           error: "Generation failed",
-          details: `Modal: ${modalErr.message} | OpenAI: ${openAIErr.message}`,
+          details: `Groq: ${groqErr.message} | Modal: ${modalErr.message}`,
         });
       }
     }
@@ -221,17 +236,19 @@ router.post("/", async (req, res) => {
     if (type === "native") {
       files = sanitizeMobileFiles(files);
 
-      if (hasForbiddenNativeCode(files) && usedProvider === "openai") {
-        console.warn("[generate] Banned mobile patterns found — requesting OpenAI correction...");
+      if (hasForbiddenNativeCode(files) && usedProvider === "groq") {
+        console.warn(
+          "[generate] Banned mobile patterns found — requesting Groq correction..."
+        );
         try {
           const correctionPrompt =
             `Fix this React Native app so it runs in Expo Go. Remove all browser APIs (localStorage, window, document, ReactDOM). Use @react-native-async-storage/async-storage for storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n${files.map(f => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`;
-          const fixResp = await generateWithOpenAI(correctionPrompt, type);
+          const fixResp = await generateWithGroq(correctionPrompt, type);
           if (Array.isArray(fixResp.data.files)) {
             files = sanitizeMobileFiles(fixResp.data.files);
           }
         } catch (e) {
-          console.error("[generate] OpenAI correction retry failed:", e.message);
+          console.error("[generate] Groq correction retry failed:", e.message);
         }
       }
     }
