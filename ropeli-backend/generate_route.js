@@ -97,10 +97,7 @@ async function callModal(prompt, retryCount = 0) {
   return response;
 }
 
-async function generateWithGroq(userPrompt, type) {
-  const client = getGroq();
-  if (!client) throw new Error("GROQ_API_KEY not set");
-
+function buildJsonGenerationMessages(userPrompt, type) {
   const webInstruction = `You are a code generator. Generate a React WEB app. Use only standard HTML elements (div, button, input, h1, p, ul, li) and inline styles or a styles object. Do NOT use any React Native or mobile libraries. The code must run in a browser with only React as a dependency.`;
 
   const nativeInstruction = `You are a code generator. Generate an Expo React Native MOBILE app. Use only React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries. Do NOT use browser APIs like localStorage, sessionStorage, window, document, ReactDOM, or HTML tags. For storage use AsyncStorage from @react-native-async-storage/async-storage. Always import React like: import React, { useState, useEffect } from 'react'. Always import AsyncStorage like: import AsyncStorage from '@react-native-async-storage/async-storage' (never destructured).`;
@@ -118,17 +115,13 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
   ]
 }`;
 
-  const response = await client.chat.completions.create({
-    model: GROQ_MODEL,
-    max_tokens: 8192,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage },
-    ],
-    response_format: { type: "json_object" },
-  });
+  return [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userMessage },
+  ];
+}
 
-  const content = response.choices[0]?.message?.content || "";
+function parseFilesJsonResponse(content, label) {
   let parsed;
   try {
     parsed = JSON.parse(content);
@@ -137,10 +130,27 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
   }
 
   if (!parsed || !Array.isArray(parsed.files)) {
-    throw new Error("Groq did not return valid files JSON");
+    throw new Error(`${label} did not return valid files JSON`);
   }
 
   return { success: true, data: { files: parsed.files } };
+}
+
+async function generateWithGroq(userPrompt, type) {
+  const client = getGroq();
+  if (!client) throw new Error("GROQ_API_KEY not set");
+
+  const messages = buildJsonGenerationMessages(userPrompt, type);
+
+  const response = await client.chat.completions.create({
+    model: GROQ_MODEL,
+    max_tokens: 8192,
+    messages,
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0]?.message?.content || "";
+  return parseFilesJsonResponse(content, "Groq");
 }
 
 router.post("/warmup", (_req, res) => {
@@ -240,9 +250,9 @@ router.post("/", async (req, res) => {
         console.warn(
           "[generate] Banned mobile patterns found — requesting Groq correction..."
         );
+        const correctionPrompt =
+          `Fix this React Native app so it runs in Expo Go. Remove all browser APIs (localStorage, window, document, ReactDOM). Use @react-native-async-storage/async-storage for storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n${files.map(f => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`;
         try {
-          const correctionPrompt =
-            `Fix this React Native app so it runs in Expo Go. Remove all browser APIs (localStorage, window, document, ReactDOM). Use @react-native-async-storage/async-storage for storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n${files.map(f => `--- ${f.path} ---\n${String(f.content ?? "").slice(0, 30000)}`).join("\n\n")}`;
           const fixResp = await generateWithGroq(correctionPrompt, type);
           if (Array.isArray(fixResp.data.files)) {
             files = sanitizeMobileFiles(fixResp.data.files);
