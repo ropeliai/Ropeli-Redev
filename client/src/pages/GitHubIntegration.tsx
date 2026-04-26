@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useGitHub } from "../context/GitHubContext";
@@ -6,6 +7,7 @@ import "../styles/GitHubIntegration.css";
 
 export default function GitHubIntegration() {
   const { isConnected, username: currentUsername, connect, disconnect, repos, fetchRepos } = useGitHub();
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
@@ -122,18 +124,26 @@ export default function GitHubIntegration() {
                     <p style={{ margin: "0 0 1rem", fontSize: "0.85rem", color: "#888", height: "40px", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
                       {repo.description || "No description provided."}
                     </p>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto" }}>
                       <span style={{ fontSize: "0.75rem", color: "#555" }}>
                         ★ {repo.stargazers_count} | ⑂ {repo.forks_count}
                       </span>
-                      <a 
-                        href={repo.html_url} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        style={{ fontSize: "0.8rem", color: "#80FFF9", textDecoration: "none" }}
-                      >
-                        View on GitHub →
-                      </a>
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <a 
+                          href={repo.html_url} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          style={{ fontSize: "0.8rem", color: "#888", textDecoration: "none", padding: "6px 12px", border: "1px solid #333", borderRadius: "6px" }}
+                        >
+                          GitHub →
+                        </a>
+                        <button
+                          onClick={() => navigate(`/builder?importRepoUrl=${encodeURIComponent(repo.html_url)}`)}
+                          style={{ fontSize: "0.8rem", color: "#000", background: "#80FFF9", textDecoration: "none", padding: "6px 12px", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
+                        >
+                          Import to Builder
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

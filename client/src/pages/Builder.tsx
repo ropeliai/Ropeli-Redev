@@ -82,6 +82,40 @@ useEffect(() => {
   }
 }, [routeProjectId]);
 
+// Handle Auto-Import from GitHub Integration Page
+useEffect(() => {
+  const searchParams = new URLSearchParams(location.search);
+  const importRepoUrl = searchParams.get("importRepoUrl");
+  
+  if (importRepoUrl && isConnected) {
+    const doImport = async () => {
+      setGhStatus({ type: "loading" });
+      setGhActionModal({ open: true, type: "import" }); // Show the modal so user sees loading state
+      const res = await importFromGitHub(importRepoUrl);
+      if (res.success && res.files) {
+        setGeneratedFiles(res.files);
+        if (res.files.length > 0) {
+          setSelectedFile(res.files[0].path);
+          setCode(res.files[0].content);
+        }
+        setActiveTab("code");
+        setMobileView("code");
+        setGhStatus({ type: "success", message: "Imported successfully!" });
+        setGhActionModal({ open: false, type: "import" });
+        setTimeout(() => setGhStatus({ type: "idle" }), 3000);
+      } else {
+        setGhStatus({ type: "error", message: res.message });
+      }
+      // Remove query param
+      navigate("/builder", { replace: true });
+    };
+    doImport();
+  } else if (importRepoUrl && !isConnected) {
+    alert("Please connect your GitHub account first to import repositories.");
+    navigate("/github", { replace: true });
+  }
+}, [location.search, isConnected, navigate, importFromGitHub]);
+
 
 
 
