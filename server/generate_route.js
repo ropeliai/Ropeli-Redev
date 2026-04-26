@@ -111,7 +111,11 @@ Do not use markdown blocks, do not add explanation. Only return pure JSON.`;
         model: OLLAMA_MODEL,
         prompt: `${systemPrompt}\n\nTask: ${prompt}`,
         stream: false,
-        format: "json"
+        format: "json",
+        options: {
+          num_predict: 8192,
+          num_ctx: 32768
+        }
       },
       { timeout: AI_TIMEOUT_MS }
     );
