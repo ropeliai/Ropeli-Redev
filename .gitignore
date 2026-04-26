@@ -9,8 +9,8 @@ client/dist/
 
 # Environment variables
 .env
-client/.env
-server/.env
+.env.local
+.env.production
 
 # Logs
 *.log
