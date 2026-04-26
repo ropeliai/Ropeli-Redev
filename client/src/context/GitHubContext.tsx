@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 type GitHubContextType = {
   username: string | null;
@@ -21,6 +22,29 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem("gh_token"));
   const [repos, setRepos] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+
+  // On mount: load GitHub credentials from Supabase if user is logged in
+  useEffect(() => {
+    const loadFromSupabase = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("github_connections")
+        .select("github_username, github_token")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!error && data) {
+        setUsername(data.github_username);
+        setToken(data.github_token);
+        localStorage.setItem("gh_username", data.github_username);
+        localStorage.setItem("gh_token", data.github_token);
+      }
+    };
+
+    loadFromSupabase();
+  }, []);
 
   const isConnected = !!(username && token);
 
@@ -48,18 +72,49 @@ export const GitHubProvider = ({ children }: { children: React.ReactNode }) => {
     if (isConnected) fetchRepos();
   }, [isConnected]);
 
-  const connect = (user: string, tok: string) => {
+  const connect = async (user: string, tok: string) => {
     localStorage.setItem("gh_username", user);
     localStorage.setItem("gh_token", tok);
     setUsername(user);
     setToken(tok);
+
+    // Persist to Supabase
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { error } = await supabase
+          .from("github_connections")
+          .upsert({
+            user_id: authUser.id,
+            github_username: user,
+            github_token: tok,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id" });
+        if (error) console.error("Failed to save GitHub connection to Supabase:", error.message);
+      }
+    } catch (err) {
+      console.error("Supabase save error:", err);
+    }
   };
 
-  const disconnect = () => {
+  const disconnect = async () => {
     localStorage.removeItem("gh_username");
     localStorage.removeItem("gh_token");
     setUsername(null);
     setToken(null);
+
+    // Remove from Supabase
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await supabase
+          .from("github_connections")
+          .delete()
+          .eq("user_id", authUser.id);
+      }
+    } catch (err) {
+      console.error("Supabase delete error:", err);
+    }
   };
 
   const exportToGitHub = async (repoName: string, files: { path: string; content: string }[]) => {

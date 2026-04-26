@@ -121,7 +121,7 @@ const GitHubModal = ({ open, onClose }: Props) => {
         )}
 
         <div style={{ marginTop: "30px", fontSize: "0.75rem", color: "#333", textAlign: "center" }}>
-          Encrypted local storage only.
+          Saved securely to your account.
         </div>
       </div>
     </div>
