@@ -112,7 +112,7 @@ Do not use markdown blocks, do not add explanation. Only return pure JSON.`;
         format: "json",
         options: {
           num_predict: 8192,
-          num_ctx: 32768
+          num_ctx: 8192
         }
       },
       { timeout: AI_TIMEOUT_MS }
