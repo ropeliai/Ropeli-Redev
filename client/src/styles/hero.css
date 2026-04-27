@@ -642,6 +642,19 @@ body {
     color: #ffffff;
 }
 
+.app-type-icon {
+    font-size: 1rem;
+}
+
+.app-type-icon-item {
+    font-size: 1.2rem;
+    margin-right: 4px;
+}
+
+.app-type-dropdown {
+    width: 160px;
+}
+
 
 /* MOBILE */
 

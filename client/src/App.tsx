@@ -14,6 +14,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import GitHubIntegration from "./pages/GitHubIntegration";
 import DevelopersPlayground from "./pages/DevelopersPlayground";
+import AgentBuilder from "./pages/AgentBuilder";
 
 
 const App = () => {
@@ -26,6 +27,7 @@ const App = () => {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/integrations" element={<Integrations />} />
       <Route path="/builder" element={<Builder />} />
+      <Route path="/agent" element={<AgentBuilder />} />
       <Route path="/careers" element={<Careers />} />
       <Route path="/blog" element={<Blog />} />
       <Route path="/docs" element={<Docs />} />

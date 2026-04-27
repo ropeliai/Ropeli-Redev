@@ -101,9 +101,13 @@ const handleFigmaClick = () => {
   const handleBuild = () => {
     if (!text.trim()) return;
 
-    navigate("/builder", {
+    const targetRoute = selectedAppType.id === "ai-agent" ? "/agent" : "/builder";
+
+    navigate(targetRoute, {
       state: {
         autoPrompt: text,
+        model: selectedModel.id,
+        appType: selectedAppType.id,
       },
     });
   };
@@ -204,34 +208,51 @@ const MODELS = [
     id: "claude-sonnet",
     name: "Claude 4.5 Sonnet",
     desc: "200k Context",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg",
+    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg")}`,
   },
   {
     id: "claude-opus",
     name: "Claude 4.5 Opus",
     desc: "Anthropic’s most advanced model",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg",
+    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg")}`,
   },
   {
     id: "gemini",
     name: "Gemini Flash 2.5",
     desc: "Google’s fast multimodal model",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/640px-Google_Gemini_icon_2025.svg.png",
+    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/640px-Google_Gemini_icon_2025.svg.png")}`,
+
   },
   {
     id: "gpt",
     name: "GPT 5 Turbo",
     desc: "OpenAI’s latest model",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Tabler-icons_brand-openai.svg/640px-Tabler-icons_brand-openai.svg.png",
+    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Tabler-icons_brand-openai.svg/640px-Tabler-icons_brand-openai.svg.png")}`,
+
+  },
+];
+
+const APP_TYPES = [
+  {
+    id: "app",
+    name: "App",
+    icon: "📱",
+  },
+  {
+    id: "ai-agent",
+    name: "AI Agent",
+    icon: "🤖",
   },
 ];
 
 const [selectedModel, setSelectedModel] = useState(MODELS[0]);
-
-//const [selectedModel, setSelectedModel] = useState("Claude 4.5 Sonnet");
 const [modelOpen, setModelOpen] = useState(false);
 
-// Close model dropdown on outside click
+const [selectedAppType, setSelectedAppType] = useState(APP_TYPES[0]);
+const [appTypeOpen, setAppTypeOpen] = useState(false);
+const appTypeRef = useRef<HTMLDivElement | null>(null);
+
+// Close dropdowns on outside click
 useEffect(() => {
   const handleClickOutside = (event: MouseEvent) => {
     if (
@@ -241,13 +262,20 @@ useEffect(() => {
     ) {
       setModelOpen(false);
     }
+    if (
+      appTypeOpen &&
+      appTypeRef.current &&
+      !appTypeRef.current.contains(event.target as Node)
+    ) {
+      setAppTypeOpen(false);
+    }
   };
 
   document.addEventListener("mousedown", handleClickOutside);
   return () => {
     document.removeEventListener("mousedown", handleClickOutside);
   };
-}, [modelOpen]);
+}, [modelOpen, appTypeOpen]);
 
 
   /* ---------- MICROPHONE ---------- */
@@ -584,6 +612,35 @@ useEffect(() => {
                 <div className="model-text">
                 <div className="model-name">{model.name}</div>
                 <div className="model-desc">{model.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* APP TYPE SELECTOR */}
+    <div className="model-selector" ref={appTypeRef}>
+      <button className="model-btn" onClick={() => setAppTypeOpen((v) => !v)}>
+        <span className="app-type-icon">{selectedAppType.icon}</span>
+        {selectedAppType.name}
+        <span className="chevron">▾</span>
+      </button>
+
+      {appTypeOpen && (
+        <div className="model-dropdown app-type-dropdown">
+          {APP_TYPES.map((type) => (
+            <div
+              key={type.id}
+              className={`model-item ${type.id === selectedAppType.id ? "active" : ""}`}
+              onClick={() => {
+                setSelectedAppType(type);
+                setAppTypeOpen(false);
+              }}
+            >
+              <span className="app-type-icon-item">{type.icon}</span>
+              <div className="model-text">
+                <div className="model-name">{type.name}</div>
               </div>
             </div>
           ))}

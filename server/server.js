@@ -7,6 +7,7 @@ import paymentRoutes from "./payment.routes.js";
 import generateRoutes from "./generate_route.js";
 import ollamaRoutes from "./ollama_route.js";
 import expoRoutes from "./expo_route.js";
+import agentRoutes from "./agent_route.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "../.env") }); // Load from project root
@@ -27,6 +28,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/ollama", ollamaRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/expo", expoRoutes);
+app.use("/api/agent", agentRoutes);
 
 // GitHub Proxy to bypass COOP/COEP browser restrictions
 app.post("/api/github/proxy", async (req, res) => {
@@ -52,6 +54,22 @@ app.post("/api/github/proxy", async (req, res) => {
     } catch (error) {
         console.error("GitHub Proxy Error:", error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Image proxy to bypass COEP restrictions for external images
+app.get("/api/img-proxy", async (req, res) => {
+    const url = req.query.url;
+    if (!url) return res.status(400).send("Missing url param");
+    try {
+        const response = await fetch(decodeURIComponent(url));
+        const contentType = response.headers.get("content-type") || "image/png";
+        res.set("Content-Type", contentType);
+        res.set("Cross-Origin-Resource-Policy", "cross-origin");
+        const buffer = await response.arrayBuffer();
+        res.send(Buffer.from(buffer));
+    } catch (error) {
+        res.status(500).send("Proxy error: " + error.message);
     }
 });
 

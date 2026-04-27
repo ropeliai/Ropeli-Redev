@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useGitHub } from "../context/GitHubContext";
 import AuthModal from "./AuthModal";
 import GitHubModal from "./GitHubModal";
+import NodesCatalogModal from "./NodesCatalogModal";
 import "../styles/navbar.css";
 
 const Navbar = () => {
@@ -20,6 +21,7 @@ const Navbar = () => {
 
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   const profileRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -86,7 +88,17 @@ const Navbar = () => {
 
           {/* RIGHT SIDE */}
           <div className="nav-right">
-            <div className="nav-icons">
+          <div className="nav-icons">
+              {/* 🤖 AI Nodes Catalog Button */}
+              <button
+                className="nav-icon-btn"
+                title="AI Agent Nodes Catalog"
+                onClick={() => setCatalogOpen(true)}
+                style={{ fontSize: '20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px' }}
+              >
+                🤖
+              </button>
+
               <button 
                 className={`nav-icon-btn ${isGuest ? "disabled-btn" : ""} ${isConnected ? "connected" : ""}`} 
                 aria-disabled={isGuest}
@@ -100,7 +112,7 @@ const Navbar = () => {
                 }}
               >
                 <img 
-                  src="https://cdn.simpleicons.org/github" 
+                  src={`/api/img-proxy?url=${encodeURIComponent("https://cdn.simpleicons.org/github/ffffff")}`}
                   alt="GitHub" 
                   style={isConnected ? { filter: "brightness(0) saturate(100%) invert(80%) sepia(50%) saturate(1000%) hue-rotate(120deg)" } : {}}
                 />
@@ -260,6 +272,8 @@ const Navbar = () => {
   open={authModalOpen}
   onClose={() => setAuthModalOpen(false)}
 />
+      {/* ================= NODES CATALOG MODAL ================= */}
+      <NodesCatalogModal open={catalogOpen} onClose={() => setCatalogOpen(false)} />
     </>
   );
 };

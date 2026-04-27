@@ -13,6 +13,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import ChatPanel from "../components/builder/chat/ChatPanel";
 import { Terminal } from "../components/builder/Terminal";
+import AgentCanvas from "../components/builder/AgentCanvas";
 import { ChatMessage as ChatMessageType, ProjectConfig } from "../components/builder/chat/chat.types";
 import { useGitHub } from "../context/GitHubContext";
 import GitHubModal from "../components/GitHubModal";
@@ -155,12 +156,14 @@ const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 };
 
 
-const [activeTab, setActiveTab] = useState<"preview" | "code" | "terminal">("preview");
+const [activeTab, setActiveTab] = useState<"preview" | "code" | "terminal" | "agent">("preview");
 const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
 const [webContainerInstance, setWebContainerInstance] = useState<any>(null);
 const [shellProcess, setShellProcess] = useState<any>(null);
 const [hasCodeEdits, setHasCodeEdits] = useState(false);
 const [isRunningOnDevice, setIsRunningOnDevice] = useState(false);
+
+const [agentWorkflow, setAgentWorkflow] = useState<any>(null);
 
 
 // AUTO HIDE BUILDER LOADING AFTER 10s
@@ -199,7 +202,11 @@ useEffect(() => {
   const [expoQrUrl, setExpoQrUrl] = useState("");
   const [expoLoading, setExpoLoading] = useState(false);
   const [expoMetroReady, setExpoMetroReady] = useState(false);
-  const [buildType, setBuildType] = useState<"mobile" | "web">("mobile");
+  const [buildType, setBuildType] = useState<"mobile" | "web">(
+    location.state?.appType === "app" ? "web" : "mobile"
+  );
+  const [selectedModel, setSelectedModel] = useState(location.state?.model || "claude-sonnet");
+  const [selectedAppType, setSelectedAppType] = useState(location.state?.appType || "app");
   const [generationElapsed, setGenerationElapsed] = useState(0);
   const generationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [generatedProjectName, setGeneratedProjectName] = useState("");
@@ -399,27 +406,57 @@ const handleSend = async (overridePrompt?: string) => {
   if (!overridePrompt) setPrompt("");
 
   try {
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: userPrompt,
-        type: buildType,
-        existingFiles: generatedFiles.length ? generatedFiles : undefined,
-      }),
-    });
+    let result;
+    if (selectedAppType === "ai-agent") {
+      // Logic for AI Agent generation
+      setActiveTab("agent");
+      const response = await fetch("/api/agent/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: userPrompt }),
+      });
+      result = await response.json();
 
-    const result = await response.json();
-    if (result?.success) {
-      const files = Array.isArray(result.files)
-        ? result.files.map((f: any) => ({ path: f.path, content: f.content }))
-        : [];
+      if (result?.success && result.workflow) {
+        setAgentWorkflow(result.workflow);
+        setGeneratedProjectName(slugify(userPrompt));
+        
+        setMessages((prev) => [
+          ...prev.filter((m) => m.kind !== "thinking"),
+          {
+            kind: "text",
+            role: "assistant",
+            content: `✅ Agent workflow generated: ${slugify(userPrompt)}. Check the agent canvas.`,
+          },
+        ]);
+      } else {
+        throw new Error("Workflow generation failed.");
+      }
+    } else {
+      // Existing App logic
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: userPrompt,
+          type: buildType,
+          model: selectedModel,
+          appType: selectedAppType,
+          existingFiles: generatedFiles.length ? generatedFiles : undefined,
+        }),
+      });
 
-      setGeneratedFiles(files);
-      setSelectedFile(files[0]?.path || "");
-      setCode(files[0]?.content || "");
-      setHasCodeEdits(false);
-      setGeneratedProjectName(result.project_name || slugify(userPrompt));
+      result = await response.json();
+      if (result?.success) {
+        const files = Array.isArray(result.files)
+          ? result.files.map((f: any) => ({ path: f.path, content: f.content }))
+          : [];
+
+        setGeneratedFiles(files);
+        setSelectedFile(files[0]?.path || "");
+        setCode(files[0]?.content || "");
+        setHasCodeEdits(false);
+        setGeneratedProjectName(result.project_name || slugify(userPrompt));
 
       const projectIdToUse = existingGeneratedProjectId || slugify(userPrompt);
 
@@ -489,19 +526,20 @@ const handleSend = async (overridePrompt?: string) => {
         }
       }
 
-      setMessages((prev) => [
-        ...prev.filter((m) => m.kind !== "thinking"),
-        {
-          kind: "text",
-          role: "assistant",
-          content: `✅ App generated: ${result.project_name || slugify(userPrompt)}. Scan the QR code to preview.`,
-        },
-      ]);
-    } else {
-      setMessages((prev) => [
-        ...prev.filter((m) => m.kind !== "thinking"),
-        { kind: "text", role: "assistant", content: "❌ Generation failed. Please try again." },
-      ]);
+        setMessages((prev) => [
+          ...prev.filter((m) => m.kind !== "thinking"),
+          {
+            kind: "text",
+            role: "assistant",
+            content: `✅ App generated: ${result.project_name || slugify(userPrompt)}. Scan the QR code to preview.`,
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev.filter((m) => m.kind !== "thinking"),
+          { kind: "text", role: "assistant", content: "❌ Generation failed. Please try again." },
+        ]);
+      }
     }
   } catch (error) {
     console.error(error);
@@ -907,17 +945,26 @@ useEffect(() => {
       {/* CENTER (DESKTOP ONLY) */}
       <div className="topbar-center desktop-only">
         <div className="builder-top-tabs">
+          {selectedAppType === "ai-agent" ? (
+            <button
+              className={activeTab === "agent" ? "active" : ""}
+              onClick={() => setActiveTab("agent")}
+            >
+              Workflow
+            </button>
+          ) : (
+            <button
+              className={activeTab === "preview" ? "active" : ""}
+              onClick={() => setActiveTab("preview")}
+            >
+              Preview
+            </button>
+          )}
           <button
             className={activeTab === "code" ? "active" : ""}
             onClick={() => setActiveTab("code")}
           >
             Code
-          </button>
-          <button
-            className={activeTab === "preview" ? "active" : ""}
-            onClick={() => setActiveTab("preview")}
-          >
-            Preview
           </button>
           <button
             className={activeTab === "terminal" ? "active" : ""}
@@ -1226,7 +1273,13 @@ useEffect(() => {
     </div>
   ) : (
     <>
-        {activeTab === "preview" && (
+        {/* ACTIVE TAB CONTENT */}
+        <div className="tab-content" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          {activeTab === "agent" && (
+            <AgentCanvas workflow={agentWorkflow} />
+          )}
+
+          {activeTab === "preview" && (
   <div className={`preview-panel ${previewSize}`}>
       <div className="preview-content" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         
@@ -1401,6 +1454,7 @@ useEffect(() => {
             <Terminal onTerminalReady={handleTerminalReady} />
           </div>
         )}
+        </div>
     </>
   )}
     </div>
