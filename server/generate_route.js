@@ -4,13 +4,6 @@ import OpenAI from "openai";
 
 const router = express.Router();
 
-const USE_OPENAI = process.env.USE_OPENAI === "true";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:3b";
-// Increased timeout from 600s to 1200s (20 minutes) for large model responses
-const AI_TIMEOUT_MS = parseInt(process.env.AI_TIMEOUT_MS || "1200000", 10);
-
 const BANNED_MOBILE = [
   "localStorage",
   "sessionStorage",
@@ -63,6 +56,7 @@ function deriveProjectNameFromPrompt(prompt) {
 }
 
 async function callOpenAI(prompt) {
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
   const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
   const systemPrompt = `You are a professional code generator. 
@@ -103,6 +97,10 @@ Output ONLY a raw JSON object with the following structure:
   }
 }
 Do not use markdown blocks, do not add explanation. Only return pure JSON.`;
+
+  const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434";
+  const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:3b";
+  const AI_TIMEOUT_MS = parseInt(process.env.AI_TIMEOUT_MS || "1200000", 10);
 
   try {
     const response = await axios.post(
@@ -180,6 +178,9 @@ router.post("/", async (req, res) => {
     }
 
     let response;
+    const USE_OPENAI = process.env.USE_OPENAI === "true";
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
     if (USE_OPENAI && OPENAI_API_KEY) {
       console.log("Calling OpenAI (gpt-4o)...");
       response = await callOpenAI(aiPrompt);
@@ -205,6 +206,7 @@ router.post("/", async (req, res) => {
         const correctionPrompt = `${nativeInstruction}\n\nCRITICAL FIX: Rewrite the app so it runs in Expo Go with React Native only. Use @react-native-async-storage/async-storage.\n\nUser request: ${trimmedPrompt}\n\nCurrent broken files:\n\n${badCtx}\n\nReturn complete fixed files in JSON format.`;
 
         try {
+          const USE_OPENAI = process.env.USE_OPENAI === "true";
           const fixResp = USE_OPENAI ? await callOpenAI(correctionPrompt) : await callOllama(correctionPrompt);
           const fixedFiles = fixResp?.data?.data?.files;
           if (Array.isArray(fixedFiles)) files = sanitizeMobileFiles(fixedFiles);
