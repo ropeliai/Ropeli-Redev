@@ -9,10 +9,31 @@ const RUNNING_PROCESSES = new Map();
 const EXPO_STATE = new Map();
 const START_TIMEOUT_MS = 180000;
 
+/** Expo SDK 54 (matches Expo Go store / client ~54.x); see expo@54 bundledNativeModules.json */
+const SDK_54 = {
+  expo: "~54.0.0",
+  "expo-status-bar": "~3.0.8",
+  react: "19.1.0",
+  "react-native": "0.81.4",
+  "@react-native-async-storage/async-storage": "2.2.0",
+  "react-native-safe-area-context": "~5.6.0",
+  "react-native-screens": "~4.16.0",
+  "react-native-gesture-handler": "~2.28.0",
+  "@react-navigation/native": "^7.0.14",
+  "@react-navigation/native-stack": "^7.3.10",
+};
+
+/** 1x1 transparent PNG so Metro / icon paths resolve (replace with real art in app). */
+const TINY_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKsjgQAAAABJRU5ErkJggg==",
+  "base64"
+);
+
 const SPAWN_ENV = {
   ...process.env,
   EXPO_NO_PROMPTS: "1",
-  CI: "0",
+  // Non-interactive CLIs (Expo / npm prompts)
+  CI: "1",
   NODE_ENV: "development",
 };
 
@@ -48,6 +69,22 @@ function sleep(ms) {
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+/** Ensures `assets/` exists with files referenced by app.json (avoids Metro ENOENT on scandir). */
+function ensureProjectAssets(rootDir) {
+  const assets = path.join(rootDir, "assets");
+  ensureDir(assets);
+  const writeIfMissing = (name) => {
+    const p = path.join(assets, name);
+    if (!fs.existsSync(p)) fs.writeFileSync(p, TINY_PNG);
+  };
+  writeIfMissing("icon.png");
+  writeIfMissing("splash-icon.png");
+}
+
+function hasPkg(dir, relPath) {
+  return fs.existsSync(path.join(dir, relPath));
 }
 
 function writeFiles(projectDir, files) {
@@ -100,44 +137,75 @@ function writeManifest(projectDir, safeId, files) {
   );
 }
 
+function npmInstall(cwd, label) {
+  console.log(`[expo] npm install (${label})...`);
+  execSync("npm install --legacy-peer-deps", {
+    cwd,
+    stdio: "inherit",
+    timeout: 300000,
+    env: SPAWN_ENV,
+  });
+}
+
+/**
+ * Base template: used as source for each generated project.
+ * Includes @expo/ngrok in devDependencies so `expo start --tunnel` does not
+ * prompt to install it globally (non-interactive on Render/CI).
+ */
 function ensureBaseProject() {
   ensureDir(BASE_PROJECT);
 
   const pkgPath = path.join(BASE_PROJECT, "package.json");
-  if (!fs.existsSync(pkgPath)) {
-    console.log("[expo] Creating base Expo project...");
+  let needsBaseNpmForSdk = false;
+
+  const writeBasePackage = () => {
     const pkg = {
       name: "ropeli-base",
       version: "1.0.0",
       main: "node_modules/expo/AppEntry.js",
-      scripts: { start: "expo start", android: "expo start --android", ios: "expo start --ios" },
-      dependencies: {
-        "expo": "~55.0.0",
-        "expo-status-bar": "~2.2.3",
-        "react": "18.3.2",
-        "react-native": "0.79.2",
-        "@react-native-async-storage/async-storage": "2.1.2",
-        "react-native-safe-area-context": "5.4.0",
-        "react-native-screens": "~4.10.0",
-        "@react-navigation/native": "^7.0.14",
-        "@react-navigation/native-stack": "^7.3.10",
+      scripts: {
+        start: "expo start",
+        android: "expo start --android",
+        ios: "expo start --ios",
       },
+      dependencies: { ...SDK_54 },
       devDependencies: {
         "@babel/core": "^7.20.0",
+        "@expo/ngrok": "^4.1.0",
       },
     };
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), "utf8");
+  };
 
-    fs.writeFileSync(path.join(BASE_PROJECT, "app.json"), JSON.stringify({
-      expo: {
-        name: "RopeliApp",
-        slug: "ropeli-app",
-        version: "1.0.0",
-        orientation: "portrait",
-        platforms: ["ios", "android"],
-        sdkVersion: "55.0.0",
-      },
-    }, null, 2), "utf8");
+  if (!fs.existsSync(pkgPath)) {
+    console.log("[expo] Creating base Expo project...");
+    writeBasePackage();
+
+    fs.writeFileSync(
+      path.join(BASE_PROJECT, "app.json"),
+      JSON.stringify(
+        {
+          expo: {
+            name: "RopeliApp",
+            slug: "ropeli-app",
+            version: "1.0.0",
+            orientation: "portrait",
+            icon: "./assets/icon.png",
+            splash: {
+              image: "./assets/splash-icon.png",
+              resizeMode: "contain",
+              backgroundColor: "#ffffff",
+            },
+            platforms: ["ios", "android"],
+            sdkVersion: "54.0.0",
+          },
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+    ensureProjectAssets(BASE_PROJECT);
 
     fs.writeFileSync(path.join(BASE_PROJECT, "App.js"),
       `import React from 'react';\nimport { View, Text } from 'react-native';\nexport default function App() {\n  return <View><Text>Loading...</Text></View>;\n}\n`,
@@ -148,19 +216,146 @@ function ensureBaseProject() {
       `module.exports = function(api) {\n  api.cache(true);\n  return { presets: ['babel-preset-expo'] };\n};\n`,
       "utf8"
     );
-
-    console.log("[expo] Installing base Expo project dependencies (this takes a while first time)...");
+  } else {
+    const firstVer = (s) => {
+      const m = String(s).match(/(\d+)/);
+      return m ? parseInt(m[1], 10) : 0;
+    };
     try {
-      execSync("npm install --legacy-peer-deps", {
-        cwd: BASE_PROJECT,
-        stdio: "inherit",
-        timeout: 120000,
-        env: SPAWN_ENV,
-      });
-      console.log("[expo] Base project dependencies installed.");
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+      let changed = false;
+      if (!pkg.dependencies) pkg.dependencies = {};
+      const expoDep = String(pkg.dependencies.expo || "");
+      if (firstVer(expoDep) !== 54) {
+        console.log("[expo] Aligning base template to Expo SDK 54 (Expo Go compatible)...");
+        Object.assign(pkg.dependencies, SDK_54);
+        needsBaseNpmForSdk = true;
+        changed = true;
+      }
+      if (pkg?.dependencies?.react === "18.3.2") {
+        console.log("[expo] Repairing invalid react version in base package...");
+        pkg.dependencies.react = "19.1.0";
+        changed = true;
+      }
+      if (!pkg.devDependencies) pkg.devDependencies = {};
+      if (!pkg.devDependencies["@expo/ngrok"]) {
+        console.log("[expo] Adding @expo/ngrok to base devDependencies (tunnel)...");
+        pkg.devDependencies["@expo/ngrok"] = "^4.1.0";
+        changed = true;
+      }
+      if (changed) {
+        fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), "utf8");
+      }
     } catch (e) {
-      console.error("[expo] npm install failed:", e.message);
+      console.warn("[expo] Could not patch base package.json:", e.message);
     }
+    const appPath = path.join(BASE_PROJECT, "app.json");
+    try {
+      if (fs.existsSync(appPath)) {
+        const app = JSON.parse(fs.readFileSync(appPath, "utf8"));
+        const ex = app.expo || (app.expo = {});
+        const sv = String(ex.sdkVersion || "");
+        if (firstVer(sv) !== 54) {
+          console.log("[expo] Setting app.json sdkVersion to 54.0.0...");
+          ex.sdkVersion = "54.0.0";
+        }
+        if (!ex.icon) ex.icon = "./assets/icon.png";
+        if (!ex.splash) {
+          ex.splash = {
+            image: "./assets/splash-icon.png",
+            resizeMode: "contain",
+            backgroundColor: "#ffffff",
+          };
+        }
+        fs.writeFileSync(appPath, JSON.stringify(app, null, 2), "utf8");
+      }
+    } catch (e) {
+      console.warn("[expo] Could not patch base app.json:", e.message);
+    }
+  }
+
+  ensureProjectAssets(BASE_PROJECT);
+
+  if (needsBaseNpmForSdk) {
+    npmInstall(BASE_PROJECT, "base template (Expo SDK 54 align)");
+  }
+
+  const reactNativeInBase = hasPkg(BASE_PROJECT, path.join("node_modules", "react-native", "package.json"));
+  const ngrokInBase = hasPkg(BASE_PROJECT, path.join("node_modules", "@expo", "ngrok", "package.json"));
+  if (!reactNativeInBase || !ngrokInBase) {
+    npmInstall(BASE_PROJECT, "base template");
+  }
+
+  if (!hasPkg(BASE_PROJECT, path.join("node_modules", "react-native", "package.json"))) {
+    throw new Error(
+      "[expo] Base preflight failed: react-native is missing after npm install. Check network, npm registry, and disk space."
+    );
+  }
+}
+
+/**
+ * Ensure projectDir has resolvable node_modules (symlink to base, or npm install).
+ */
+function ensureProjectNodeModules(projectDir) {
+  const baseModules = path.join(BASE_PROJECT, "node_modules");
+  const projModules = path.join(projectDir, "node_modules");
+  const rn = path.join(projModules, "react-native", "package.json");
+  const expoPkg = path.join(projModules, "expo", "package.json");
+
+  function coreDepsOk() {
+    return fs.existsSync(rn) && fs.existsSync(expoPkg);
+  }
+
+  if (coreDepsOk()) {
+    console.log("[expo] Preflight: node_modules OK in project.");
+    return;
+  }
+
+  if (!fs.existsSync(baseModules)) {
+    throw new Error(
+      "[expo] Preflight: base node_modules missing. ensureBaseProject() should run first."
+    );
+  }
+
+  if (!fs.existsSync(projModules)) {
+    try {
+      fs.symlinkSync(baseModules, projModules, "dir");
+      console.log("[expo] Preflight: node_modules symlinked from base -> project");
+    } catch (e) {
+      console.warn(
+        "[expo] Preflight: symlink node_modules failed:",
+        e.message,
+        "— will run npm install in project"
+      );
+    }
+  }
+
+  if (!coreDepsOk()) {
+    if (fs.existsSync(projModules) && isSymlink(projModules)) {
+      try {
+        fs.unlinkSync(projModules);
+        console.log("[expo] Preflight: removed broken/incomplete node_modules symlink");
+      } catch (e) {
+        console.warn("[expo] Preflight: could not remove symlink:", e.message);
+      }
+    }
+    npmInstall(projectDir, "project (deps required for Metro)");
+  }
+
+  if (!coreDepsOk()) {
+    throw new Error(
+      "[expo] Preflight failed: react-native and/or expo missing after install. " +
+        `Project: ${projectDir}. Check npm registry, disk space, and that BASE_PROJECT has a successful npm install.`
+    );
+  }
+  console.log("[expo] Preflight: react-native + expo resolved.");
+}
+
+function isSymlink(p) {
+  try {
+    return fs.lstatSync(p).isSymbolicLink();
+  } catch {
+    return false;
   }
 }
 
@@ -179,18 +374,10 @@ export async function startExpo(projectId, files) {
   copyDirRecursive(BASE_PROJECT, projectDir);
   console.log("[expo] Base project copied");
 
-  const baseModules = path.join(BASE_PROJECT, "node_modules");
-  const projModules = path.join(projectDir, "node_modules");
-  if (fs.existsSync(baseModules) && !fs.existsSync(projModules)) {
-    try {
-      fs.symlinkSync(baseModules, projModules, "dir");
-      console.log("[expo] node_modules symlinked from base");
-    } catch {
-      console.log("[expo] Symlink failed — using base node_modules directly");
-    }
-  }
+  ensureProjectNodeModules(projectDir);
 
   writeFiles(projectDir, files || []);
+  ensureProjectAssets(projectDir);
   writeManifest(projectDir, safeId, files || []);
 
   const localIP = getLocalIP();
@@ -201,7 +388,7 @@ export async function startExpo(projectId, files) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       "npx",
-      ["--yes", "expo@55.0.0", "start", "--tunnel"],
+      ["--yes", "expo@54.0.17", "start", "--tunnel"],
       {
         cwd: projectDir,
         shell: true,
@@ -295,7 +482,17 @@ export async function startExpo(projectId, files) {
       const state = EXPO_STATE.get(safeId);
       if (state) state.running = false;
       if (!settled) {
-        finish(() => reject(new Error(`Expo exited with code ${code}\n${fullOutput.slice(-1500)}`)));
+        const hint =
+          /non-interactive|ngrok|Could not resolve react-native/i.test(fullOutput)
+            ? " If you see ngrok or react-native errors, clear EXPO_BASE_DIR cache or let preflight re-run npm install; ensure Render has outbound network for tunnels."
+            : "";
+        finish(() =>
+          reject(
+            new Error(
+              `Expo exited with code ${code}. Last output:\n${fullOutput.slice(-2000)}${hint}`
+            )
+          )
+        );
       }
     });
   });

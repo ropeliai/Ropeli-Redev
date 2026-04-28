@@ -115,6 +115,7 @@ const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 const [activeTab, setActiveTab] = useState<"preview" | "code">("preview");
 const [hasCodeEdits, setHasCodeEdits] = useState(false);
 const [isRunningOnDevice, setIsRunningOnDevice] = useState(false);
+const [fileSearch, setFileSearch] = useState("");
 
 
 // AUTO HIDE BUILDER LOADING AFTER 10s
@@ -702,6 +703,15 @@ useEffect(() => {
     }, {})
   ).map(([folder, files]) => ({ folder, files }));
 
+  const filteredGroupedFiles = groupedFiles
+    .map(({ folder, files }) => ({
+      folder,
+      files: files.filter((file) =>
+        file.path.toLowerCase().includes(fileSearch.toLowerCase())
+      ),
+    }))
+    .filter(({ files }) => files.length > 0);
+
   const sandpackFiles = generatedFiles.reduce((acc, f) => {
     acc[`/${f.path}`] = { code: f.content };
     return acc;
@@ -1001,9 +1011,17 @@ useEffect(() => {
           <div className="code-panel">
             <div className="code-explorer">
               <div className="explorer-header">Files</div>
+              <div className="explorer-toolbar">
+                <input
+                  className="explorer-search"
+                  value={fileSearch}
+                  onChange={(e) => setFileSearch(e.target.value)}
+                  placeholder="Search files..."
+                />
+              </div>
               <div className="file-tree-vertical">
                 {generatedFiles.length === 0 && <div className="file-empty">No files yet</div>}
-                {groupedFiles.map(({ folder, files }) => (
+                {filteredGroupedFiles.map(({ folder, files }) => (
                   <div key={folder || "root"}>
                     {folder && <div className="file-folder-row">📁 {folder}</div>}
                     {files.map((file) => (
@@ -1213,6 +1231,38 @@ useEffect(() => {
   {mobileView === "code" && (
     <div className="builder-right">
       <div className="code-panel">
+        <div className="code-explorer mobile-code-explorer">
+          <div className="explorer-header">Files</div>
+          <div className="explorer-toolbar">
+            <input
+              className="explorer-search"
+              value={fileSearch}
+              onChange={(e) => setFileSearch(e.target.value)}
+              placeholder="Search files..."
+            />
+          </div>
+          <div className="file-tree-vertical">
+            {generatedFiles.length === 0 && <div className="file-empty">No files yet</div>}
+            {filteredGroupedFiles.map(({ folder, files }) => (
+              <div key={folder || "root"}>
+                {folder && <div className="file-folder-row">📁 {folder}</div>}
+                {files.map((file) => (
+                  <button
+                    key={file.path}
+                    className={`file-row ${file.path === selectedFile ? "active" : ""}`}
+                    onClick={() => {
+                      setSelectedFile(file.path);
+                      setCode(file.content);
+                    }}
+                  >
+                    <span className="file-icon">📄</span>
+                    <span className="file-name">{file.path}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="code-editor">
           <div className="editor-header">
             <div className="editor-header-left">

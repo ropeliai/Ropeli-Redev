@@ -631,6 +631,27 @@
     border-bottom: 1px solid #111;
 }
 
+.explorer-toolbar {
+    padding: 8px;
+    border-bottom: 1px solid #111;
+}
+
+.explorer-search {
+    width: 100%;
+    background: #111;
+    color: #ddd;
+    border: 1px solid #212121;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    outline: none;
+}
+
+.explorer-search:focus {
+    border-color: #5ef2e4;
+    box-shadow: 0 0 0 1px rgba(94, 242, 228, 0.25);
+}
+
 .file-tree {
     padding: 8px;
     overflow-y: auto;
@@ -668,6 +689,12 @@
 
 .file-row.active {
     background: rgba(94, 242, 228, 0.2);
+}
+
+.file-empty {
+    color: #8f8f8f;
+    font-size: 12px;
+    padding: 10px 12px;
 }
 
 .file-icon {
@@ -1042,6 +1069,20 @@
     }
     .builder-right {
         margin: 0;
+    }
+    .code-panel {
+        flex-direction: column;
+        margin: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    .mobile-code-explorer {
+        width: 100%;
+        min-height: 160px;
+        max-height: 220px;
+        border-right: none;
+        border-bottom: 1px solid #111;
     }
     .chat-area {
         padding: 16px;
