@@ -1,16 +1,17 @@
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: join(__dirname, "../.env") }); // Load from project root early
+
+import express from "express";
+import cors from "cors";
 import paymentRoutes from "./payment.routes.js";
 import generateRoutes from "./generate_route.js";
 import ollamaRoutes from "./ollama_route.js";
 import expoRoutes from "./expo_route.js";
 import agentRoutes from "./agent_route.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: join(__dirname, "../.env") }); // Load from project root
 
 const app = express();
 

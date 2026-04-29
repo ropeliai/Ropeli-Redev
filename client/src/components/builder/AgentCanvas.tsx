@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -13,63 +13,218 @@ import {
   ReactFlowProvider,
   useReactFlow
 } from '@xyflow/react';
+import {
+  Zap, Webhook, Clock, MousePointerClick, AlertTriangle, Globe,
+  Settings2, GitBranch, Shuffle, GitMerge, GitFork, RefreshCw,
+  Terminal, FileText, FilePen, Package, X, Search, Play
+} from "lucide-react";
 import '@xyflow/react/dist/style.css';
+import { BRAND_SVGS } from "../../brandIcons";
 
-// --- CUSTOM NODE COMPONENTS ---
-const icons: Record<string, string> = {
-  // Core / Triggers
-  trigger: '⚡', webhook: '🪝', schedule: '⏱️', manual: '👆', error: '⚠️', http: '🌐', set: '📝', if: '⚖️', switch: '🔀', merge: '⏬', split: '⏫', loop: '🔁', execute: '💻', read: '📖', write: '✏️',
-  
-  // AI & ML
-  openai: '🧠', claude: '🤖', gemini: '✨', ollama: '🦙', huggingface: '🤗', mistral: '🌪️', cohere: '⚛️', pinecone: '🌲', qdrant: '🎯', milvus: '🗄️', elevenlabs: '🎙️', midjourney: '🎨', dalle: '🖼️', stablediffusion: '🌌', replicate: '🧬', aws_textract: '📄', google_vision: '👁️',
-  
-  // Social Media
-  instagram: '📸', facebook: '📘', twitter: '🐦', linkedin: '💼', tiktok: '🎵', pinterest: '📌', youtube: '▶️', reddit: '👽', discord: '👾', snapchat: '👻', telegram: '✈️', whatsapp: '💬', slack: '💬', twitch: '🎮',
-  
-  // Communication & Email
-  gmail: '📧', outlook: '📨', sendgrid: '📮', mailchimp: '🐵', twilio: '📱', postmark: '📫', activecampaign: '🎯', customerio: '👥', klaviyo: '📈', intercom: '🎧', zendesk: '🤝', freshdesk: '🎫',
-  
-  // Data & Databases
-  mysql: '🐬', postgresql: '🐘', mongodb: '🍃', redis: '⚡', supabase: '🟢', firebase: '🔥', snowflake: '❄️', bigquery: '🔍', aws_s3: '🪣', airtable: '📊', notion: '📓', google_sheets: '📗', excel: '📊', dynamodb: '⚡', elasticsearch: '🔎',
-  
-  // CRM & Sales
-  salesforce: '☁️', hubspot: '🟠', pipedrive: '🚀', zoho: '🏢', monday: '📅', clickup: '✅', asana: '🎯', trello: '📋', jira: '🛠️', linear: '📈', stripe: '💳', paypal: '💰', square: '⬛', shopify: '🛍️', woocommerce: '🛒',
-  
-  // Marketing & Analytics
-  google_analytics: '📈', mixpanel: '📊', amplitude: '📉', segment: '🧩', facebook_ads: '📢', google_ads: '🎯', linkedin_ads: '👔', tiktok_ads: '📱', hotjar: '🔥', mailgun: '🔫', typeform: '📝', typebot: '🤖',
-  
-  // Developer Tools
-  github: '🐙', gitlab: '🦊', bitbucket: '🪣', docker: '🐳', aws_ec2: '☁️', vercel: '▲', netlify: '🌐', cloudflare: '☁️', datadog: '🐶', sentry: '🚨', pagerduty: '📟', grafana: '📊',
+// ─── ICON MAPPING (Synchronized with Catalog) ───────────────────────────────
 
-  action: '⚙️',
-  default: '📦'
+const LUCIDE_ICONS: Record<string, React.FC<{ size?: number; color?: string; strokeWidth?: number }>> = {
+  trigger: Zap,
+  webhook: Webhook,
+  schedule: Clock,
+  manual: MousePointerClick,
+  error: AlertTriangle,
+  http: Globe,
+  set: Settings2,
+  if: GitBranch,
+  switch: Shuffle,
+  merge: GitMerge,
+  split: GitFork,
+  loop: RefreshCw,
+  execute: Terminal,
+  read: FileText,
+  write: FilePen,
 };
 
+const BRAND_ICONS: Record<string, string> = {
+  openai: "openai",
+  claude: "anthropic",
+  gemini: "googlegemini",
+  ollama: "ollama",
+  huggingface: "huggingface",
+  mistral: "mistral",
+  cohere: "cohere",
+  pinecone: "pinecone",
+  qdrant: "qdrant",
+  milvus: "milvus",
+  elevenlabs: "elevenlabs",
+  midjourney: "midjourney",
+  dalle: "openai",
+  stablediffusion: "stability",
+  replicate: "replicate",
+  aws_textract: "amazonaws",
+  google_vision: "googlecloud",
+  instagram: "instagram",
+  facebook: "facebook",
+  twitter: "x",
+  linkedin: "linkedin",
+  tiktok: "tiktok",
+  pinterest: "pinterest",
+  youtube: "youtube",
+  reddit: "reddit",
+  discord: "discord",
+  snapchat: "snapchat",
+  telegram: "telegram",
+  whatsapp: "whatsapp",
+  slack: "slack",
+  twitch: "twitch",
+  gmail: "gmail",
+  outlook: "microsoftoutlook",
+  sendgrid: "sendgrid",
+  mailchimp: "mailchimp",
+  twilio: "twilio",
+  postmark: "postmark",
+  activecampaign: "activecampaign",
+  customerio: "customerio",
+  klaviyo: "klaviyo",
+  intercom: "intercom",
+  zendesk: "zendesk",
+  freshdesk: "freshdesk",
+  mysql: "mysql",
+  postgresql: "postgresql",
+  mongodb: "mongodb",
+  redis: "redis",
+  supabase: "supabase",
+  firebase: "firebase",
+  snowflake: "snowflake",
+  bigquery: "googlebigquery",
+  aws_s3: "amazons3",
+  airtable: "airtable",
+  notion: "notion",
+  google_sheets: "googlesheets",
+  excel: "microsoftexcel",
+  dynamodb: "amazondynamodb",
+  elasticsearch: "elasticsearch",
+  salesforce: "salesforce",
+  hubspot: "hubspot",
+  pipedrive: "pipedrive",
+  zoho: "zoho",
+  monday: "monday",
+  clickup: "clickup",
+  asana: "asana",
+  trello: "trello",
+  jira: "jira",
+  linear: "linear",
+  stripe: "stripe",
+  paypal: "paypal",
+  square: "square",
+  shopify: "shopify",
+  woocommerce: "woocommerce",
+  google_analytics: "googleanalytics",
+  mixpanel: "mixpanel",
+  amplitude: "amplitude",
+  segment: "segment",
+  facebook_ads: "facebook",
+  google_ads: "googleads",
+  linkedin_ads: "linkedin",
+  tiktok_ads: "tiktok",
+  hotjar: "hotjar",
+  mailgun: "mailgun",
+  typeform: "typeform",
+  typebot: "typebot",
+  github: "github",
+  gitlab: "gitlab",
+  bitbucket: "bitbucket",
+  docker: "docker",
+  aws_ec2: "amazonec2",
+  vercel: "vercel",
+  netlify: "netlify",
+  cloudflare: "cloudflare",
+  datadog: "datadog",
+  sentry: "sentry",
+  pagerduty: "pagerduty",
+  grafana: "grafana",
+};
+
+// ─── ICON RENDERER ───────────────────────────────────────────────────────────
+
+const NodeIcon = ({ type, size = 20, color = "#5ef2e4" }: { type: string; size?: number; color?: string }) => {
+  const LucideIcon = LUCIDE_ICONS[type];
+  const brandSvgPath = BRAND_SVGS[type];
+
+  if (LucideIcon) {
+    return <LucideIcon size={size} color={color} strokeWidth={2} />;
+  }
+
+  if (brandSvgPath) {
+    return (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        fill="#ffffff"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ display: "block" }}
+      >
+        <title>{type}</title>
+        <path d={brandSvgPath} />
+      </svg>
+    );
+  }
+
+  return <Package size={size} color={color} strokeWidth={2} />;
+};
+
+// --- CUSTOM NODE COMPONENTS ---
+
 const CustomNode = ({ data, isConnectable }: any) => {
-  const icon = icons[data.type] || icons.default;
+  const accentColor = "#5ef2e4";
+  
   return (
-    <div style={{
-      background: '#1a192b',
-      border: '1px solid #3a395b',
-      borderRadius: '8px',
-      padding: '12px 16px',
+    <div className="custom-agent-node" style={{
+      background: 'rgba(20, 20, 31, 0.85)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: `1px solid rgba(94, 242, 228, 0.2)`,
+      borderRadius: '16px',
+      padding: '16px 20px',
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
-      minWidth: '220px',
+      gap: '16px',
+      minWidth: '260px',
       color: '#fff',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-      fontFamily: 'Inter, sans-serif'
+      boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+      fontFamily: 'Inter, sans-serif',
+      position: 'relative',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     }}>
-      <Handle type="target" position={Position.Left} isConnectable={isConnectable} style={{ background: '#5ef2e4', width: '8px', height: '8px', border: 'none' }} />
-      <div style={{ fontSize: '24px', background: '#2a293b', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {icon}
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        isConnectable={isConnectable} 
+        style={{ background: accentColor, width: '12px', height: '12px', border: '3px solid #14141f', left: '-6px' }} 
+      />
+      
+      <div style={{ 
+        background: 'linear-gradient(135deg, rgba(26,26,46,0.9) 0%, rgba(15,15,25,0.9) 100%)', 
+        padding: '12px', 
+        borderRadius: '12px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        border: '1px solid rgba(255,255,255,0.05)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+      }}>
+        <NodeIcon type={data.type} size={26} color={accentColor} />
       </div>
-      <div>
-        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#eaeaea' }}>{data.label}</div>
-        <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', marginTop: '2px' }}>{data.type}</div>
+
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: '16px', fontWeight: 600, color: '#fff', marginBottom: '4px', letterSpacing: '-0.3px' }}>{data.label}</div>
+        <div style={{ fontSize: '11px', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.8px', opacity: 0.9, fontWeight: 500 }}>{data.type}</div>
       </div>
-      <Handle type="source" position={Position.Right} isConnectable={isConnectable} style={{ background: '#5ef2e4', width: '8px', height: '8px', border: 'none' }} />
+
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        isConnectable={isConnectable} 
+        style={{ background: accentColor, width: '12px', height: '12px', border: '3px solid #14141f', right: '-6px' }} 
+      />
     </div>
   );
 };
@@ -80,7 +235,7 @@ const nodeTypes = {
 
 // --- SIDEBAR COMPONENT ---
 const Sidebar = () => {
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useState('');
   
   const onDragStart = (event: React.DragEvent, nodeType: string, label: string) => {
     event.dataTransfer.setData('application/reactflow', JSON.stringify({ type: nodeType, label }));
@@ -161,60 +316,80 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside style={{ width: '280px', background: '#111', borderRight: '1px solid #222', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
-      <h3 style={{ margin: '0', fontSize: '15px', color: '#fff', fontWeight: 'bold' }}>Available Nodes</h3>
-      <div style={{ fontSize: '12px', color: '#666' }}>Drag and drop nodes to the canvas</div>
+    <aside style={{ width: '300px', background: '#0a0a0f', borderRight: '1px solid #1e1e2e', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
+      <div style={{ marginBottom: '4px' }}>
+        <h3 style={{ margin: '0', fontSize: '18px', color: '#fff', fontWeight: 'bold', letterSpacing: '-0.3px' }}>Nodes Library</h3>
+        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>Drag nodes onto the canvas</p>
+      </div>
       
-      <input 
-        type="text" 
-        placeholder="Search 100+ nodes..." 
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{
-          background: '#1a192b',
-          border: '1px solid #333',
-          color: '#fff',
-          padding: '8px 12px',
-          borderRadius: '6px',
-          outline: 'none',
-          width: '100%',
-          boxSizing: 'border-box',
-          marginBottom: '8px'
-        }}
-      />
+      <div style={{ position: 'relative' }}>
+        <Search size={16} color="#666" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+        <input 
+          type="text" 
+          placeholder="Search 100+ nodes..." 
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            color: '#fff',
+            padding: '12px 14px 12px 40px',
+            borderRadius: '10px',
+            outline: 'none',
+            width: '100%',
+            boxSizing: 'border-box',
+            fontSize: '14px',
+            transition: 'all 0.3s ease',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
+          }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(94, 242, 228, 0.5)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(94, 242, 228, 0.1)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; e.currentTarget.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)'; }}
+        />
+      </div>
 
       {categories.map((category) => {
         const filteredNodes = category.nodes.filter(n => n.label.toLowerCase().includes(search.toLowerCase()) || n.type.toLowerCase().includes(search.toLowerCase()));
         if (filteredNodes.length === 0) return null;
 
         return (
-          <div key={category.name} style={{ marginBottom: '12px' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{category.name}</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div key={category.name} style={{ marginBottom: '16px' }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#5ef2e4', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>{category.name}</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {filteredNodes.map((nt) => (
                 <div
                   key={nt.type}
                   onDragStart={(event) => onDragStart(event, nt.type, nt.label)}
                   draggable
                   style={{
-                    background: '#1a192b',
-                    border: '1px solid #2a2940',
-                    borderRadius: '6px',
-                    padding: '8px 12px',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    borderRadius: '10px',
+                    padding: '10px 14px',
                     cursor: 'grab',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    color: '#ddd',
+                    gap: '12px',
+                    color: '#e0e0e0',
                     fontSize: '13px',
-                    transition: 'all 0.2s ease',
-                    userSelect: 'none'
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    userSelect: 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = '#25243c'; e.currentTarget.style.borderColor = '#3a395b'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = '#1a192b'; e.currentTarget.style.borderColor = '#2a2940'; }}
+                  onMouseOver={(e) => { 
+                    e.currentTarget.style.background = 'rgba(94, 242, 228, 0.1)'; 
+                    e.currentTarget.style.borderColor = 'rgba(94, 242, 228, 0.3)'; 
+                    e.currentTarget.style.transform = 'translateX(4px)'; 
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(94, 242, 228, 0.2)';
+                  }}
+                  onMouseOut={(e) => { 
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'; 
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; 
+                    e.currentTarget.style.transform = 'translateX(0)'; 
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                  }}
                 >
-                  <span style={{ fontSize: '16px' }}>{icons[nt.type] || icons.default}</span>
-                  {nt.label}
+                  <NodeIcon type={nt.type} size={18} color="#5ef2e4" />
+                  <span style={{ fontWeight: 500, letterSpacing: '0.3px' }}>{nt.label}</span>
                 </div>
               ))}
             </div>
@@ -241,12 +416,15 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
 
   useEffect(() => {
     if (workflow && workflow.nodes && workflow.edges) {
-      // Map custom workflow config to ReactFlow format
       const rfNodes = workflow.nodes.map((n, i) => ({
         id: n.id,
         type: 'customNode',
-        data: { label: n.name, type: n.type },
-        position: { x: i * 350 + 50, y: window.innerHeight / 3 }, // Better auto-layout horizontal
+        data: { 
+          ...n.data,
+          label: n.name, 
+          type: n.type 
+        },
+        position: { x: i * 400 + 100, y: 200 },
       }));
 
       const rfEdges = workflow.edges.map((e) => ({
@@ -263,8 +441,21 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
 
       setNodes(rfNodes);
       setEdges(rfEdges);
+      
+      setTimeout(() => {
+        try {
+          reactFlowInstance.current?.fitView({ padding: 0.2, duration: 800 });
+        } catch (e) {
+          console.warn("Fit view failed", e);
+        }
+      }, 200);
     }
   }, [workflow, setNodes, setEdges]);
+
+  const reactFlowInstance = useRef<any>(null);
+  const onInit = (instance: any) => {
+    reactFlowInstance.current = instance;
+  };
 
   const onConnect = useCallback((params: any) => setEdges((eds) => addEdge({
     ...params,
@@ -306,31 +497,38 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
     [screenToFlowPosition, setNodes]
   );
 
-  if (!workflow) {
+  if (!workflow || !nodes.length) {
     return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-        <h2>Generating AI Agent Workflow...</h2>
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', background: '#0a0a0a', gap: '20px' }}>
+        <div style={{ padding: '32px', borderRadius: '20px', background: '#111118', border: '1px solid #1e1e2e', textAlign: 'center', maxWidth: '440px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+           <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: '#5ef2e418', border: '1px solid #5ef2e433', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+             <RefreshCw size={32} color="#5ef2e4" className="spin-animation" />
+           </div>
+           <h2 style={{ color: '#fff', margin: '0 0 10px 0', fontSize: '24px', fontWeight: 700 }}>Initializing Canvas</h2>
+           <p style={{ color: '#666', fontSize: '15px', margin: 0, lineHeight: 1.5 }}>Hang tight! We're building your agent workflow and establishing node connections.</p>
+        </div>
+        <style>{`
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          .spin-animation { animation: spin 2s linear infinite; }
+        `}</style>
       </div>
     );
   }
 
   const executeWorkflow = async () => {
-    // Determine parent mapping based on edges
     const parentMap: Record<string, string> = {};
     edges.forEach(e => {
       parentMap[e.target] = e.source;
     });
 
-    // Map ReactFlow to Backend Format
     const backendNodes = nodes.map(n => {
-      let data: any = { ...n.data }; // preserve existing data if any
+      let data: any = { ...n.data };
 
       if (n.data.type === 'openai') {
         data.prompt = "Write a short engaging 2-sentence script for a reel."; 
-        data.apiKey = ""; // Will fallback to env
+        data.apiKey = ""; 
       } else if (n.data.type === 'instagram') {
         const parentId = parentMap[n.id];
-        // Automatically wire the caption to the output of the parent node
         data.caption = parentId ? `{{node.${parentId}.data.text}}` : "Beautiful AI Generated Reel! 🤖✨";
         data.mediaUrl = ""; 
       }
@@ -372,24 +570,28 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
       <div style={{ flex: 1, position: 'relative' }} ref={reactFlowWrapper}>
         
         {/* EXECUTE BUTTON */}
-        <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}>
+        <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10 }}>
           <button 
             onClick={executeWorkflow}
             style={{
-              background: '#5ef2e4',
+              background: 'linear-gradient(135deg, #5ef2e4 0%, #3bbdb1 100%)',
               color: '#000',
               border: 'none',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 14px rgba(94, 242, 228, 0.4)'
+              gap: '10px',
+              boxShadow: '0 8px 24px rgba(94, 242, 228, 0.3)',
+              fontSize: '14px',
+              transition: 'transform 0.2s, box-shadow 0.2s'
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(94, 242, 228, 0.4)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(94, 242, 228, 0.3)'; }}
           >
-            ▶ Execute Workflow
+            <Play size={18} fill="currentColor" /> Execute Workflow
           </button>
         </div>
 
@@ -402,19 +604,20 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
           onDrop={onDrop}
           onDragOver={onDragOver}
           nodeTypes={nodeTypes}
+          onInit={onInit}
           fitView
-          style={{ background: '#0a0a0a' }}
+          style={{ background: '#050508' }}
         >
-          <Controls style={{ background: '#222', fill: 'white', border: '1px solid #444' }} />
+          <Controls style={{ background: '#111118', fill: 'white', border: '1px solid #1e1e2e', borderRadius: '8px', padding: '4px' }} />
           <MiniMap 
             nodeColor="#3a395b"
             nodeStrokeWidth={3} 
             zoomable 
             pannable 
-            style={{ background: '#1a192b', border: '1px solid #333', borderRadius: '8px' }} 
-            maskColor="rgba(0,0,0, 0.4)"
+            style={{ background: '#111118', border: '1px solid #1e1e2e', borderRadius: '12px', margin: '16px' }} 
+            maskColor="rgba(0,0,0, 0.6)"
           />
-          <Background variant={"dots" as any} gap={16} size={1} color="#333" />
+          <Background variant={"dots" as any} gap={20} size={1} color="#222" />
         </ReactFlow>
       </div>
     </div>

@@ -1,103 +1,230 @@
+import OpenAI from 'openai';
 
 const SYSTEM_PROMPT = `You are an expert AI workflow agent architect. Your task is to generate a JSON representation of an executable workflow based on the user's prompt.
 The workflow is a Directed Acyclic Graph (DAG) consisting of nodes and edges.
 
-AVAILABLE NODE TYPES:
-1. trigger: Starts the workflow. Does not require mapping from other nodes. (id typically starts with 'trigger_')
-2. openai: Generates text or content. Requires 'prompt' and 'apiKey'. (id typically starts with 'openai_')
-3. action: Performs an action, like 'generate_video'. Requires 'actionType' and 'inputData'. (id typically starts with 'action_')
-4. instagram: Posts to Instagram. Requires 'mediaUrl', 'caption', and 'accessToken'. (id typically starts with 'instagram_')
+AVAILABLE NODE TYPES (use as many as relevant):
+- Core/Triggers: trigger, webhook, schedule, manual, error, http, set, if, switch, merge, split, loop, execute, read, write
+- AI & ML: openai, claude, gemini, ollama, huggingface, mistral, cohere, pinecone, qdrant, milvus, elevenlabs, midjourney, dalle, stablediffusion, replicate, aws_textract, google_vision
+- Social Media: instagram, facebook, twitter, linkedin, tiktok, pinterest, youtube, reddit, discord, snapchat, telegram, whatsapp, slack, twitch
+- Communication & Email: gmail, outlook, sendgrid, mailchimp, twilio, postmark, activecampaign, customerio, klaviyo, intercom, zendesk, freshdesk
+- Data & Databases: mysql, postgresql, mongodb, redis, supabase, firebase, snowflake, bigquery, aws_s3, airtable, notion, google_sheets, excel, dynamodb, elasticsearch
+- CRM & Sales: salesforce, hubspot, pipedrive, zoho, monday, clickup, asana, trello, jira, linear, stripe, paypal, square, shopify, woocommerce
+- Marketing & Analytics: google_analytics, mixpanel, amplitude, segment, facebook_ads, google_ads, linkedin_ads, tiktok_ads, hotjar, mailgun, typeform, typebot
+- Developer Tools: github, gitlab, bitbucket, docker, aws_ec2, vercel, netlify, cloudflare, datadog, sentry, pagerduty, grafana
+- General: action (with custom actionType)
 
-JSON FORMAT:
-You must output ONLY valid JSON in the following format, with no markdown formatting or explanation text:
+RULES:
+1. Always start with a "trigger" node.
+2. Generate between 3-8 nodes depending on complexity.
+3. Use realistic, appropriate node types for the user's request.
+4. Connect nodes logically with edges (source → target).
+5. Each node MUST have: id, type, name, data (object with relevant params).
+6. Each edge MUST have: source, target.
+7. Node IDs should be descriptive like "trigger_1", "openai_script", "gmail_send", etc.
+
+OUTPUT FORMAT:
+You must output ONLY valid JSON (no markdown, no explanation):
 {
   "nodes": [
-    {
-      "id": "trigger_1",
-      "type": "trigger",
-      "name": "Manual Trigger",
-      "data": {
-        "initialContext": "start"
-      }
-    },
-    {
-      "id": "openai_1",
-      "type": "openai",
-      "name": "Generate Script",
-      "data": {
-        "prompt": "Write a 30-second Reel script about AI agents.",
-        "apiKey": "user-provided-or-mock"
-      }
-    },
-    {
-      "id": "action_1",
-      "type": "action",
-      "name": "Create Video",
-      "data": {
-        "actionType": "generate_video",
-        "inputData": "{{node.openai_1.data.text}}"
-      }
-    },
-    {
-      "id": "instagram_1",
-      "type": "instagram",
-      "name": "Post to Instagram",
-      "data": {
-        "mediaUrl": "{{node.action_1.data.videoUrl}}",
-        "caption": "{{node.openai_1.data.text}}",
-        "accessToken": "mock-ig-token"
-      }
-    }
+    { "id": "trigger_1", "type": "trigger", "name": "Start", "data": { "initialContext": "start" } },
+    { "id": "openai_1", "type": "openai", "name": "Generate Content", "data": { "prompt": "...", "apiKey": "env" } }
   ],
   "edges": [
-    { "source": "trigger_1", "target": "openai_1" },
-    { "source": "openai_1", "target": "action_1" },
-    { "source": "action_1", "target": "instagram_1" }
+    { "source": "trigger_1", "target": "openai_1" }
   ]
 }
 
-PARAMETER MAPPING:
-Use the syntax '{{node.<node_id>.data.<property>}}' to reference outputs from previous nodes.
-For example, the OpenAINode outputs 'text', so to use it in another node, pass '{{node.openai_1.data.text}}'.
-The ActionNode (when actionType is 'generate_video') outputs 'videoUrl'.
+Generate a workflow that is relevant, practical, and demonstrates a real-world use case based on the user's request.`;
 
-Your job: Read the user's request and build the nodes array and edges array. Output ONLY valid JSON.
-`;
-
+/**
+ * Generate workflow using OpenAI API
+ */
 export async function generateWorkflowWithOllama(userPrompt) {
-  try {
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama3.2', // Or whatever model you prefer
-        system: SYSTEM_PROMPT,
-        prompt: userPrompt,
-        stream: false,
-        format: 'json'
-      })
-    });
+  // Try OpenAI first
+  const apiKey = process.env.OPENAI_API_KEY;
 
-    const data = await response.json();
-    if (data.response) {
-      return JSON.parse(data.response);
+  if (apiKey) {
+    try {
+      const openai = new OpenAI({ apiKey });
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (content) {
+        const parsed = JSON.parse(content);
+        if (parsed.nodes && parsed.edges) {
+          console.log(`[AgentGenerator] OpenAI generated ${parsed.nodes.length} nodes for: "${userPrompt}"`);
+          return parsed;
+        }
+      }
+      throw new Error('Invalid response structure from OpenAI');
+    } catch (error) {
+      console.error('[AgentGenerator] OpenAI generation failed, using smart fallback:', error.message);
     }
-    throw new Error('Invalid response from Ollama');
-  } catch (error) {
-    console.error("Error generating workflow from Ollama:", error);
-    // Fallback static example if Ollama fails (for demo purposes)
+  } else {
+    console.warn('[AgentGenerator] No OPENAI_API_KEY found, using smart fallback.');
+  }
+
+  // Smart keyword-based fallback
+  return generateSmartFallback(userPrompt);
+}
+
+/**
+ * Smart fallback: generates a relevant workflow based on keywords in the prompt.
+ */
+function generateSmartFallback(prompt) {
+  const p = prompt.toLowerCase();
+
+  // --- Sales Agent ---
+  if (p.includes('sales') || p.includes('lead') || p.includes('crm') || p.includes('prospect')) {
     return {
       nodes: [
-        { id: "trigger_1", type: "trigger", name: "Manual Trigger", data: { initialContext: "start" } },
-        { id: "openai_1", type: "openai", name: "Generate Script", data: { prompt: "Write a 30-second Reel script about AI agents.", apiKey: "mock" } },
-        { id: "action_1", type: "action", name: "Create Video", data: { actionType: "generate_video", inputData: "{{node.openai_1.data.text}}" } },
-        { id: "instagram_1", type: "instagram", name: "Post to Instagram", data: { mediaUrl: "{{node.action_1.data.videoUrl}}", caption: "{{node.openai_1.data.text}}", accessToken: "mock-ig-token" } }
+        { id: 'trigger_1', type: 'trigger', name: 'New Lead Trigger', data: { initialContext: 'new_lead' } },
+        { id: 'openai_qualify', type: 'openai', name: 'AI Lead Qualifier', data: { prompt: 'Analyze this lead and score them 1-10 based on fit', apiKey: 'env' } },
+        { id: 'if_qualified', type: 'if', name: 'Is Lead Qualified?', data: { condition: 'score >= 7' } },
+        { id: 'openai_email', type: 'openai', name: 'Generate Sales Email', data: { prompt: 'Write a personalized outreach email for this lead', apiKey: 'env' } },
+        { id: 'gmail_send', type: 'gmail', name: 'Send Outreach Email', data: { to: '{{lead.email}}', subject: 'Partnership Opportunity' } },
+        { id: 'hubspot_update', type: 'hubspot', name: 'Update CRM', data: { action: 'update_contact', status: 'contacted' } },
+        { id: 'slack_notify', type: 'slack', name: 'Notify Sales Team', data: { channel: '#sales', message: 'New qualified lead contacted' } },
       ],
       edges: [
-        { source: "trigger_1", target: "openai_1" },
-        { source: "openai_1", target: "action_1" },
-        { source: "action_1", target: "instagram_1" }
-      ]
+        { source: 'trigger_1', target: 'openai_qualify' },
+        { source: 'openai_qualify', target: 'if_qualified' },
+        { source: 'if_qualified', target: 'openai_email' },
+        { source: 'openai_email', target: 'gmail_send' },
+        { source: 'gmail_send', target: 'hubspot_update' },
+        { source: 'hubspot_update', target: 'slack_notify' },
+      ],
     };
   }
+
+  // --- Social Media Agent ---
+  if (p.includes('social media') || p.includes('instagram') || p.includes('post') || p.includes('content') || p.includes('marketing')) {
+    return {
+      nodes: [
+        { id: 'trigger_1', type: 'schedule', name: 'Daily Schedule', data: { cron: '0 9 * * *' } },
+        { id: 'openai_content', type: 'openai', name: 'Generate Post Content', data: { prompt: 'Write an engaging social media post about trending topics', apiKey: 'env' } },
+        { id: 'dalle_image', type: 'dalle', name: 'Generate Post Image', data: { prompt: 'Create a vibrant social media visual', apiKey: 'env' } },
+        { id: 'instagram_post', type: 'instagram', name: 'Post to Instagram', data: { caption: '{{openai_content.text}}', mediaUrl: '{{dalle_image.url}}' } },
+        { id: 'twitter_post', type: 'twitter', name: 'Post to X/Twitter', data: { text: '{{openai_content.text}}' } },
+        { id: 'google_analytics_track', type: 'google_analytics', name: 'Track Engagement', data: { event: 'social_post_published' } },
+      ],
+      edges: [
+        { source: 'trigger_1', target: 'openai_content' },
+        { source: 'openai_content', target: 'dalle_image' },
+        { source: 'dalle_image', target: 'instagram_post' },
+        { source: 'dalle_image', target: 'twitter_post' },
+        { source: 'instagram_post', target: 'google_analytics_track' },
+        { source: 'twitter_post', target: 'google_analytics_track' },
+      ],
+    };
+  }
+
+  // --- Customer Support Agent ---
+  if (p.includes('support') || p.includes('customer') || p.includes('ticket') || p.includes('helpdesk') || p.includes('chat')) {
+    return {
+      nodes: [
+        { id: 'trigger_1', type: 'webhook', name: 'New Support Ticket', data: { event: 'ticket_created' } },
+        { id: 'openai_classify', type: 'openai', name: 'Classify Issue', data: { prompt: 'Classify this support ticket by urgency and category', apiKey: 'env' } },
+        { id: 'switch_priority', type: 'switch', name: 'Route by Priority', data: { field: 'urgency' } },
+        { id: 'openai_response', type: 'openai', name: 'Generate AI Response', data: { prompt: 'Draft a helpful response to this customer issue', apiKey: 'env' } },
+        { id: 'zendesk_update', type: 'zendesk', name: 'Update Ticket', data: { status: 'in_progress' } },
+        { id: 'gmail_reply', type: 'gmail', name: 'Send Response', data: { to: '{{ticket.email}}' } },
+      ],
+      edges: [
+        { source: 'trigger_1', target: 'openai_classify' },
+        { source: 'openai_classify', target: 'switch_priority' },
+        { source: 'switch_priority', target: 'openai_response' },
+        { source: 'openai_response', target: 'zendesk_update' },
+        { source: 'zendesk_update', target: 'gmail_reply' },
+      ],
+    };
+  }
+
+  // --- Email Marketing Agent ---
+  if (p.includes('email') || p.includes('newsletter') || p.includes('campaign') || p.includes('mailchimp')) {
+    return {
+      nodes: [
+        { id: 'trigger_1', type: 'schedule', name: 'Weekly Schedule', data: { cron: '0 10 * * MON' } },
+        { id: 'openai_newsletter', type: 'openai', name: 'Write Newsletter', data: { prompt: 'Write an engaging weekly newsletter', apiKey: 'env' } },
+        { id: 'google_sheets_list', type: 'google_sheets', name: 'Get Subscriber List', data: { spreadsheetId: 'subscribers' } },
+        { id: 'sendgrid_send', type: 'sendgrid', name: 'Send Email Campaign', data: { from: 'newsletter@company.com' } },
+        { id: 'mixpanel_track', type: 'mixpanel', name: 'Track Campaign', data: { event: 'email_campaign_sent' } },
+      ],
+      edges: [
+        { source: 'trigger_1', target: 'openai_newsletter' },
+        { source: 'openai_newsletter', target: 'google_sheets_list' },
+        { source: 'google_sheets_list', target: 'sendgrid_send' },
+        { source: 'sendgrid_send', target: 'mixpanel_track' },
+      ],
+    };
+  }
+
+  // --- Data Pipeline Agent ---
+  if (p.includes('data') || p.includes('etl') || p.includes('pipeline') || p.includes('database') || p.includes('sync')) {
+    return {
+      nodes: [
+        { id: 'trigger_1', type: 'schedule', name: 'Hourly Sync', data: { cron: '0 * * * *' } },
+        { id: 'postgresql_read', type: 'postgresql', name: 'Read Source DB', data: { query: 'SELECT * FROM records WHERE updated_at > NOW() - INTERVAL 1 HOUR' } },
+        { id: 'openai_transform', type: 'openai', name: 'Transform & Enrich Data', data: { prompt: 'Clean and enrich this data batch', apiKey: 'env' } },
+        { id: 'mongodb_write', type: 'mongodb', name: 'Write to MongoDB', data: { collection: 'processed_records' } },
+        { id: 'slack_notify', type: 'slack', name: 'Notify Team', data: { channel: '#data-ops', message: 'Sync completed successfully' } },
+      ],
+      edges: [
+        { source: 'trigger_1', target: 'postgresql_read' },
+        { source: 'postgresql_read', target: 'openai_transform' },
+        { source: 'openai_transform', target: 'mongodb_write' },
+        { source: 'mongodb_write', target: 'slack_notify' },
+      ],
+    };
+  }
+
+  // --- E-commerce Agent ---
+  if (p.includes('ecommerce') || p.includes('shop') || p.includes('order') || p.includes('product') || p.includes('store')) {
+    return {
+      nodes: [
+        { id: 'trigger_1', type: 'webhook', name: 'New Order', data: { event: 'order_placed' } },
+        { id: 'shopify_order', type: 'shopify', name: 'Get Order Details', data: { action: 'get_order' } },
+        { id: 'openai_confirm', type: 'openai', name: 'Generate Confirmation', data: { prompt: 'Write a personalized order confirmation message', apiKey: 'env' } },
+        { id: 'gmail_confirm', type: 'gmail', name: 'Send Confirmation', data: { to: '{{order.email}}' } },
+        { id: 'stripe_process', type: 'stripe', name: 'Process Payment', data: { action: 'capture' } },
+        { id: 'google_sheets_log', type: 'google_sheets', name: 'Log Order', data: { action: 'append_row' } },
+      ],
+      edges: [
+        { source: 'trigger_1', target: 'shopify_order' },
+        { source: 'shopify_order', target: 'openai_confirm' },
+        { source: 'openai_confirm', target: 'gmail_confirm' },
+        { source: 'shopify_order', target: 'stripe_process' },
+        { source: 'stripe_process', target: 'google_sheets_log' },
+      ],
+    };
+  }
+
+  // --- Default: Generic AI Automation Agent ---
+  return {
+    nodes: [
+      { id: 'trigger_1', type: 'trigger', name: 'Start Workflow', data: { initialContext: 'start' } },
+      { id: 'openai_analyze', type: 'openai', name: 'AI Analysis', data: { prompt: `Analyze and plan: ${prompt}`, apiKey: 'env' } },
+      { id: 'openai_generate', type: 'openai', name: 'Generate Output', data: { prompt: 'Create detailed output based on analysis', apiKey: 'env' } },
+      { id: 'action_process', type: 'action', name: 'Process Results', data: { actionType: 'process_output' } },
+      { id: 'gmail_deliver', type: 'gmail', name: 'Deliver Results', data: { subject: 'AI Workflow Results' } },
+      { id: 'slack_notify', type: 'slack', name: 'Send Notification', data: { channel: '#general', message: 'Workflow completed' } },
+    ],
+    edges: [
+      { source: 'trigger_1', target: 'openai_analyze' },
+      { source: 'openai_analyze', target: 'openai_generate' },
+      { source: 'openai_generate', target: 'action_process' },
+      { source: 'action_process', target: 'gmail_deliver' },
+      { source: 'action_process', target: 'slack_notify' },
+    ],
+  };
 }

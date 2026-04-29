@@ -112,7 +112,7 @@ const Navbar = () => {
                 }}
               >
                 <img 
-                  src={`/api/img-proxy?url=${encodeURIComponent("https://cdn.simpleicons.org/github/ffffff")}`}
+                  src="https://cdn.simpleicons.org/github/ffffff"
                   alt="GitHub" 
                   style={isConnected ? { filter: "brightness(0) saturate(100%) invert(80%) sepia(50%) saturate(1000%) hue-rotate(120deg)" } : {}}
                 />

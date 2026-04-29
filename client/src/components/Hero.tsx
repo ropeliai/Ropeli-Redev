@@ -202,33 +202,30 @@ const handleSurpriseMe = () => {
 
 
   /*---Models---*/
-
 const MODELS = [
   {
     id: "claude-sonnet",
     name: "Claude 4.5 Sonnet",
     desc: "200k Context",
-    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg")}`,
+    icon: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg",
   },
   {
     id: "claude-opus",
     name: "Claude 4.5 Opus",
-    desc: "Anthropic’s most advanced model",
-    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg")}`,
+    desc: "Anthropic's most advanced model",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg",
   },
   {
     id: "gemini",
     name: "Gemini Flash 2.5",
-    desc: "Google’s fast multimodal model",
-    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/640px-Google_Gemini_icon_2025.svg.png")}`,
-
+    desc: "Google's fast multimodal model",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/640px-Google_Gemini_icon_2025.svg.png",
   },
   {
     id: "gpt",
     name: "GPT 5 Turbo",
-    desc: "OpenAI’s latest model",
-    icon: `/api/img-proxy?url=${encodeURIComponent("https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Tabler-icons_brand-openai.svg/640px-Tabler-icons_brand-openai.svg.png")}`,
-
+    desc: "OpenAI's latest model",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Tabler-icons_brand-openai.svg/640px-Tabler-icons_brand-openai.svg.png",
   },
 ];
 
