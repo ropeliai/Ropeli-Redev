@@ -12,6 +12,7 @@ import generateRoutes from "./generate_route.js";
 import ollamaRoutes from "./ollama_route.js";
 import expoRoutes from "./expo_route.js";
 import agentRoutes from "./agent_route.js";
+import templateRoutes from "./template_route.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/ollama", ollamaRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/expo", expoRoutes);
 app.use("/api/agent", agentRoutes);
+app.use("/api/templates", templateRoutes);
 
 // GitHub Proxy to bypass COOP/COEP browser restrictions
 app.post("/api/github/proxy", async (req, res) => {

@@ -20,6 +20,12 @@ type Project = {
 /* ---------------- TEMPLATE DATA ---------------- */
 const templateData: Project[] = [
   {
+    id: "t0",
+    name: "I phone Frontend",
+    updated_at: "Modern and sleek iPhone frontend UI template.",
+    thumbnail: "/I phone Frontend.png",
+  },
+  {
     id: "t1",
     name: "All in one AI-CRM Dashboards",
     updated_at: "AI-powered dashboard to manage customers, sales, and insights.",
@@ -194,6 +200,41 @@ const deleteProject = async (id: string) => {
     setInputValue("");
   };
 
+  const [templateLoading, setTemplateLoading] = useState(false);
+
+  const handleTemplateClick = async (template: Project) => {
+    if (template.id === "t0") {
+      try {
+        setTemplateLoading(true);
+        const response = await fetch("/api/templates/iphone/files");
+        const result = await response.json();
+        setTemplateLoading(false);
+        if (result.success && result.files) {
+          navigate("/builder", {
+            state: {
+              files: result.files,
+              prompt: "iPhone Frontend Template",
+            },
+          });
+        } else {
+          alert("Failed to load iPhone template files. Please try again.");
+        }
+      } catch (error) {
+        setTemplateLoading(false);
+        console.error("Failed to load iPhone template:", error);
+        alert("Failed to connect to template server.");
+      }
+    } else {
+      navigate("/builder", {
+        state: {
+          generatedProjectId: template.id,
+          files: template.files || [],
+          prompt: template.name || "",
+        },
+      });
+    }
+  };
+
 
 
 
@@ -333,11 +374,15 @@ const deleteProject = async (id: string) => {
           </div>
         ) : null}
 
-        {/* ================= TEMPLATES GRID ================= */}
         {activeTab === "templates" && (
           <div className="recent-grid templates-grid">
             {projects.templates.map((t) => (
-              <div key={t.id} className="recent-card">
+              <div 
+                key={t.id} 
+                className="recent-card"
+                onClick={() => handleTemplateClick(t)}
+                style={{ cursor: 'pointer' }}
+              >
                 <img src={t.thumbnail} className="recent-thumb" />
                 <div className="recent-info">
                   <strong>{t.name}</strong>

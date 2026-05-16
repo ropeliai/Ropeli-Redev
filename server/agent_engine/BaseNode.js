@@ -8,26 +8,50 @@ class BaseNode {
 
   /**
    * Evaluate dynamic parameters mapped from previous node outputs.
-   * e.g., {{node.trigger_1.data.script}} -> actual value
+   * Supports: "Hello {{node.id.data.name}}!" or just "{{node.id.data.value}}"
    */
   resolveParameters(context) {
     const resolvedData = { ...this.data };
+    
     for (const key in resolvedData) {
-      if (typeof resolvedData[key] === 'string' && resolvedData[key].startsWith('{{') && resolvedData[key].endsWith('}}')) {
-        const path = resolvedData[key].slice(2, -2).trim(); // e.g. node.trigger_1.data.script
-        const parts = path.split('.');
-        if (parts[0] === 'node') {
-          const sourceNodeId = parts[1];
-          let value = context[sourceNodeId];
-          for (let i = 2; i < parts.length; i++) {
-            if (value && value[parts[i]] !== undefined) {
-              value = value[parts[i]];
-            } else {
-              value = undefined;
-              break;
+      const value = resolvedData[key];
+      
+      if (typeof value === 'string') {
+        // Regex to find all {{node.id.path}} occurrences
+        resolvedData[key] = value.replace(/\{\{(node\.[^}]+)\}\}/g, (match, path) => {
+          const parts = path.trim().split('.');
+          if (parts[0] === 'node') {
+            const sourceNodeId = parts[1];
+            let current = context[sourceNodeId];
+            
+            for (let i = 2; i < parts.length; i++) {
+              if (current && current[parts[i]] !== undefined) {
+                current = current[parts[i]];
+              } else {
+                current = undefined;
+                break;
+              }
             }
+            
+            // If the whole value was just the template, we might want to return the actual type (e.g. object/number)
+            // but for replace we convert to string. If it's a perfect match, we handle it separately below.
+            return current !== undefined ? current : match;
           }
-          resolvedData[key] = value;
+          return match;
+        });
+
+        // Special case: if the string was EXACTLY "{{node.id.path}}", preserve the original data type
+        const exactMatch = value.match(/^\{\{(node\.[^}]+)\}\}$/);
+        if (exactMatch) {
+          const path = exactMatch[1].trim();
+          const parts = path.split('.');
+          const sourceNodeId = parts[1];
+          let current = context[sourceNodeId];
+          for (let i = 2; i < parts.length; i++) {
+             if (current && current[parts[i]] !== undefined) current = current[parts[i]];
+             else { current = undefined; break; }
+          }
+          if (current !== undefined) resolvedData[key] = current;
         }
       }
     }

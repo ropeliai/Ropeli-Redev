@@ -174,14 +174,14 @@ const NodeIcon = ({ type, size = 20, color = "#5ef2e4" }: { type: string; size?:
 // --- CUSTOM NODE COMPONENTS ---
 
 const CustomNode = ({ data, isConnectable }: any) => {
-  const accentColor = "#5ef2e4";
+  const accentColor = data.status === 'success' ? '#10b981' : data.status === 'error' ? '#ef4444' : data.status === 'running' ? '#3b82f6' : "#5ef2e4";
   
   return (
     <div className="custom-agent-node" style={{
       background: 'rgba(20, 20, 31, 0.85)',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
-      border: `1px solid rgba(94, 242, 228, 0.2)`,
+      border: `1px solid ${accentColor}33`,
       borderRadius: '16px',
       padding: '16px 20px',
       display: 'flex',
@@ -189,11 +189,14 @@ const CustomNode = ({ data, isConnectable }: any) => {
       gap: '16px',
       minWidth: '260px',
       color: '#fff',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+      boxShadow: data.status === 'running' ? `0 0 20px ${accentColor}44` : '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
       fontFamily: 'Inter, sans-serif',
       position: 'relative',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     }}>
+      {data.status === 'running' && (
+        <div style={{ position: 'absolute', inset: '-2px', borderRadius: '18px', border: `2px solid ${accentColor}`, animation: 'pulse 1.5s infinite' }} />
+      )}
       <Handle 
         type="target" 
         position={Position.Left} 
@@ -208,7 +211,7 @@ const CustomNode = ({ data, isConnectable }: any) => {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        border: '1px solid rgba(255,255,255,0.05)',
+        border: `1px solid ${accentColor}22`,
         boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
       }}>
         <NodeIcon type={data.type} size={26} color={accentColor} />
@@ -216,7 +219,9 @@ const CustomNode = ({ data, isConnectable }: any) => {
 
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '16px', fontWeight: 600, color: '#fff', marginBottom: '4px', letterSpacing: '-0.3px' }}>{data.label}</div>
-        <div style={{ fontSize: '11px', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.8px', opacity: 0.9, fontWeight: 500 }}>{data.type}</div>
+        <div style={{ fontSize: '11px', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.8px', opacity: 0.9, fontWeight: 500 }}>
+          {data.status === 'running' ? 'Executing...' : data.status === 'success' ? 'Completed' : data.status === 'error' ? 'Failed' : data.type}
+        </div>
       </div>
 
       <Handle 
@@ -225,6 +230,9 @@ const CustomNode = ({ data, isConnectable }: any) => {
         isConnectable={isConnectable} 
         style={{ background: accentColor, width: '12px', height: '12px', border: '3px solid #14141f', right: '-6px' }} 
       />
+      <style>{`
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.02); } 100% { opacity: 1; transform: scale(1); } }
+      `}</style>
     </div>
   );
 };
@@ -412,7 +420,25 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionLogs, setExecutionLogs] = useState<string[]>([]);
   const { screenToFlowPosition } = useReactFlow();
+
+  const onNodeClick = useCallback((event: any, node: any) => {
+    setSelectedNode(node);
+  }, []);
+
+  const updateNodeData = (id: string, newData: any) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...newData } };
+        }
+        return node;
+      })
+    );
+  };
 
   useEffect(() => {
     if (workflow && workflow.nodes && workflow.edges) {
@@ -516,30 +542,18 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
   }
 
   const executeWorkflow = async () => {
-    const parentMap: Record<string, string> = {};
-    edges.forEach(e => {
-      parentMap[e.target] = e.source;
-    });
+    setIsExecuting(true);
+    setExecutionLogs(["Starting workflow execution..."]);
+    
+    // Reset all nodes status
+    setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, status: 'idle' } })));
 
-    const backendNodes = nodes.map(n => {
-      let data: any = { ...n.data };
-
-      if (n.data.type === 'openai') {
-        data.prompt = "Write a short engaging 2-sentence script for a reel."; 
-        data.apiKey = ""; 
-      } else if (n.data.type === 'instagram') {
-        const parentId = parentMap[n.id];
-        data.caption = parentId ? `{{node.${parentId}.data.text}}` : "Beautiful AI Generated Reel! 🤖✨";
-        data.mediaUrl = ""; 
-      }
-      
-      return {
+    const backendNodes = nodes.map(n => ({
         id: n.id,
         type: n.data.type,
         name: n.data.label,
-        data
-      };
-    });
+        data: n.data
+    }));
 
     const backendEdges = edges.map(e => ({
       source: e.source,
@@ -547,6 +561,10 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
     }));
 
     try {
+      // For real-time feedback, we'd use WebSockets, but here we'll simulate the "running" state
+      // by setting nodes to 'running' based on topological sort (simplified)
+      // For now, let's just make the request and handle the result
+      
       const response = await fetch('/api/agent/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -555,12 +573,18 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
       const result = await response.json();
       
       if (result.success) {
-        alert("Workflow Executed Successfully!\n\n" + JSON.stringify(result.result, null, 2));
+        // Mark all as success for demonstration
+        setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, status: 'success' } })));
+        setExecutionLogs(prev => [...prev, "Workflow executed successfully!", JSON.stringify(result.result, null, 2)]);
       } else {
-        alert("Workflow Execution Failed:\n" + result.error);
+        setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, status: 'error' } })));
+        setExecutionLogs(prev => [...prev, `Error: ${result.error}`]);
       }
     } catch (err) {
-      alert("Error executing workflow: " + String(err));
+      setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, status: 'error' } })));
+      setExecutionLogs(prev => [...prev, `Error: ${String(err)}`]);
+    } finally {
+      setIsExecuting(false);
     }
   };
 
@@ -601,10 +625,12 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeClick={onNodeClick}
           onDrop={onDrop}
           onDragOver={onDragOver}
           nodeTypes={nodeTypes}
           onInit={onInit}
+          onPaneClick={() => setSelectedNode(null)}
           fitView
           style={{ background: '#050508' }}
         >
@@ -619,6 +645,90 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
           />
           <Background variant={"dots" as any} gap={20} size={1} color="#222" />
         </ReactFlow>
+
+        {/* NODE PROPERTIES PANEL */}
+        {selectedNode && (
+          <aside style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '320px',
+            height: '100%',
+            background: 'rgba(10, 10, 15, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderLeft: '1px solid #1e1e2e',
+            zIndex: 100,
+            padding: '24px',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Settings2 size={20} color="#5ef2e4" /> Node Properties
+              </h3>
+              <button onClick={() => setSelectedNode(null)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '12px', color: '#5ef2e4', textTransform: 'uppercase', fontWeight: 600 }}>Node Name</label>
+              <input 
+                type="text" 
+                value={selectedNode.data.label} 
+                onChange={(e) => {
+                  const newLabel = e.target.value;
+                  const newNode = { ...selectedNode, data: { ...selectedNode.data, label: newLabel } };
+                  setSelectedNode(newNode);
+                  updateNodeData(selectedNode.id, newNode.data);
+                }}
+                style={{ background: '#161623', border: '1px solid #2a2a40', color: '#fff', padding: '10px', borderRadius: '8px', outline: 'none' }}
+              />
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <label style={{ fontSize: '12px', color: '#5ef2e4', textTransform: 'uppercase', fontWeight: 600 }}>Configuration</label>
+              {Object.keys(selectedNode.data).map(key => {
+                if (key === 'label' || key === 'type') return null;
+                return (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', color: '#888' }}>{key}</span>
+                    {typeof selectedNode.data[key] === 'string' && selectedNode.data[key].length > 40 ? (
+                      <textarea 
+                        value={selectedNode.data[key]}
+                        onChange={(e) => {
+                          const newData = { ...selectedNode.data, [key]: e.target.value };
+                          const newNode = { ...selectedNode, data: newData };
+                          setSelectedNode(newNode);
+                          updateNodeData(selectedNode.id, newData);
+                        }}
+                        style={{ background: '#161623', border: '1px solid #2a2a40', color: '#fff', padding: '10px', borderRadius: '8px', outline: 'none', minHeight: '80px', fontSize: '13px', fontFamily: 'inherit' }}
+                      />
+                    ) : (
+                      <input 
+                        type="text" 
+                        value={selectedNode.data[key]} 
+                        onChange={(e) => {
+                          const newData = { ...selectedNode.data, [key]: e.target.value };
+                          const newNode = { ...selectedNode, data: newData };
+                          setSelectedNode(newNode);
+                          updateNodeData(selectedNode.id, newData);
+                        }}
+                        style={{ background: '#161623', border: '1px solid #2a2a40', color: '#fff', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '13px' }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            <style>{`
+              @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+            `}</style>
+          </aside>
+        )}
       </div>
     </div>
   );

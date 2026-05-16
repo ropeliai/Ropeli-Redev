@@ -3,6 +3,8 @@ import TriggerNode from './nodes/TriggerNode.js';
 import OpenAINode from './nodes/OpenAINode.js';
 import ActionNode from './nodes/ActionNode.js';
 import InstagramNode from './nodes/InstagramNode.js';
+import DalleNode from './nodes/DalleNode.js';
+import SlackNode from './nodes/SlackNode.js';
 import BaseNode from './BaseNode.js';
 
 // Generic fallback node for any unregistered type
@@ -23,6 +25,8 @@ const NODE_REGISTRY = {
   openai: OpenAINode,
   action: ActionNode,
   instagram: InstagramNode,
+  dalle: DalleNode,
+  slack: SlackNode,
 };
 
 /**

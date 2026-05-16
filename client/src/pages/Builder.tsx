@@ -140,8 +140,7 @@ const [previewSize, setPreviewSize] = useState<PreviewSize>("desktop");
 
 // File attachments state  
 const fileInputRef = useRef<HTMLInputElement | null>(null);
-const initialFiles = location.state?.files || [];
-const [attachedFiles, setAttachedFiles] = useState<File[]>(initialFiles);
+const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
 const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
   if (!e.target.files) return;
@@ -168,12 +167,17 @@ const [agentWorkflow, setAgentWorkflow] = useState<any>(null);
 
 // AUTO HIDE BUILDER LOADING AFTER 10s
 useEffect(() => {
+  if (location.state?.files?.length > 0 || location.state?.generatedProjectId || routeProjectId) {
+    setIsBuilderLoading(false);
+    return;
+  }
+
   const timer = setTimeout(() => {
     setIsBuilderLoading(false);
   }, 10000); // 10 seconds
 
   return () => clearTimeout(timer);
-}, []);
+}, [location.state, routeProjectId]);
 
 
 // CYCLE SETUP STEPS WHILE LOADING
@@ -262,15 +266,17 @@ useEffect(() => {
     }, 500);
   }
 
-  if (existingId) {
-    setExistingGeneratedProjectId(String(existingId));
+  if (existingId || (Array.isArray(existingFiles) && existingFiles.length > 0)) {
+    if (existingId) {
+      setExistingGeneratedProjectId(String(existingId));
+    }
     setConfigLocked(false);
     if (Array.isArray(existingFiles) && existingFiles.length > 0) {
       const preparedFiles = existingFiles.map((f: any) => ({ path: f.path, content: f.content || "" }));
       setGeneratedFiles(preparedFiles);
       setSelectedFile(preparedFiles[0]?.path || "");
       setCode(preparedFiles[0]?.content || "");
-    } else {
+    } else if (existingId) {
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(existingId));
       if (isUUID) {
         (async () => {
@@ -341,7 +347,7 @@ useEffect(() => {
   const hasAutoPrompt = Boolean(location.state?.autoPrompt);
   const hasExistingProject = Boolean(location.state?.generatedProjectId);
   if (hasAutoPrompt || hasExistingProject || hasInitialChatSeededRef.current) return;
-  if (!initialPrompt && initialFiles.length === 0 && !initialDesign) return;
+  if (!initialPrompt && !location.state?.files?.length && !initialDesign) return;
   hasInitialChatSeededRef.current = true;
 
   setMessages([
@@ -373,7 +379,7 @@ useEffect(() => {
 
   // cleanup (important for React strict mode)
   return () => clearTimeout(timer);
-}, [initialPrompt, initialDesign, initialFiles, location.state]);
+}, [initialPrompt, initialDesign, location.state]);
 
 
 
