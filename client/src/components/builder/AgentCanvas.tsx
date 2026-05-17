@@ -196,6 +196,7 @@ const CustomNode = ({ data, isConnectable }: any) => {
     }}>
       <Handle 
         type="target" 
+        id="default"
         position={Position.Left} 
         isConnectable={isConnectable} 
         style={{ background: accentColor, width: '12px', height: '12px', border: '3px solid #14141f', left: '-6px' }} 
@@ -221,10 +222,50 @@ const CustomNode = ({ data, isConnectable }: any) => {
 
       <Handle 
         type="source" 
+        id="default"
         position={Position.Right} 
         isConnectable={isConnectable} 
         style={{ background: accentColor, width: '12px', height: '12px', border: '3px solid #14141f', right: '-6px' }} 
       />
+
+      {/* Render additional handles for named inputs/outputs so edges with handles connect */}
+      {Array.isArray(data.inputs) && data.inputs.map((inp: string, idx: number) => (
+        <Handle
+          key={`in-${inp}-${idx}`}
+          type="target"
+          id={String(inp) || `in-${idx}`}
+          position={Position.Left}
+          isConnectable={isConnectable}
+          style={{
+            background: accentColor,
+            width: '8px',
+            height: '8px',
+            border: '2px solid #14141f',
+            left: '-6px',
+            top: `${18 + idx * 14}px`,
+            position: 'absolute'
+          }}
+        />
+      ))}
+
+      {Array.isArray(data.outputs) && data.outputs.map((out: string, idx: number) => (
+        <Handle
+          key={`out-${out}-${idx}`}
+          type="source"
+          id={String(out) || `out-${idx}`}
+          position={Position.Right}
+          isConnectable={isConnectable}
+          style={{
+            background: accentColor,
+            width: '8px',
+            height: '8px',
+            border: '2px solid #14141f',
+            right: '-6px',
+            top: `${18 + idx * 14}px`,
+            position: 'absolute'
+          }}
+        />
+      ))}
     </div>
   );
 };
@@ -410,27 +451,40 @@ interface AgentCanvasProps {
 
 const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
   const { screenToFlowPosition } = useReactFlow();
 
   useEffect(() => {
     if (workflow && workflow.nodes && workflow.edges) {
-      const rfNodes = workflow.nodes.map((n, i) => ({
-        id: n.id,
-        type: 'customNode',
-        data: { 
-          ...n.data,
-          label: n.name, 
-          type: n.type 
-        },
-        position: { x: i * 400 + 100, y: 200 },
-      }));
+      // Use positions from workflow if available, otherwise auto-generate
+      const rfNodes = workflow.nodes.map((n) => {
+        const position = n.position 
+          ? { x: Number(n.position.x) || 0, y: Number(n.position.y) || 0 }
+          : { x: Math.random() * 400, y: Math.random() * 300 };
+        
+        return {
+          id: n.id,
+          type: 'customNode',
+          data: { 
+            ...n.data,
+            label: n.label || n.name, 
+            type: n.type,
+            description: n.description,
+            inputs: n.inputs,
+            outputs: n.outputs,
+          },
+          position,
+        };
+      });
 
       const rfEdges = workflow.edges.map((e) => ({
-        id: `e-${e.source}-${e.target}`,
+        id: e.id || `e-${e.source}-${e.target}`,
         source: e.source,
         target: e.target,
+        sourceHandle: e.sourceHandle || 'default',
+        targetHandle: e.targetHandle || 'default',
+        type: e.type || 'smoothstep',
         animated: true,
         markerEnd: {
           type: MarkerType.ArrowClosed,
@@ -567,58 +621,175 @@ const AgentCanvasInner = ({ workflow }: AgentCanvasProps) => {
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex' }}>
       <Sidebar />
-      <div style={{ flex: 1, position: 'relative' }} ref={reactFlowWrapper}>
-        
-        {/* EXECUTE BUTTON */}
-        <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10 }}>
-          <button 
-            onClick={executeWorkflow}
-            style={{
-              background: 'linear-gradient(135deg, #5ef2e4 0%, #3bbdb1 100%)',
-              color: '#000',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '12px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 8px 24px rgba(94, 242, 228, 0.3)',
-              fontSize: '14px',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(94, 242, 228, 0.4)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(94, 242, 228, 0.3)'; }}
+
+      <div style={{ flex: 1, display: 'flex', position: 'relative' }} ref={reactFlowWrapper}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          {/* EXECUTE BUTTON */}
+          <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10 }}>
+            <button 
+              onClick={executeWorkflow}
+              style={{
+                background: 'linear-gradient(135deg, #5ef2e4 0%, #3bbdb1 100%)',
+                color: '#000',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: '0 8px 24px rgba(94, 242, 228, 0.3)',
+                fontSize: '14px',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(94, 242, 228, 0.4)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(94, 242, 228, 0.3)'; }}
+            >
+              <Play size={18} fill="currentColor" /> Execute Workflow
+            </button>
+          </div>
+
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            nodeTypes={nodeTypes}
+            onInit={onInit}
+            fitView
+            style={{ background: '#050508' }}
           >
-            <Play size={18} fill="currentColor" /> Execute Workflow
-          </button>
+            <Controls style={{ background: '#111118', fill: 'white', border: '1px solid #1e1e2e', borderRadius: '8px', padding: '4px' }} />
+            <MiniMap 
+              nodeColor="#3a395b"
+              nodeStrokeWidth={3} 
+              zoomable 
+              pannable 
+              style={{ background: '#111118', border: '1px solid #1e1e2e', borderRadius: '12px', margin: '16px' }} 
+              maskColor="rgba(0,0,0, 0.6)"
+            />
+            <Background variant={"dots" as any} gap={20} size={1} color="#222" />
+          </ReactFlow>
         </div>
 
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          nodeTypes={nodeTypes}
-          onInit={onInit}
-          fitView
-          style={{ background: '#050508' }}
-        >
-          <Controls style={{ background: '#111118', fill: 'white', border: '1px solid #1e1e2e', borderRadius: '8px', padding: '4px' }} />
-          <MiniMap 
-            nodeColor="#3a395b"
-            nodeStrokeWidth={3} 
-            zoomable 
-            pannable 
-            style={{ background: '#111118', border: '1px solid #1e1e2e', borderRadius: '12px', margin: '16px' }} 
-            maskColor="rgba(0,0,0, 0.6)"
-          />
-          <Background variant={"dots" as any} gap={20} size={1} color="#222" />
-        </ReactFlow>
+        {/* JSON PANEL */}
+        <div style={{ width: 420, background: '#07070b', borderLeft: '1px solid #1e1e2e', padding: '16px', boxSizing: 'border-box', overflow: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div>
+              <div style={{ color: '#fff', fontWeight: 700 }}>Generated Workflow</div>
+              <div style={{ color: '#888', fontSize: '12px' }}>JSON Schema (n8n-style) from Gemini</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  try {
+                    const workflowJson = {
+                      workflow: {
+                        name: 'Generated Workflow',
+                        description: 'Auto-generated workflow',
+                      },
+                      nodes: nodes.map(n => ({
+                        id: n.id,
+                        type: n.data.type,
+                        label: n.data.label,
+                        description: n.data.description || '',
+                        position: n.position,
+                        config: n.data,
+                        inputs: n.data.inputs || [],
+                        outputs: n.data.outputs || [],
+                      })),
+                      edges: edges.map(e => ({
+                        id: e.id,
+                        source: e.source,
+                        target: e.target,
+                        sourceHandle: e.sourceHandle,
+                        targetHandle: e.targetHandle,
+                      })),
+                    };
+                    navigator.clipboard.writeText(JSON.stringify(workflowJson, null, 2));
+                    // eslint-disable-next-line no-alert
+                    alert('Copied JSON to clipboard');
+                  } catch (e) {
+                    // eslint-disable-next-line no-alert
+                    alert('Copy failed');
+                  }
+                }}
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.06)', color: '#cfeee9', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer' }}
+              >Copy</button>
+
+              <button
+                onClick={() => {
+                  const workflowJson = {
+                    workflow: {
+                      name: 'Generated Workflow',
+                      description: 'Auto-generated workflow',
+                    },
+                    nodes: nodes.map(n => ({
+                      id: n.id,
+                      type: n.data.type,
+                      label: n.data.label,
+                      description: n.data.description || '',
+                      position: n.position,
+                      config: n.data,
+                      inputs: n.data.inputs || [],
+                      outputs: n.data.outputs || [],
+                    })),
+                    edges: edges.map(e => ({
+                      id: e.id,
+                      source: e.source,
+                      target: e.target,
+                      sourceHandle: e.sourceHandle,
+                      targetHandle: e.targetHandle,
+                    })),
+                  };
+                  const payload = JSON.stringify(workflowJson, null, 2);
+                  const blob = new Blob([payload], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `workflow-${Date.now()}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                }}
+                style={{ background: 'linear-gradient(135deg, #5ef2e4 0%, #3bbdb1 100%)', border: 'none', color: '#000', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer' }}
+              >Download</button>
+            </div>
+          </div>
+
+          <div style={{ background: '#040405', border: '1px solid #101018', borderRadius: '8px', padding: '12px', color: '#cfeee9', fontSize: '12px', fontFamily: 'Inter, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace', whiteSpace: 'pre-wrap', maxHeight: '500px', overflow: 'auto' }}>
+            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+{JSON.stringify({
+  workflow: {
+    name: 'Generated Workflow',
+    description: 'Auto-generated workflow',
+  },
+  nodes: nodes.map(n => ({
+    id: n.id,
+    type: n.data.type,
+    label: n.data.label,
+    description: n.data.description || '',
+    position: n.position,
+    config: n.data,
+    inputs: n.data.inputs || [],
+    outputs: n.data.outputs || [],
+  })),
+  edges: edges.map(e => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    sourceHandle: e.sourceHandle,
+    targetHandle: e.targetHandle,
+  })),
+}, null, 2)}
+            </pre>
+          </div>
+        </div>
       </div>
     </div>
   );
