@@ -1,0 +1,57 @@
+services:
+  - type: web
+    name: ropeli-backend
+    env: node
+    plan: standard          # required for persistent disk attachment
+    buildCommand: npm install
+    startCommand: node server.js
+
+    # Persistent disk for the Expo base + per-project directories. Without
+    # this every restart wipes the multi-GB npm install and the first build
+    # takes 5+ minutes to recover.
+    disk:
+      name: expo-projects
+      mountPath: /var/data/expo-projects
+      sizeGB: 10
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Point expo_runner at the persistent disk mount.
+      - key: EXPO_BASE_DIR
+        value: /var/data/expo-projects
+
+      # ── secrets — set in Render dashboard, never commit values here ──
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: EXPO_TOKEN
+        sync: false
+      - key: MODAL_API_URL
+        sync: false
+
+      # SMTP for APK-ready notifications. All optional — email.js no-ops
+      # when these are unset.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+
+      # Off by default — flip to "true" in the dashboard once the grader
+      # has been validated on staging.
+      - key: ENABLE_GRADER
+        value: "false"
