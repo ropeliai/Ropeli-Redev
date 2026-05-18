@@ -2,6 +2,8 @@ import express from "express";
 import axios from "axios";
 import OpenAI from "openai";
 import { enhancePromptForGeneration } from "./prompt_enhancer.js";
+import requireAuth from "./middleware/requireAuth.js";
+import checkRateLimit from "./middleware/checkRateLimit.js";
 
 const router = express.Router();
 
@@ -164,7 +166,7 @@ router.post("/warmup", (_req, res) => {
     .catch(() => {});
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, checkRateLimit, async (req, res) => {
   try {
     const { prompt, type: rawType, existingFiles } = req.body;
 

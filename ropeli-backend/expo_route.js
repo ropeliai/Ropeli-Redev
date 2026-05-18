@@ -1,9 +1,10 @@
 import express from "express";
 import { startExpo, stopExpo, getExpoStatus } from "./expo_runner.js";
+import requireAuth from "./middleware/requireAuth.js";
 
 const router = express.Router();
 
-router.post("/start", async (req, res) => {
+router.post("/start", requireAuth, async (req, res) => {
   try {
     const { project_id, files } = req.body || {};
     if (!project_id) {
@@ -19,7 +20,7 @@ router.post("/start", async (req, res) => {
   }
 });
 
-router.post("/stop", (req, res) => {
+router.post("/stop", requireAuth, (req, res) => {
   try {
     const { project_id } = req.body || {};
     if (project_id) stopExpo(project_id);
@@ -32,7 +33,7 @@ router.post("/stop", (req, res) => {
   }
 });
 
-router.get("/status/:projectId", async (req, res) => {
+router.get("/status/:projectId", requireAuth, async (req, res) => {
   try {
     const status = await getExpoStatus(req.params.projectId);
     res.json(status);
