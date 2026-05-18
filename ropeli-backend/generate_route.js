@@ -41,6 +41,21 @@ const MODAL_API_URL =
   "https://coutinhoandrew0--my-coder-model-generate.modal.run";
 
 const MODAL_TIMEOUT_MS = 60000;
+const GROQ_TIMEOUT_MS = 85000;
+
+/**
+ * Typed error used to short-circuit the generate handler and map the failure
+ * to a client-safe HTTP status without leaking SDK internals.
+ *   kind: "timeout" | "rate_limited" | "upstream"
+ */
+class GroqCallError extends Error {
+  constructor(kind, message, { retryAfter = null } = {}) {
+    super(message);
+    this.name = "GroqCallError";
+    this.kind = kind;
+    this.retryAfter = retryAfter;
+  }
+}
 
 const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
@@ -173,12 +188,35 @@ async function generateWithGroq(userPrompt, type) {
 
   const messages = buildJsonGenerationMessages(userPrompt, type);
 
-  const response = await client.chat.completions.create({
-    model: GROQ_MODEL,
-    max_tokens: 8192,
-    messages,
-    response_format: { type: "json_object" },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await client.chat.completions.create(
+      {
+        model: GROQ_MODEL,
+        max_tokens: 8192,
+        messages,
+        response_format: { type: "json_object" },
+      },
+      { signal: controller.signal }
+    );
+  } catch (err) {
+    if (err?.name === "AbortError" || controller.signal.aborted) {
+      throw new GroqCallError("timeout", `Groq call exceeded ${GROQ_TIMEOUT_MS}ms`);
+    }
+    const status = err?.status ?? err?.response?.status;
+    if (status === 429) {
+      throw new GroqCallError("rate_limited", "Groq rate limited", { retryAfter: 60 });
+    }
+    if (typeof status === "number" && status >= 500) {
+      throw new GroqCallError("upstream", `Groq ${status}`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   const content = response.choices[0]?.message?.content || "";
   return parseFilesJsonResponse(content, "Groq");
@@ -244,6 +282,30 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
       usedProvider = "groq";
       console.log("[generate] Groq succeeded");
     } catch (groqErr) {
+      // Surface typed Groq errors with the right HTTP code BEFORE falling back
+      // to Modal — a timeout or rate-limit should not silently switch providers.
+      if (groqErr instanceof GroqCallError) {
+        if (groqErr.kind === "timeout") {
+          return res.status(504).json({
+            error: "GENERATION_TIMEOUT",
+            message: "Generation took too long. Please try again.",
+          });
+        }
+        if (groqErr.kind === "rate_limited") {
+          return res.status(503).json({
+            error: "PROVIDER_RATE_LIMITED",
+            message: "AI provider is busy. Please try again in 60 seconds.",
+            retry_after: groqErr.retryAfter ?? 60,
+          });
+        }
+        if (groqErr.kind === "upstream") {
+          return res.status(503).json({
+            error: "PROVIDER_UNAVAILABLE",
+            message: "AI provider is temporarily unavailable.",
+          });
+        }
+      }
+
       console.warn(
         "[generate] Groq failed:",
         groqErr.message,
@@ -265,6 +327,23 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
           "[generate] Modal fallback also failed:",
           modalErr.message
         );
+        // axios timeout shows up as ECONNABORTED / "timeout of Xms exceeded".
+        const isTimeout =
+          modalErr?.code === "ECONNABORTED" ||
+          /timeout/i.test(modalErr?.message || "");
+        if (isTimeout) {
+          return res.status(504).json({
+            error: "GENERATION_TIMEOUT",
+            message: "Generation took too long. Please try again.",
+          });
+        }
+        const status = modalErr?.response?.status;
+        if (typeof status === "number" && status >= 500) {
+          return res.status(503).json({
+            error: "PROVIDER_UNAVAILABLE",
+            message: "AI provider is temporarily unavailable.",
+          });
+        }
         return res.status(502).json({
           error: "Generation failed",
           details: `Groq: ${groqErr.message} | Modal: ${modalErr.message}`,
