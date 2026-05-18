@@ -254,8 +254,39 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
 
     const webInstruction =
       "IMPORTANT: Generate a React WEB app only. Use div, button, input, h1, p, ul, li - standard HTML elements only. Use inline styles or a styles object with standard CSS. Do NOT use View, Text, StyleSheet, TouchableOpacity, FlatList, react-native, expo, NavigationContainer, or any mobile library. The code must run in a browser with no dependencies except React.";
-    const nativeInstruction =
-      "IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.";
+    const nativeInstruction = `IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.
+
+UI QUALITY RULES — mandatory for every screen file:
+- Use StyleSheet.create() for ALL styles. Never put style objects directly on JSX elements.
+- Every screen must have: a header (title Text or navigation header), a body area (ScrollView or FlatList), and at least one primary action button.
+- Buttons must have: backgroundColor, borderRadius (minimum 8), paddingVertical (minimum 12), paddingHorizontal (minimum 20), and visible text.
+- Every FlatList must include: keyExtractor={(item) => item.id}, renderItem, and ListEmptyComponent that shows a non-empty message.
+- Every onPress must call a state setter, navigate to a screen, or call an async function. Empty onPress={() => {}} is FORBIDDEN.
+
+LOGIC INVARIANTS — copy these patterns exactly:
+
+Add item pattern:
+const handleAdd = () => {
+  if (!inputText.trim()) return;
+  const newItem = { id: Date.now().toString(), text: inputText.trim() };
+  setItems(prev => [...prev, newItem]);
+  setInputText('');
+  AsyncStorage.setItem('items', JSON.stringify([...items, newItem]));
+};
+
+Delete item pattern:
+const handleDelete = (id) => {
+  setItems(prev => prev.filter(item => item.id !== id));
+  AsyncStorage.getItem('items').then(stored => {
+    const updated = (JSON.parse(stored || '[]')).filter(item => item.id !== id);
+    AsyncStorage.setItem('items', JSON.stringify(updated));
+  });
+};
+
+RULES:
+- Every Add button MUST use setItems(prev => [...prev, newItem]) — never setItems([...items, newItem])
+- Every Delete MUST filter by id — never by index
+- Every AsyncStorage.setItem call MUST also update local state`;
 
     let fullPrompt;
     if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
