@@ -81,6 +81,87 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
   return { Authorization: `Bearer ${session.access_token}` };
 };
 
+// ── APK build state ────────────────────────────────────────────────────────
+type ApkStatus = "idle" | "building" | "finished" | "errored";
+const [apkStatus, setApkStatus] = useState<ApkStatus>("idle");
+const [apkUrl, setApkUrl] = useState<string | null>(null);
+const [apkBuildId, setApkBuildId] = useState<string | null>(null);
+const apkPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+// Cleanup polling on unmount so we never leak intervals between sessions.
+useEffect(() => {
+  return () => {
+    if (apkPollRef.current) clearInterval(apkPollRef.current);
+  };
+}, []);
+
+// Restore APK download URL from Supabase when revisiting a previously-built
+// project. generated_projects.apk_url is written by build-status when EAS
+// reports "finished".
+useEffect(() => {
+  if (!existingGeneratedProjectId || apkStatus !== "idle") return;
+  supabase
+    .from("generated_projects")
+    .select("apk_url")
+    .eq("id", existingGeneratedProjectId)
+    .single()
+    .then(({ data }) => {
+      if (data?.apk_url) {
+        setApkUrl(data.apk_url);
+        setApkStatus("finished");
+      }
+    });
+}, [existingGeneratedProjectId, apkStatus]);
+
+const handleBuildAPK = async () => {
+  if (!existingGeneratedProjectId || apkStatus === "building") return;
+  setApkStatus("building");
+  setApkUrl(null);
+
+  const authHeaders = await getAuthHeaders();
+  let res: Response;
+  try {
+    res = await fetch("/api/expo/build", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders },
+      body: JSON.stringify({ project_id: existingGeneratedProjectId }),
+    });
+  } catch {
+    setApkStatus("errored");
+    return;
+  }
+
+  const data = await res.json().catch(() => ({} as any));
+  if (!res.ok || !data?.build_id) {
+    setApkStatus("errored");
+    return;
+  }
+  setApkBuildId(data.build_id);
+
+  // Poll every 30 s. We never await this — the interval is the loop.
+  if (apkPollRef.current) clearInterval(apkPollRef.current);
+  apkPollRef.current = setInterval(async () => {
+    try {
+      const hdrs = await getAuthHeaders();
+      const pr = await fetch(
+        `/api/expo/build-status/${encodeURIComponent(data.build_id)}`,
+        { headers: hdrs }
+      );
+      const poll = await pr.json().catch(() => ({} as any));
+      if (poll.status === "finished" && poll.apk_url) {
+        if (apkPollRef.current) clearInterval(apkPollRef.current);
+        setApkUrl(poll.apk_url);
+        setApkStatus("finished");
+      } else if (poll.status === "errored") {
+        if (apkPollRef.current) clearInterval(apkPollRef.current);
+        setApkStatus("errored");
+      }
+    } catch {
+      // Network blip — keep polling.
+    }
+  }, 30_000);
+};
+
 
 
 
@@ -756,6 +837,45 @@ useEffect(() => {
     };
   }
 
+  // Reused below in both desktop and mobile-layout QR previews.
+  const apkSection = buildType === "mobile" && existingGeneratedProjectId ? (
+    <div className="apk-section">
+      {apkStatus === "idle" && (
+        <button onClick={handleBuildAPK} className="btn-secondary apk-build-btn">
+          Build Android APK
+        </button>
+      )}
+      {apkStatus === "building" && (
+        <div className="apk-building">
+          <div className="spinner" />
+          <p>Building APK… this usually takes 5–15 minutes.</p>
+          <p className="apk-hint">You can close this tab — we'll email you when it's ready.</p>
+        </div>
+      )}
+      {apkStatus === "finished" && apkUrl && (
+        <div className="apk-ready">
+          <p className="apk-ready-title">✅ APK Ready</p>
+          <a href={apkUrl} download className="btn-primary apk-download-btn">
+            Download APK
+          </a>
+          <p className="apk-install-note">
+            On your Android phone: Settings → Security → enable <em>Install unknown apps</em> → tap the link above.
+          </p>
+        </div>
+      )}
+      {apkStatus === "errored" && (
+        <div className="apk-error">
+          <p>
+            Build failed.{" "}
+            <button className="apk-retry-btn" onClick={() => setApkStatus("idle")}>
+              Try again
+            </button>
+          </p>
+        </div>
+      )}
+    </div>
+  ) : null;
+
  return (
   <section className="builder-page">
     
@@ -1023,6 +1143,7 @@ useEffect(() => {
             ) : (
               <p>Run generation to start Expo and get QR link</p>
             )}
+            {apkSection}
           </div>
         ) : (
           <div className="web-frame-preview">
@@ -1243,6 +1364,7 @@ useEffect(() => {
               ) : (
                 <p>Run generation to start Expo and get QR link</p>
               )}
+              {apkSection}
             </div>
           ) : (
             <div className="web-frame-preview">
