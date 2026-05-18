@@ -1,11 +1,40 @@
 import express from "express";
 import axios from "axios";
 import OpenAI from "openai";
+import { createClient } from "@supabase/supabase-js";
 import { enhancePromptForGeneration } from "./prompt_enhancer.js";
 import requireAuth from "./middleware/requireAuth.js";
 import checkRateLimit from "./middleware/checkRateLimit.js";
 
 const router = express.Router();
+
+// ── Supabase service client (used only to log generations for rate limiting) ──
+let supabaseServiceClient = null;
+function getSupabaseServiceClient() {
+  if (supabaseServiceClient) return supabaseServiceClient;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  supabaseServiceClient = createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  return supabaseServiceClient;
+}
+
+/**
+ * Fire-and-forget insert into generations table. Never awaited, never throws.
+ * If SUPABASE_SERVICE_ROLE_KEY is missing, this is a silent no-op.
+ */
+function recordGeneration(userId) {
+  if (!userId) return;
+  const sb = getSupabaseServiceClient();
+  if (!sb) return;
+  sb.from("generations")
+    .insert({ user_id: userId, created_at: new Date().toISOString() })
+    .then(({ error }) => {
+      if (error) console.warn("[rate-limit] insert failed:", error.message);
+    });
+}
 
 const MODAL_API_URL =
   process.env.MODAL_API_URL ||
@@ -266,6 +295,7 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
     }
 
     const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
+    recordGeneration(req.user?.id);
     res.json({ success: true, project_name, files, provider: usedProvider });
   } catch (error) {
     console.error("[generate] Unexpected error:", error.message);
