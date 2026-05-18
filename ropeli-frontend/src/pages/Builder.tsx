@@ -73,6 +73,14 @@ useEffect(() => {
   }
 }, [routeProjectId]);
 
+// Returns Authorization header if a Supabase session exists, otherwise {}.
+// Always merge with Content-Type at the call site.
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
+};
+
 
 
 
@@ -340,15 +348,36 @@ const handleSend = async (overridePrompt?: string) => {
   if (!overridePrompt) setPrompt("");
 
   try {
+    const authHeaders = await getAuthHeaders();
     const response = await fetch("/api/generate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({
         prompt: userPrompt,
         type: buildType,
         existingFiles: generatedFiles.length ? generatedFiles : undefined,
       }),
     });
+
+    if (response.status === 401) {
+      setMessages((prev) => [
+        ...prev.filter((m) => m.kind !== "thinking"),
+        { kind: "text", role: "assistant", content: "🔒 Please log in to generate apps." },
+      ]);
+      return;
+    }
+    if (response.status === 429) {
+      const err = await response.json().catch(() => ({}));
+      setMessages((prev) => [
+        ...prev.filter((m) => m.kind !== "thinking"),
+        {
+          kind: "text",
+          role: "assistant",
+          content: err?.message || "You've used all 20 daily generations. Resets at midnight UTC.",
+        },
+      ]);
+      return;
+    }
 
     const result = await response.json();
     if (result?.success) {
@@ -370,7 +399,7 @@ const handleSend = async (overridePrompt?: string) => {
         setExpoQrUrl("");
         const expoResponse = await fetch("/api/expo/start", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ project_id: projectIdToUse, files }),
         });
         const expoResult = await expoResponse.json();
@@ -381,7 +410,9 @@ const handleSend = async (overridePrompt?: string) => {
           } else {
             const pollId = setInterval(async () => {
               try {
-                const sr = await fetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`);
+                const sr = await fetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`, {
+                  headers: authHeaders,
+                });
                 const st = await sr.json();
                 if (st.metroReachable) {
                   setExpoMetroReady(true);
@@ -517,9 +548,10 @@ const handleRunOnDevice = async () => {
 
   const projectIdToUse = existingGeneratedProjectId || slugify(prompt);
   try {
+    const authHeaders = await getAuthHeaders();
     const expoResponse = await fetch("/api/expo/start", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ project_id: projectIdToUse, files: generatedFiles }),
     });
     const expoResult = await expoResponse.json();
@@ -530,7 +562,9 @@ const handleRunOnDevice = async () => {
       } else {
         const pollId = setInterval(async () => {
           try {
-            const sr = await fetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`);
+            const sr = await fetch(`/api/expo/status/${encodeURIComponent(projectIdToUse)}`, {
+              headers: authHeaders,
+            });
             const st = await sr.json();
             if (st.metroReachable) {
               setExpoMetroReady(true);
