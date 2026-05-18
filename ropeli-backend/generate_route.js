@@ -3,6 +3,7 @@ import axios from "axios";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 import { enhancePromptForGeneration } from "./prompt_enhancer.js";
+import { gradeAndImprove } from "./gradeAndImprove.js";
 import requireAuth from "./middleware/requireAuth.js";
 import checkRateLimit from "./middleware/checkRateLimit.js";
 
@@ -400,6 +401,19 @@ RULES:
           }
         } catch (e) {
           console.error("[generate] Groq correction retry failed:", e.message);
+        }
+      }
+    }
+
+    // Optional grader pass — opt-in via ENABLE_GRADER=true.
+    // Off by default because past iterations regressed working button handlers.
+    if (process.env.ENABLE_GRADER === "true" && usedProvider === "groq") {
+      const groq = getGroq();
+      if (groq) {
+        try {
+          files = await gradeAndImprove(files, groq);
+        } catch (gradeErr) {
+          console.warn("[generate] grader threw — keeping original files:", gradeErr?.message);
         }
       }
     }
