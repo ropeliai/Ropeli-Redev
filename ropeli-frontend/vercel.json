@@ -1,5 +1,12 @@
 {
   "rewrites": [
-    { "source": "/:path*", "destination": "/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://ropeli-backend.onrender.com/api/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
   ]
 }
