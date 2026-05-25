@@ -253,8 +253,49 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
       ),
     });
 
-    const webInstruction =
-      "IMPORTANT: Generate a React WEB app only. Use div, button, input, h1, p, ul, li - standard HTML elements only. Use inline styles or a styles object with standard CSS. Do NOT use View, Text, StyleSheet, TouchableOpacity, FlatList, react-native, expo, NavigationContainer, or any mobile library. The code must run in a browser with no dependencies except React.";
+    const webInstruction = `IMPORTANT: Generate a complete, working React WEB app only.
+
+TECH RULES:
+- Use ONLY standard HTML elements: div, button, input, textarea, select, h1–h6, p, ul, li, span, img, form, label
+- Use React hooks: useState, useEffect, useCallback, useMemo
+- Use inline styles or a single styles object with standard CSS properties (camelCase)
+- Use localStorage for persistence if the user's app needs it
+- NEVER use: View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, react-native, expo, AsyncStorage, NavigationContainer, or any mobile library
+- Every component must have a default export
+- The app must run in a browser with only React as a dependency — no npm imports beyond React
+
+UI QUALITY RULES — mandatory for every component:
+- Every app must have a visible header with a title
+- Buttons must have visible background colour, padding (at least 8px 16px), border-radius (at least 6px), and a text label
+- Every list must handle the empty state — show a message like "No items yet" when the list is empty
+- Every input must have a visible placeholder or label
+- Use a clean, minimal colour palette — white/light background, one accent colour for buttons
+- NEVER leave an onClick handler empty: onClick={() => {}} is FORBIDDEN — every button must do something
+
+LOGIC INVARIANTS — copy these patterns exactly:
+
+Add item pattern:
+const handleAdd = () => {
+  if (!inputText.trim()) return;
+  const newItem = { id: Date.now().toString(), text: inputText.trim(), done: false };
+  setItems(prev => [...prev, newItem]);
+  setInputText('');
+};
+
+Delete item pattern:
+const handleDelete = (id) => {
+  setItems(prev => prev.filter(item => item.id !== id));
+};
+
+Toggle item pattern:
+const handleToggle = (id) => {
+  setItems(prev => prev.map(item => item.id === id ? { ...item, done: !item.done } : item));
+};
+
+RULES:
+- Every Add action MUST use setItems(prev => [...prev, newItem]) — never setItems([...items, newItem])
+- Every Delete MUST filter by id — never by index
+- Never mutate state directly`;
     const nativeInstruction = `IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.
 
 UI QUALITY RULES — mandatory for every screen file:
