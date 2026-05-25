@@ -81,90 +81,6 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
   return { Authorization: `Bearer ${session.access_token}` };
 };
 
-// ── APK build state ────────────────────────────────────────────────────────
-type ApkStatus = "idle" | "building" | "finished" | "errored";
-const [apkStatus, setApkStatus] = useState<ApkStatus>("idle");
-const [apkUrl, setApkUrl] = useState<string | null>(null);
-const [apkBuildId, setApkBuildId] = useState<string | null>(null);
-const apkPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-// Cleanup polling on unmount so we never leak intervals between sessions.
-useEffect(() => {
-  return () => {
-    if (apkPollRef.current) clearInterval(apkPollRef.current);
-  };
-}, []);
-
-// Restore APK download URL from Supabase when revisiting a previously-built
-// project. generated_projects.apk_url is written by build-status when EAS
-// reports "finished".
-useEffect(() => {
-  if (!existingGeneratedProjectId || apkStatus !== "idle") return;
-  supabase
-    .from("generated_projects")
-    .select("apk_url")
-    .eq("id", existingGeneratedProjectId)
-    .single()
-    .then(({ data }) => {
-      if (data?.apk_url) {
-        setApkUrl(data.apk_url);
-        setApkStatus("finished");
-      }
-    });
-}, [existingGeneratedProjectId, apkStatus]);
-
-const handleBuildAPK = async () => {
-  if (!existingGeneratedProjectId || apkStatus === "building") return;
-  setApkStatus("building");
-  setApkUrl(null);
-
-  const authHeaders = await getAuthHeaders();
-  let res: Response;
-  try {
-    res = await fetch("/api/expo/build", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders },
-      body: JSON.stringify({ project_id: existingGeneratedProjectId }),
-    });
-  } catch {
-    setApkStatus("errored");
-    return;
-  }
-
-  const data = await res.json().catch(() => ({} as any));
-  if (!res.ok || !data?.build_id) {
-    setApkStatus("errored");
-    return;
-  }
-  setApkBuildId(data.build_id);
-
-  // Poll every 30 s. We never await this — the interval is the loop.
-  if (apkPollRef.current) clearInterval(apkPollRef.current);
-  apkPollRef.current = setInterval(async () => {
-    try {
-      const hdrs = await getAuthHeaders();
-      const pr = await fetch(
-        `/api/expo/build-status/${encodeURIComponent(data.build_id)}`,
-        { headers: hdrs }
-      );
-      const poll = await pr.json().catch(() => ({} as any));
-      if (poll.status === "finished" && poll.apk_url) {
-        if (apkPollRef.current) clearInterval(apkPollRef.current);
-        setApkUrl(poll.apk_url);
-        setApkStatus("finished");
-      } else if (poll.status === "errored") {
-        if (apkPollRef.current) clearInterval(apkPollRef.current);
-        setApkStatus("errored");
-      }
-    } catch {
-      // Network blip — keep polling.
-    }
-  }, 30_000);
-};
-
-
-
-
   const [code, setCode] = useState(`
 const root = document.getElementById("root");
 root.innerHTML = "<h1>Hello from Ropeli </h1>";
@@ -250,6 +166,88 @@ useEffect(() => {
   const [existingGeneratedProjectId, setExistingGeneratedProjectId] = useState<string | null>(
     location.state?.generatedProjectId ? String(location.state.generatedProjectId) : null
   );
+
+  // ── APK build state ──────────────────────────────────────────────────────
+  type ApkStatus = "idle" | "building" | "finished" | "errored";
+  const [apkStatus, setApkStatus] = useState<ApkStatus>("idle");
+  const [apkUrl, setApkUrl] = useState<string | null>(null);
+  const [apkBuildId, setApkBuildId] = useState<string | null>(null);
+  const apkPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup polling on unmount so we never leak intervals between sessions.
+  useEffect(() => {
+    return () => {
+      if (apkPollRef.current) clearInterval(apkPollRef.current);
+    };
+  }, []);
+
+  // Restore APK download URL from Supabase when revisiting a previously-built
+  // project. generated_projects.apk_url is written by build-status when EAS
+  // reports "finished".
+  useEffect(() => {
+    if (!existingGeneratedProjectId || apkStatus !== "idle") return;
+    supabase
+      .from("generated_projects")
+      .select("apk_url")
+      .eq("id", existingGeneratedProjectId)
+      .single()
+      .then(({ data }) => {
+        if (data?.apk_url) {
+          setApkUrl(data.apk_url);
+          setApkStatus("finished");
+        }
+      });
+  }, [existingGeneratedProjectId, apkStatus]);
+
+  const handleBuildAPK = async () => {
+    if (!existingGeneratedProjectId || apkStatus === "building") return;
+    setApkStatus("building");
+    setApkUrl(null);
+
+    const authHeaders = await getAuthHeaders();
+    let res: Response;
+    try {
+      res = await fetch("/api/expo/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ project_id: existingGeneratedProjectId }),
+      });
+    } catch {
+      setApkStatus("errored");
+      return;
+    }
+
+    const data = await res.json().catch(() => ({} as any));
+    if (!res.ok || !data?.build_id) {
+      setApkStatus("errored");
+      return;
+    }
+    setApkBuildId(data.build_id);
+
+    // Poll every 30 s. We never await this — the interval is the loop.
+    if (apkPollRef.current) clearInterval(apkPollRef.current);
+    apkPollRef.current = setInterval(async () => {
+      try {
+        const hdrs = await getAuthHeaders();
+        const pr = await fetch(
+          `/api/expo/build-status/${encodeURIComponent(data.build_id)}`,
+          { headers: hdrs }
+        );
+        const poll = await pr.json().catch(() => ({} as any));
+        if (poll.status === "finished" && poll.apk_url) {
+          if (apkPollRef.current) clearInterval(apkPollRef.current);
+          setApkUrl(poll.apk_url);
+          setApkStatus("finished");
+        } else if (poll.status === "errored") {
+          if (apkPollRef.current) clearInterval(apkPollRef.current);
+          setApkStatus("errored");
+        }
+      } catch {
+        // Network blip — keep polling.
+      }
+    }, 30_000);
+  };
+
   const [projectConfig, setProjectConfig] = useState<ProjectConfig>({
   buildTypes: [],
   integrations: [],
