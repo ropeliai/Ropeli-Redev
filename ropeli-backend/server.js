@@ -16,7 +16,7 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
