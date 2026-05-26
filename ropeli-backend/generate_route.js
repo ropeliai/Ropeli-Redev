@@ -144,15 +144,89 @@ async function callModal(prompt, retryCount = 0) {
   return response;
 }
 
-function buildJsonGenerationMessages(userPrompt, type) {
-  const webInstruction = `You are a code generator. Generate a React WEB app. Use only standard HTML elements (div, button, input, h1, p, ul, li) and inline styles or a styles object. Do NOT use any React Native or mobile libraries. The code must run in a browser with only React as a dependency.`;
+const WEB_SYSTEM_PROMPT = `You are a code generator. Generate a complete, working React WEB app only.
 
-  const nativeInstruction = `You are a code generator. Generate an Expo React Native MOBILE app. Use only React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries. Do NOT use browser APIs like localStorage, sessionStorage, window, document, ReactDOM, or HTML tags. For storage use AsyncStorage from @react-native-async-storage/async-storage. Always import React like: import React, { useState, useEffect } from 'react'. Always import AsyncStorage like: import AsyncStorage from '@react-native-async-storage/async-storage' (never destructured).`;
+TECH RULES:
+- Use ONLY standard HTML elements: div, button, input, textarea, select, h1–h6, p, ul, li, span, img, form, label
+- Use React hooks: useState, useEffect, useCallback, useMemo
+- Use inline styles or a single styles object with standard CSS properties (camelCase)
+- Use localStorage for persistence if the user's app needs it
+- NEVER use: View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, react-native, expo, AsyncStorage, NavigationContainer, or any mobile library
+- Every component must have a default export
+- The app must run in a browser with only React as a dependency — no npm imports beyond React
 
-  const systemPrompt =
-    type === "web" ? webInstruction : nativeInstruction;
+UI QUALITY RULES — mandatory for every component:
+- Every app must have a visible header with a title
+- Buttons must have visible background colour, padding (at least 8px 16px), border-radius (at least 6px), and a text label
+- Every list must handle the empty state — show a message like "No items yet" when the list is empty
+- Every input must have a visible placeholder or label
+- Use a clean, minimal colour palette — white/light background, one accent colour for buttons
+- NEVER leave an onClick handler empty: onClick={() => {}} is FORBIDDEN — every button must do something
 
-  const userMessage = `${userPrompt}
+LOGIC INVARIANTS — copy these patterns exactly:
+
+Add item pattern:
+const handleAdd = () => {
+  if (!inputText.trim()) return;
+  const newItem = { id: Date.now().toString(), text: inputText.trim(), done: false };
+  setItems(prev => [...prev, newItem]);
+  setInputText('');
+};
+
+Delete item pattern:
+const handleDelete = (id) => {
+  setItems(prev => prev.filter(item => item.id !== id));
+};
+
+Toggle item pattern:
+const handleToggle = (id) => {
+  setItems(prev => prev.map(item => item.id === id ? { ...item, done: !item.done } : item));
+};
+
+RULES:
+- Every Add action MUST use setItems(prev => [...prev, newItem]) — never setItems([...items, newItem])
+- Every Delete MUST filter by id — never by index
+- Never mutate state directly`;
+
+const NATIVE_SYSTEM_PROMPT = `You are a code generator. Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Keep dependencies minimal and compatible with Expo.
+
+UI QUALITY RULES — mandatory for every screen file:
+- Use StyleSheet.create() for ALL styles. Never put style objects directly on JSX elements.
+- Every screen must have: a header (title Text or navigation header), a body area (ScrollView or FlatList), and at least one primary action button.
+- Buttons must have: backgroundColor, borderRadius (minimum 8), paddingVertical (minimum 12), paddingHorizontal (minimum 20), and visible text.
+- Every FlatList must include: keyExtractor={(item) => item.id}, renderItem, and ListEmptyComponent that shows a non-empty message.
+- Every onPress must call a state setter, navigate to a screen, or call an async function. Empty onPress={() => {}} is FORBIDDEN.
+- NEVER nest a FlatList or ScrollView inside a plain ScrollView with the same orientation.
+
+LOGIC INVARIANTS — copy these patterns exactly:
+
+Add item pattern:
+const handleAdd = () => {
+  if (!inputText.trim()) return;
+  const newItem = { id: Date.now().toString(), text: inputText.trim() };
+  setItems(prev => [...prev, newItem]);
+  setInputText('');
+  AsyncStorage.setItem('items', JSON.stringify([...items, newItem]));
+};
+
+Delete item pattern:
+const handleDelete = (id) => {
+  setItems(prev => prev.filter(item => item.id !== id));
+  AsyncStorage.getItem('items').then(stored => {
+    const updated = (JSON.parse(stored || '[]')).filter(item => item.id !== id);
+    AsyncStorage.setItem('items', JSON.stringify(updated));
+  });
+};
+
+RULES:
+- Every Add button MUST use setItems(prev => [...prev, newItem]) — never setItems([...items, newItem])
+- Every Delete MUST filter by id — never by index
+- Every AsyncStorage.setItem call MUST also update local state`;
+
+function buildJsonGenerationMessages(userContent, type) {
+  const systemPrompt = type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT;
+
+  const userMessage = `${userContent}
 
 Return ONLY a valid JSON object with this exact structure (no markdown, no explanation, just the JSON):
 {
@@ -253,105 +327,27 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
       ),
     });
 
-    const webInstruction = `IMPORTANT: Generate a complete, working React WEB app only.
-
-TECH RULES:
-- Use ONLY standard HTML elements: div, button, input, textarea, select, h1–h6, p, ul, li, span, img, form, label
-- Use React hooks: useState, useEffect, useCallback, useMemo
-- Use inline styles or a single styles object with standard CSS properties (camelCase)
-- Use localStorage for persistence if the user's app needs it
-- NEVER use: View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, react-native, expo, AsyncStorage, NavigationContainer, or any mobile library
-- Every component must have a default export
-- The app must run in a browser with only React as a dependency — no npm imports beyond React
-
-UI QUALITY RULES — mandatory for every component:
-- Every app must have a visible header with a title
-- Buttons must have visible background colour, padding (at least 8px 16px), border-radius (at least 6px), and a text label
-- Every list must handle the empty state — show a message like "No items yet" when the list is empty
-- Every input must have a visible placeholder or label
-- Use a clean, minimal colour palette — white/light background, one accent colour for buttons
-- NEVER leave an onClick handler empty: onClick={() => {}} is FORBIDDEN — every button must do something
-
-LOGIC INVARIANTS — copy these patterns exactly:
-
-Add item pattern:
-const handleAdd = () => {
-  if (!inputText.trim()) return;
-  const newItem = { id: Date.now().toString(), text: inputText.trim(), done: false };
-  setItems(prev => [...prev, newItem]);
-  setInputText('');
-};
-
-Delete item pattern:
-const handleDelete = (id) => {
-  setItems(prev => prev.filter(item => item.id !== id));
-};
-
-Toggle item pattern:
-const handleToggle = (id) => {
-  setItems(prev => prev.map(item => item.id === id ? { ...item, done: !item.done } : item));
-};
-
-RULES:
-- Every Add action MUST use setItems(prev => [...prev, newItem]) — never setItems([...items, newItem])
-- Every Delete MUST filter by id — never by index
-- Never mutate state directly`;
-    const nativeInstruction = `IMPORTANT: Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Never use localStorage, sessionStorage, document, window, or ReactDOM in React Native code. Keep dependencies minimal and compatible with Expo.
-
-UI QUALITY RULES — mandatory for every screen file:
-- Use StyleSheet.create() for ALL styles. Never put style objects directly on JSX elements.
-- Every screen must have: a header (title Text or navigation header), a body area (ScrollView or FlatList), and at least one primary action button.
-- Buttons must have: backgroundColor, borderRadius (minimum 8), paddingVertical (minimum 12), paddingHorizontal (minimum 20), and visible text.
-- Every FlatList must include: keyExtractor={(item) => item.id}, renderItem, and ListEmptyComponent that shows a non-empty message.
-- Every onPress must call a state setter, navigate to a screen, or call an async function. Empty onPress={() => {}} is FORBIDDEN.
-
-LOGIC INVARIANTS — copy these patterns exactly:
-
-Add item pattern:
-const handleAdd = () => {
-  if (!inputText.trim()) return;
-  const newItem = { id: Date.now().toString(), text: inputText.trim() };
-  setItems(prev => [...prev, newItem]);
-  setInputText('');
-  AsyncStorage.setItem('items', JSON.stringify([...items, newItem]));
-};
-
-Delete item pattern:
-const handleDelete = (id) => {
-  setItems(prev => prev.filter(item => item.id !== id));
-  AsyncStorage.getItem('items').then(stored => {
-    const updated = (JSON.parse(stored || '[]')).filter(item => item.id !== id);
-    AsyncStorage.setItem('items', JSON.stringify(updated));
-  });
-};
-
-RULES:
-- Every Add button MUST use setItems(prev => [...prev, newItem]) — never setItems([...items, newItem])
-- Every Delete MUST filter by id — never by index
-- Every AsyncStorage.setItem call MUST also update local state`;
-
-    let fullPrompt;
+    // Build the user-turn content only — instructions live in the system role
+    // inside buildJsonGenerationMessages (WEB_SYSTEM_PROMPT / NATIVE_SYSTEM_PROMPT).
+    let userContent;
     if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
       const filesContext = existingFiles
         .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
         .join("\n\n");
-      fullPrompt =
-        type === "web"
-          ? `${webInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to:\n${enhancedIntent}\n\nReturn the complete updated files.`
-          : `${nativeInstruction}\n\nHere are the existing files:\n\n${filesContext}\n\nThe user wants to:\n${enhancedIntent}\n\nReturn the complete updated files.`;
+      userContent = `Here are the existing files:\n\n${filesContext}\n\nThe user wants to:\n${enhancedIntent}\n\nReturn the complete updated files.`;
     } else {
-      fullPrompt =
-        type === "web"
-          ? `${webInstruction}\n\nUser request:\n${enhancedIntent}`
-          : `${nativeInstruction}\n\nUser request:\n${enhancedIntent}`;
+      userContent = `User request:\n${enhancedIntent}`;
     }
+
+    // Modal receives a single raw string — prepend the system prompt for it.
+    const modalPrompt = `${type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT}\n\n${userContent}`;
 
     let responseData = null;
     let usedProvider = null;
 
     try {
       console.log("[generate] Trying Groq...");
-      responseData = await generateWithGroq(fullPrompt, type);
+      responseData = await generateWithGroq(userContent, type);
       usedProvider = "groq";
       console.log("[generate] Groq succeeded");
     } catch (groqErr) {
@@ -386,7 +382,7 @@ RULES:
       );
 
       try {
-        const modalResponse = await callModal(fullPrompt);
+        const modalResponse = await callModal(modalPrompt);
         const { success, data } = modalResponse.data;
         if (success && data && Array.isArray(data.files)) {
           responseData = { success, data };
