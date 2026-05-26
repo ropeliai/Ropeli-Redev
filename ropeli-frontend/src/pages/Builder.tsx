@@ -55,6 +55,42 @@ const slugify = (text: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-+|-+$)/g, "") || "generated-project";
 
+// Returns the build type the user *probably* meant, or null when ambiguous.
+// Only used as a soft suggestion on the very first generation. The user's
+// explicit Mobile/Web toggle always takes precedence.
+const detectBuildTypeFromPrompt = (text: string): "mobile" | "web" | null => {
+  const t = text.toLowerCase();
+  const webHits = [
+    "website",
+    "web app",
+    "web-app",
+    "webapp",
+    "landing page",
+    "dashboard",
+    "browser",
+    "next.js",
+    "nextjs",
+    "react web",
+  ].some((kw) => t.includes(kw));
+  const mobileHits = [
+    "mobile app",
+    "mobile-app",
+    "android app",
+    "ios app",
+    "iphone app",
+    "expo",
+    "react native",
+    "react-native",
+    "phone app",
+    "play store",
+    "app store",
+    "apk",
+  ].some((kw) => t.includes(kw));
+  if (webHits && !mobileHits) return "web";
+  if (mobileHits && !webHits) return "mobile";
+  return null;
+};
+
 export default function Builder() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -248,6 +284,145 @@ useEffect(() => {
     }, 30_000);
   };
 
+  // Switch between Mobile and Web. If there are already generated files, ask
+  // the user to confirm a conversion and re-run /api/generate with the files
+  // as `existingFiles` and the new target type. With no files, this is a
+  // plain toggle — identical to the previous setBuildType behaviour.
+  const handleSwitchBuildType = async (target: "mobile" | "web") => {
+    if (target === buildType) return;
+    if (isGenerating) return;
+
+    if (generatedFiles.length === 0) {
+      setBuildType(target);
+      return;
+    }
+
+    const ok = window.confirm(
+      target === "web"
+        ? "Convert this mobile app into a web app? This will use one of your daily generations."
+        : "Convert this web app into a mobile app? This will use one of your daily generations."
+    );
+    if (!ok) return;
+
+    setBuildType(target);
+    setIsGenerating(true);
+    setGenerationElapsed(0);
+    generationTimerRef.current = setInterval(() => {
+      setGenerationElapsed((prev) => prev + 1);
+    }, 1000);
+
+    const conversionInstruction =
+      target === "web"
+        ? "Convert this React Native / Expo app into a React web app. Use only standard HTML elements (div, button, input, etc.) and inline styles. Remove all react-native and Expo imports. Keep the same features and structure."
+        : "Convert this React web app into an Expo React Native mobile app. Replace HTML elements with React Native components (View, Text, TouchableOpacity, FlatList, etc.). Replace localStorage with AsyncStorage. Keep the same features and structure.";
+
+    try {
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({
+          prompt: conversionInstruction,
+          type: target,
+          existingFiles: generatedFiles,
+        }),
+      });
+
+      if (response.status === 401) {
+        setMessages((prev) => [
+          ...prev,
+          { kind: "text", role: "assistant", content: "🔒 Please log in to convert apps." },
+        ]);
+        return;
+      }
+      if (response.status === 429) {
+        const err = await response.json().catch(() => ({} as any));
+        setMessages((prev) => [
+          ...prev,
+          {
+            kind: "text",
+            role: "assistant",
+            content: err?.message || "Daily limit reached. Resets at midnight UTC.",
+          },
+        ]);
+        return;
+      }
+
+      const result = await response.json();
+      if (!result?.success || !Array.isArray(result.files)) {
+        setMessages((prev) => [
+          ...prev,
+          { kind: "text", role: "assistant", content: "❌ Conversion failed. Please try again." },
+        ]);
+        return;
+      }
+
+      const files = result.files.map((f: any) => ({ path: f.path, content: f.content }));
+      setGeneratedFiles(files);
+      setSelectedFile(files[0]?.path || "");
+      setCode(files[0]?.content || "");
+      setHasCodeEdits(false);
+
+      const projectIdToUse = existingGeneratedProjectId || slugify(generatedProjectName || "app");
+
+      if (target === "mobile") {
+        setExpoLoading(true);
+        setExpoMetroReady(false);
+        setExpoQrUrl("");
+        const expoResponse = await fetch("/api/expo/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          body: JSON.stringify({ project_id: projectIdToUse, files }),
+        });
+        const expoResult = await expoResponse.json().catch(() => ({} as any));
+        if (expoResult?.success && expoResult.qr_url) {
+          setExpoQrUrl(expoResult.qr_url);
+          if (expoResult.metroReachable) {
+            setExpoMetroReady(true);
+          }
+        }
+        setExpoLoading(false);
+      }
+
+      if (user && existingGeneratedProjectId) {
+        await supabase
+          .from("generated_projects")
+          .update({
+            files,
+            build_type: target,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingGeneratedProjectId)
+          .eq("user_id", user.id);
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          kind: "text",
+          role: "assistant",
+          content:
+            target === "web"
+              ? "✅ Converted to a web app. Live preview is ready."
+              : "✅ Converted to a mobile app. Scan the QR code to preview.",
+        },
+      ]);
+    } catch (err) {
+      console.error("[switch-build-type] failed:", err);
+      setMessages((prev) => [
+        ...prev,
+        { kind: "text", role: "assistant", content: "❌ Conversion failed. Please try again." },
+      ]);
+    } finally {
+      setIsGenerating(false);
+      if (generationTimerRef.current) {
+        clearInterval(generationTimerRef.current);
+        generationTimerRef.current = null;
+      }
+      setGenerationElapsed(0);
+    }
+  };
+
   const [projectConfig, setProjectConfig] = useState<ProjectConfig>({
   buildTypes: [],
   integrations: [],
@@ -414,6 +589,19 @@ const handleSend = async (overridePrompt?: string) => {
   if (isGenerating) return;
   const userPrompt = (overridePrompt ?? prompt).trim();
   if (!userPrompt) return;
+
+  // Soft auto-detect from prompt text. Applied ONLY on the first generation
+  // (no existing files yet) so follow-up prompts can't flip mode unexpectedly.
+  // The user's manual toggle always wins when no signal is found.
+  let resolvedBuildType: "mobile" | "web" = buildType;
+  if (generatedFiles.length === 0) {
+    const detected = detectBuildTypeFromPrompt(userPrompt);
+    if (detected && detected !== buildType) {
+      resolvedBuildType = detected;
+      setBuildType(detected);
+    }
+  }
+
   setMessages((prev) => [
     ...prev,
     { kind: "user_input", role: "user", content: userPrompt },
@@ -433,7 +621,7 @@ const handleSend = async (overridePrompt?: string) => {
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({
         prompt: userPrompt,
-        type: buildType,
+        type: resolvedBuildType,
         existingFiles: generatedFiles.length ? generatedFiles : undefined,
       }),
     });
@@ -472,7 +660,7 @@ const handleSend = async (overridePrompt?: string) => {
 
       const projectIdToUse = existingGeneratedProjectId || slugify(userPrompt);
 
-      if (buildType === "mobile") {
+      if (resolvedBuildType === "mobile") {
         setExpoLoading(true);
         setExpoMetroReady(false);
         setExpoQrUrl("");
@@ -511,7 +699,7 @@ const handleSend = async (overridePrompt?: string) => {
           project_name: result.project_name || slugify(userPrompt),
           prompt: userPrompt,
           files,
-          build_type: buildType,
+          build_type: resolvedBuildType,
           updated_at: new Date().toISOString(),
         };
 
@@ -946,8 +1134,20 @@ useEffect(() => {
 
       {/* RIGHT */}
       <div className="topbar-right">
-        <button onClick={() => setBuildType("mobile")} className={buildType === "mobile" ? "active" : ""}>Mobile</button>
-        <button onClick={() => setBuildType("web")} className={buildType === "web" ? "active" : ""}>Web</button>
+        <button
+          onClick={() => handleSwitchBuildType("mobile")}
+          disabled={isGenerating}
+          className={buildType === "mobile" ? "active" : ""}
+        >
+          Mobile
+        </button>
+        <button
+          onClick={() => handleSwitchBuildType("web")}
+          disabled={isGenerating}
+          className={buildType === "web" ? "active" : ""}
+        >
+          Web
+        </button>
 
         <input
           className="project-name-input"
