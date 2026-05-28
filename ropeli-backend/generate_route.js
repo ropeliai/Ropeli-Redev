@@ -152,6 +152,7 @@ TECH RULES:
 - Use inline styles or a single styles object with standard CSS properties (camelCase)
 - Use localStorage for persistence if the user's app needs it
 - NEVER use: View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, react-native, expo, AsyncStorage, NavigationContainer, or any mobile library
+- NEVER import CSS files — no `import './App.css'` or any `.css` import. Use inline styles or a styles object only
 - Every component must have a default export
 - The app must run in a browser with only React as a dependency — no npm imports beyond React
 
