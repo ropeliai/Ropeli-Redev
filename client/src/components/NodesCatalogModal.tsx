@@ -201,7 +201,7 @@ const categories = [
   {
     name: "Core / Triggers",
     nodes: [
-      { type: "trigger", label: "Trigger" }, { type: "webhook", label: "Webhook" },
+      { type: "trigger", label: "Custom Trigger" }, { type: "webhook", label: "Webhook" },
       { type: "schedule", label: "Schedule" }, { type: "manual", label: "Manual Trigger" },
       { type: "error", label: "Error Trigger" }, { type: "http", label: "HTTP Request" },
       { type: "set", label: "Set" }, { type: "if", label: "IF" },

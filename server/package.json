@@ -5,8 +5,9 @@
     "type": "module",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js",
-        "dev": "node server.js"
+        "start": "node --import tsx server.js",
+        "dev": "node --import tsx server.js",
+        "smoke:trigger": "node --import tsx tests/smoke-trigger.test.js"
     },
     "engines": {
         "node": ">=18"
@@ -16,6 +17,8 @@
         "dotenv": "^17.2.3",
         "express": "^4.19.2",
         "openai": "^6.34.0",
-        "razorpay": "^2.9.6"
+        "node-cron": "^4.2.1",
+        "razorpay": "^2.9.6",
+        "tsx": "^4.20.6"
     }
 }

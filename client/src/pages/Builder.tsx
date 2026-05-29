@@ -213,11 +213,17 @@ useEffect(() => {
   const [existingGeneratedProjectId, setExistingGeneratedProjectId] = useState<string | null>(
     location.state?.generatedProjectId ? String(location.state.generatedProjectId) : null
   );
+  const [agentWorkflowId, setAgentWorkflowId] = useState<string | null>(
+    location.state?.workflowId ? String(location.state.workflowId) : null
+  );
   const [projectConfig, setProjectConfig] = useState<ProjectConfig>({
   buildTypes: [],
   integrations: [],
 });
 const [configLocked, setConfigLocked] = useState(true);
+
+  const effectiveWorkflowId = existingGeneratedProjectId || projectId || agentWorkflowId || agentWorkflow?.id || 'unknown';
+  console.warn('[Trigger] Using workflowId:', effectiveWorkflowId);
 
 
   const [prompt, setPrompt] = useState(initialPrompt);
@@ -419,6 +425,10 @@ const handleSend = async (overridePrompt?: string) => {
 
       if (result?.success && result.workflow) {
         setAgentWorkflow(result.workflow);
+        const resolvedWorkflowId =
+          String(result.workflow?.id || result.workflow?.workflowId || result.workflow?.workflow?.id || '').trim() ||
+          `workflow_${Date.now().toString(36)}_${Math.random().toString(16).slice(2)}`;
+        setAgentWorkflowId(resolvedWorkflowId.startsWith('generated-') ? `workflow_${Date.now().toString(36)}_${Math.random().toString(16).slice(2)}` : resolvedWorkflowId);
         setGeneratedProjectName(slugify(userPrompt));
         
         setMessages((prev) => [
@@ -1276,7 +1286,7 @@ useEffect(() => {
         {/* ACTIVE TAB CONTENT */}
         <div className="tab-content" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {activeTab === "agent" && (
-            <AgentCanvas workflow={agentWorkflow} />
+            <AgentCanvas workflow={agentWorkflow} workflowId={effectiveWorkflowId} />
           )}
 
           {activeTab === "preview" && (

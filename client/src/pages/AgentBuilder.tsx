@@ -12,6 +12,9 @@ const AgentBuilder = () => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [agentWorkflow, setAgentWorkflow] = useState<any>(null);
+  const [agentWorkflowId, setAgentWorkflowId] = useState<string | null>(
+    location.state?.workflowId ? String(location.state.workflowId) : null
+  );
   const [error, setError] = useState<string | null>(null);
   
   const hasAutoPromptRunRef = useRef(false);
@@ -47,6 +50,13 @@ const AgentBuilder = () => {
 
       if (result?.success && result.workflow && result.workflow.nodes?.length > 0) {
         setAgentWorkflow(result.workflow);
+        const resolvedWorkflowId = String(result.workflow?.id || result.workflow?.workflowId || result.workflow?.workflow?.id || '').trim();
+        const effectiveWorkflowId = resolvedWorkflowId && !resolvedWorkflowId.startsWith('generated-')
+          ? resolvedWorkflowId
+          : `workflow_${Date.now().toString(36)}_${Math.random().toString(16).slice(2)}`;
+
+        console.warn('[Trigger] Using workflowId:', effectiveWorkflowId);
+        setAgentWorkflowId(effectiveWorkflowId);
         setError(null);
       } else {
         setError(result.error || "Workflow generation returned empty results. Please try a more descriptive prompt.");
@@ -220,7 +230,7 @@ const AgentBuilder = () => {
               </button>
             </div>
           ) : (
-            <AgentCanvas workflow={agentWorkflow} />
+            <AgentCanvas workflow={agentWorkflow} workflowId={agentWorkflowId || agentWorkflow?.id || 'unknown'} />
           )}
         </div>
       </div>

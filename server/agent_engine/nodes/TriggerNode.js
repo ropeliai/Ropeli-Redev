@@ -7,9 +7,9 @@ class TriggerNode extends BaseNode {
 
   async execute(context) {
     const params = this.resolveParameters(context);
-    // Triggers typically just pass along initial data or await an event.
-    // Here we just return any input data as output.
-    return params;
+    // If a normalized trigger event was injected by the runtime, propagate it directly.
+    // Otherwise fall back to the node configuration parameters.
+    return context.triggerEvent || params;
   }
 }
 

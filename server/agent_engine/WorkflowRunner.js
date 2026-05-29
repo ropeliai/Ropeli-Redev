@@ -1,10 +1,11 @@
 import BaseNode from './BaseNode.js';
 
 class WorkflowRunner {
-  constructor(workflowConfig) {
+  constructor(workflowConfig, options = {}) {
     this.nodes = {}; // Map of id -> Node instance
     this.edges = workflowConfig.edges || []; // Array of { source, target }
     this.context = {}; // Shared context to store node outputs
+    this.initialContext = options.initialContext || {}; // Runtime context injected by trigger consumers
   }
 
   registerNode(nodeInstance) {
@@ -63,8 +64,13 @@ class WorkflowRunner {
   /**
    * Run the workflow end-to-end
    */
-  async run() {
+  async execute(initialContext = {}) {
     console.log("Starting workflow execution...");
+    this.context = {
+      ...this.initialContext,
+      ...initialContext,
+    };
+
     const plan = this.getExecutionPlan();
 
     for (const nodeId of plan) {
@@ -72,7 +78,13 @@ class WorkflowRunner {
       console.log(`Executing node [${node.name}] (${nodeId})...`);
       
       try {
-        const output = await node.execute(this.context);
+        const nodeContext = {
+          ...this.context,
+          currentNodeId: nodeId,
+          currentNodeType: node.type,
+        };
+
+        const output = await node.execute(nodeContext);
         this.context[nodeId] = { data: output };
         console.log(`Node [${node.name}] output:`, output);
       } catch (error) {
@@ -83,6 +95,10 @@ class WorkflowRunner {
 
     console.log("Workflow execution completed.");
     return this.context;
+  }
+
+  async run(initialContext = {}) {
+    return await this.execute(initialContext);
   }
 }
 

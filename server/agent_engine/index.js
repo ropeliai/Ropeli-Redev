@@ -30,8 +30,8 @@ const NODE_REGISTRY = {
  * @param {Object} workflowConfig 
  * @returns {WorkflowRunner}
  */
-export function buildWorkflow(workflowConfig) {
-  const runner = new WorkflowRunner(workflowConfig);
+export function buildWorkflow(workflowConfig, options = {}) {
+  const runner = new WorkflowRunner(workflowConfig, options);
 
   for (const nodeConfig of workflowConfig.nodes) {
     const NodeClass = NODE_REGISTRY[nodeConfig.type];
@@ -52,7 +52,7 @@ export function buildWorkflow(workflowConfig) {
  * Runs a workflow configuration.
  * @param {Object} workflowConfig 
  */
-export async function executeWorkflow(workflowConfig) {
-  const runner = buildWorkflow(workflowConfig);
-  return await runner.run();
+export async function executeWorkflow(workflowConfig, initialContext = {}) {
+  const runner = buildWorkflow(workflowConfig, { initialContext });
+  return await runner.execute(initialContext);
 }
