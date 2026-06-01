@@ -27,6 +27,12 @@ services:
         sync: false
       - key: GROQ_MODEL
         sync: false
+      # Optional stronger model for web only (falls back to GROQ_MODEL if unset)
+      - key: GROQ_MODEL_WEB
+        sync: false
+      # Web syntax repair after generation (set to "false" to disable)
+      - key: ENABLE_WEB_SYNTAX_REPAIR
+        value: "true"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY

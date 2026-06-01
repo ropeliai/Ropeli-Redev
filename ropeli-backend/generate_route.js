@@ -4,6 +4,11 @@ import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 import { enhancePromptForGeneration } from "./prompt_enhancer.js";
 import { gradeAndImprove } from "./gradeAndImprove.js";
+import {
+  postProcessWebFiles,
+  getGroqModelForType,
+  sanitizeWebFiles,
+} from "./webPostProcess.js";
 import requireAuth from "./middleware/requireAuth.js";
 import checkRateLimit from "./middleware/checkRateLimit.js";
 
@@ -57,8 +62,6 @@ class GroqCallError extends Error {
     this.retryAfter = retryAfter;
   }
 }
-
-const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 let groqClient = null;
 function getGroq() {
@@ -153,6 +156,9 @@ TECH RULES:
 - Use localStorage for persistence if the user's app needs it
 - NEVER use: View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, react-native, expo, AsyncStorage, NavigationContainer, or any mobile library
 - NEVER import CSS files — no import of App.css or any .css file. Use inline styles or a styles object only
+- Prefer a single App.js file with all UI and logic; add at most 2 extra .js files only if the app truly needs them (max 3 files total)
+- App.js is required and is the main component Sandpack loads
+- Every file must be valid JavaScript/JSX: balanced quotes, brackets, and parentheses — no stray apostrophes in arrays or after semicolons
 - Every component must have a default export
 - The app must run in a browser with only React as a dependency — no npm imports beyond React
 
@@ -271,7 +277,7 @@ async function generateWithGroq(userPrompt, type) {
   try {
     response = await client.chat.completions.create(
       {
-        model: GROQ_MODEL,
+        model: getGroqModelForType(type),
         max_tokens: 8192,
         messages,
         response_format: { type: "json_object" },
@@ -440,6 +446,21 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
         } catch (e) {
           console.error("[generate] Groq correction retry failed:", e.message);
         }
+      }
+    }
+
+    // Web-only quality pipeline: strip bad imports, validate JSX, optional syntax repair.
+    // Native/mobile path is unchanged above.
+    if (type === "web") {
+      const groq = getGroq();
+      try {
+        files = await postProcessWebFiles(files, groq);
+      } catch (webPostErr) {
+        console.warn(
+          "[generate] web post-process failed — returning sanitized files:",
+          webPostErr?.message || webPostErr
+        );
+        files = sanitizeWebFiles(files);
       }
     }
 
