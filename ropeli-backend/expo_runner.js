@@ -388,7 +388,7 @@ export async function startExpo(projectId, files) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       "npx",
-      ["--yes", "expo@54.0.17", "start", "--tunnel"],
+      ["--yes", "expo@54.0.17", "start", "--tunnel", "--max-workers", "2", "--non-interactive"],
       {
         cwd: projectDir,
         shell: true,
