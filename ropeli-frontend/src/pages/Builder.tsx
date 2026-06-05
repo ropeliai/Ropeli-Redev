@@ -106,6 +106,7 @@ const { projectId: routeProjectId } = useParams<{ projectId: string }>();
 useEffect(() => {
   if (routeProjectId) {
     setProjectId(routeProjectId);
+    setExistingGeneratedProjectId(routeProjectId);
   }
 }, [routeProjectId]);
 
@@ -406,7 +407,14 @@ useEffect(() => {
       setCode(files[0]?.content || "");
       setHasCodeEdits(false);
 
-      const projectIdToUse = existingGeneratedProjectId || slugify(generatedProjectName || "app");
+      if (result.generated_project_id && !existingGeneratedProjectId) {
+        setExistingGeneratedProjectId(result.generated_project_id);
+      }
+
+      const projectIdToUse =
+        existingGeneratedProjectId ||
+        result.generated_project_id ||
+        slugify(generatedProjectName || "app");
 
       if (target === "mobile") {
         setExpoLoading(true);
