@@ -147,9 +147,18 @@ async function callModal(prompt, retryCount = 0) {
   return response;
 }
 
+const WEB_LAYOUT_REQUIREMENTS = `WEB LAYOUT REQUIREMENTS:
+- Use CSS variables for all colors matching the mobile palette above
+- Max-width 480px centered (mobile-first web preview)
+- Font: system-ui, -apple-system, sans-serif
+- All interactive elements must have hover and focus states
+- No layout should overflow horizontally
+
+`;
+
 const WEB_SYSTEM_PROMPT = `You are a code generator. Generate a complete, working React WEB app only.
 
-TECH RULES:
+${WEB_LAYOUT_REQUIREMENTS}TECH RULES:
 - Use ONLY standard HTML elements: div, button, input, textarea, select, h1–h6, p, ul, li, span, img, form, label
 - Use React hooks: useState, useEffect, useCallback, useMemo
 - Use inline styles or a single styles object with standard CSS properties (camelCase)
@@ -195,7 +204,63 @@ RULES:
 - Every Delete MUST filter by id — never by index
 - Never mutate state directly`;
 
-const NATIVE_SYSTEM_PROMPT = `You are a code generator. Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Keep dependencies minimal and compatible with Expo.
+const NATIVE_DESIGN_REQUIREMENTS = `DESIGN REQUIREMENTS — mandatory for every screen:
+
+LAYOUT:
+- Every screen must use a SafeAreaView as the root container
+- Use a ScrollView or FlatList as the main body — never let content overflow off screen
+- Maintain consistent padding: 16px horizontal, 12px vertical on all screens
+- Header: full-width, backgroundColor matches theme, paddingTop 48 (accounts for status bar), paddingHorizontal 20, paddingBottom 16
+- Body: flex 1, backgroundColor '#F8F9FA'
+- Bottom actions: always pinned with paddingBottom 32 to avoid home indicator overlap
+
+TYPOGRAPHY:
+- Screen title: fontSize 24, fontWeight '700', color '#1A1A2E'
+- Section headers: fontSize 18, fontWeight '600', color '#16213E'
+- Body text: fontSize 15, fontWeight '400', color '#4A4A68', lineHeight 22
+- Labels: fontSize 13, fontWeight '500', color '#6C757D'
+
+BUTTONS:
+- Primary: backgroundColor '#4361EE', borderRadius 12, paddingVertical 14, paddingHorizontal 24, full-width
+- Secondary: backgroundColor 'transparent', borderWidth 1.5, borderColor '#4361EE', borderRadius 12, same padding
+- Destructive (delete): backgroundColor '#EF4444', borderRadius 8, paddingVertical 10, paddingHorizontal 16
+- All button text: color white (primary/destructive), color '#4361EE' (secondary), fontWeight '600', fontSize 15
+- All buttons must have activeOpacity={0.8} — never use plain View for tappable items
+
+INPUTS:
+- backgroundColor 'white', borderWidth 1, borderColor '#E2E8F0', borderRadius 10
+- paddingHorizontal 14, paddingVertical 12, fontSize 15, color '#1A1A2E'
+- On focus: borderColor '#4361EE'
+- Always include placeholder text that describes what to type
+
+LIST ITEMS:
+- backgroundColor 'white', borderRadius 10, marginHorizontal 16, marginVertical 4
+- paddingHorizontal 16, paddingVertical 14
+- Subtle shadow: shadowColor '#000', shadowOffset {width:0, height:1}, shadowOpacity 0.05, shadowRadius 3, elevation 2
+- Separator: thin line, color '#F0F0F0'
+
+COLORS (use these consistently):
+- Primary: #4361EE
+- Background: #F8F9FA
+- Surface (cards): #FFFFFF
+- Text primary: #1A1A2E
+- Text secondary: #4A4A68
+- Text muted: #9CA3AF
+- Border: #E2E8F0
+- Success: #10B981
+- Error: #EF4444
+- Warning: #F59E0B
+
+EMPTY STATES:
+- Every list screen must have a ListEmptyComponent
+- Show an icon (use Text with an emoji), a title, and a subtitle encouraging the first action
+- Example: 🗒️ "No items yet" / "Tap the + button to add your first item"
+
+These design rules apply to EVERY screen. Do not deviate from them.
+
+`;
+
+const NATIVE_SYSTEM_PROMPT = `${NATIVE_DESIGN_REQUIREMENTS}You are a code generator. Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Keep dependencies minimal and compatible with Expo.
 
 UI QUALITY RULES — mandatory for every screen file:
 - Use StyleSheet.create() for ALL styles. Never put style objects directly on JSX elements.
