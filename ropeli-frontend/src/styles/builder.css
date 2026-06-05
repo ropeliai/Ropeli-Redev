@@ -1233,3 +1233,52 @@
     cursor: pointer;
     margin-left: 6px;
 }
+
+.upgrade-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.upgrade-modal {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.upgrade-modal-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.upgrade-modal h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin-bottom: 8px;
+}
+
+.upgrade-modal p {
+    font-size: 14px;
+    color: #4A4A68;
+    margin-bottom: 8px;
+}
+
+.upgrade-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.upgrade-modal-reset {
+    font-size: 12px;
+    color: #9CA3AF;
+}

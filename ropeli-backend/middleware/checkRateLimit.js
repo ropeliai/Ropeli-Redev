@@ -1,7 +1,7 @@
 /**
  * checkRateLimit.js
  *
- * Caps per-user generations at DAILY_LIMIT per rolling 24h window.
+ * Caps per-user generations by plan tier per rolling 24h window.
  *
  * Must run AFTER requireAuth (relies on req.user.id).
  *
@@ -14,7 +14,11 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-export const DAILY_LIMIT = 20;
+export const LIMITS = {
+  free: 2,
+  pro: 50,
+  unlimited: 999999,
+};
 
 let cachedClient = null;
 function getServiceClient() {
@@ -31,7 +35,6 @@ function getServiceClient() {
 export default async function checkRateLimit(req, res, next) {
   try {
     if (!req.user?.id) {
-      // requireAuth wasn't run, or didn't attach a user. Fail-open.
       console.warn("[rate-limit] req.user.id missing — skipping check");
       return next();
     }
@@ -41,6 +44,20 @@ export default async function checkRateLimit(req, res, next) {
       console.warn("[rate-limit] SUPABASE_SERVICE_ROLE_KEY not set — skipping check");
       return next();
     }
+
+    let plan = "free";
+    try {
+      const { data: profile } = await sb
+        .from("profiles")
+        .select("plan")
+        .eq("id", req.user.id)
+        .single();
+      plan = profile?.plan || "free";
+    } catch (profileErr) {
+      console.warn("[rate-limit] profile lookup failed — defaulting to free:", profileErr?.message);
+    }
+
+    const DAILY_LIMIT = LIMITS[plan] ?? LIMITS.free;
 
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
@@ -58,7 +75,13 @@ export default async function checkRateLimit(req, res, next) {
     if ((count ?? 0) >= DAILY_LIMIT) {
       return res.status(429).json({
         error: "DAILY_LIMIT_REACHED",
-        message: `You have used all ${DAILY_LIMIT} daily generations. Resets at midnight UTC.`,
+        plan,
+        limit: DAILY_LIMIT,
+        message:
+          plan === "free"
+            ? "Free accounts get 2 generations per day. Upgrade to Pro for 50/day."
+            : `You have used all ${DAILY_LIMIT} daily generations. Resets at midnight UTC.`,
+        upgrade_required: plan === "free",
       });
     }
 

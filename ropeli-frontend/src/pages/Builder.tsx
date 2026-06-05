@@ -202,6 +202,7 @@ useEffect(() => {
   const [existingGeneratedProjectId, setExistingGeneratedProjectId] = useState<string | null>(
     location.state?.generatedProjectId ? String(location.state.generatedProjectId) : null
   );
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // ── APK build state ──────────────────────────────────────────────────────
   type ApkStatus = "idle" | "building" | "finished" | "errored";
@@ -337,6 +338,10 @@ useEffect(() => {
       }
       if (response.status === 429) {
         const err = await response.json().catch(() => ({} as any));
+        if (err?.upgrade_required) {
+          setShowUpgradeModal(true);
+          return;
+        }
         setMessages((prev) => [
           ...prev,
           {
@@ -635,12 +640,16 @@ const handleSend = async (overridePrompt?: string) => {
     }
     if (response.status === 429) {
       const err = await response.json().catch(() => ({}));
+      if (err?.upgrade_required) {
+        setShowUpgradeModal(true);
+        return;
+      }
       setMessages((prev) => [
         ...prev.filter((m) => m.kind !== "thinking"),
         {
           kind: "text",
           role: "assistant",
-          content: err?.message || "You've used all 20 daily generations. Resets at midnight UTC.",
+          content: err?.message || "You've used all your daily generations. Resets at midnight UTC.",
         },
       ]);
       return;
@@ -1064,6 +1073,25 @@ useEffect(() => {
 
  return (
   <section className="builder-page">
+    {showUpgradeModal && (
+      <div className="upgrade-modal-overlay" onClick={() => setShowUpgradeModal(false)}>
+        <div className="upgrade-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="upgrade-modal-icon">🚀</div>
+          <h2>You've used your free generations</h2>
+          <p>Free accounts get 2 app generations per day.</p>
+          <p>Upgrade to Pro for 50 generations per day, session history, and priority generation.</p>
+          <div className="upgrade-modal-actions">
+            <button className="btn-primary" onClick={() => navigate("/pricing")}>
+              Upgrade to Pro
+            </button>
+            <button className="btn-secondary" onClick={() => setShowUpgradeModal(false)}>
+              Come back tomorrow
+            </button>
+          </div>
+          <p className="upgrade-modal-reset">Your free generations reset at midnight UTC.</p>
+        </div>
+      </div>
+    )}
     
     {/* ===== GLOBAL FILE INPUT (DO NOT MOVE) ===== */}
     <input
