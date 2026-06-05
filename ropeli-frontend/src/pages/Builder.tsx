@@ -103,13 +103,6 @@ const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
 const { projectId: routeProjectId } = useParams<{ projectId: string }>();
 
-useEffect(() => {
-  if (routeProjectId) {
-    setProjectId(routeProjectId);
-    setExistingGeneratedProjectId(routeProjectId);
-  }
-}, [routeProjectId]);
-
 // Returns Authorization header if a Supabase session exists, otherwise {}.
 // Always merge with Content-Type at the call site.
 const getAuthHeaders = async (): Promise<Record<string, string>> => {
@@ -205,6 +198,13 @@ useEffect(() => {
   );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [sessionResumed, setSessionResumed] = useState(false);
+
+  useEffect(() => {
+    if (routeProjectId) {
+      setProjectId(routeProjectId);
+      setExistingGeneratedProjectId(routeProjectId);
+    }
+  }, [routeProjectId]);
 
   // ── APK build state ──────────────────────────────────────────────────────
   type ApkStatus = "idle" | "building" | "finished" | "errored";
