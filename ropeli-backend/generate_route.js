@@ -42,6 +42,80 @@ function recordGeneration(userId) {
     });
 }
 
+function buildContextBlock(existingFiles) {
+  if (!existingFiles || !Array.isArray(existingFiles) || existingFiles.length === 0) {
+    return "";
+  }
+  return `
+EXISTING APP CONTEXT:
+The user already has a working app. You are MODIFYING or EXTENDING it, not replacing it.
+Existing files:
+${existingFiles.map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`).join("\n\n")}
+
+RULES for modification:
+- Keep all working functionality that exists
+- Only change what the new prompt explicitly asks to change
+- If adding a new screen, wire it into the existing navigation
+- If adding a feature, integrate it with existing state
+- Do NOT rename existing components or change file structure unless asked
+- Return ALL files (modified and unmodified) in the response
+`;
+}
+
+async function persistGeneratedProject({
+  userId,
+  existingProjectId,
+  project_name,
+  prompt,
+  files,
+  provider,
+  type,
+}) {
+  const sb = getSupabaseServiceClient();
+  if (!sb || !userId) return null;
+
+  const sessionState = {
+    files,
+    project_name,
+    prompt,
+    provider,
+    template_used: type,
+    last_updated: new Date().toISOString(),
+  };
+
+  const build_type = type === "web" ? "web" : "mobile";
+  const row = {
+    user_id: userId,
+    project_name,
+    files,
+    prompt,
+    session_state: sessionState,
+    build_type,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (existingProjectId) {
+    row.id = existingProjectId;
+  }
+
+  try {
+    const { data, error } = await sb
+      .from("generated_projects")
+      .upsert(row, { onConflict: "id" })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.warn("[generate] generated_projects upsert failed:", error.message);
+      return existingProjectId || null;
+    }
+    return data?.id ?? existingProjectId ?? null;
+  } catch (err) {
+    console.warn("[generate] generated_projects upsert error:", err?.message || err);
+    return existingProjectId || null;
+  }
+}
+
 const MODAL_API_URL =
   process.env.MODAL_API_URL ||
   "https://coutinhoandrew0--my-coder-model-generate.modal.run";
@@ -382,7 +456,7 @@ router.post("/warmup", (_req, res) => {
 
 router.post("/", requireAuth, checkRateLimit, async (req, res) => {
   try {
-    const { prompt, type: rawType, existingFiles } = req.body;
+    const { prompt, type: rawType, existingFiles, existingProjectId } = req.body;
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return res.status(400).json({ error: "Prompt is required" });
@@ -401,15 +475,10 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
 
     // Build the user-turn content only — instructions live in the system role
     // inside buildJsonGenerationMessages (WEB_SYSTEM_PROMPT / NATIVE_SYSTEM_PROMPT).
-    let userContent;
-    if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
-      const filesContext = existingFiles
-        .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
-        .join("\n\n");
-      userContent = `Here are the existing files:\n\n${filesContext}\n\nThe user wants to:\n${enhancedIntent}\n\nReturn the complete updated files.`;
-    } else {
-      userContent = `User request:\n${enhancedIntent}`;
-    }
+    const contextBlock = buildContextBlock(existingFiles);
+    const userContent = contextBlock
+      ? `${contextBlock}\n\nThe user wants to:\n${enhancedIntent}`
+      : `User request:\n${enhancedIntent}`;
 
     // Modal receives a single raw string — prepend the system prompt for it.
     const modalPrompt = `${type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT}\n\n${userContent}`;
@@ -544,7 +613,24 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
 
     const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
     recordGeneration(req.user?.id);
-    res.json({ success: true, project_name, files, provider: usedProvider });
+
+    const savedProjectId = await persistGeneratedProject({
+      userId: req.user?.id,
+      existingProjectId: existingProjectId || null,
+      project_name,
+      prompt: trimmedPrompt,
+      files,
+      provider: usedProvider,
+      type,
+    });
+
+    res.json({
+      success: true,
+      project_name,
+      files,
+      provider: usedProvider,
+      generated_project_id: savedProjectId,
+    });
   } catch (error) {
     console.error("[generate] Unexpected error:", error.message);
     res.status(500).json({ error: "Failed to generate app", details: error.message });

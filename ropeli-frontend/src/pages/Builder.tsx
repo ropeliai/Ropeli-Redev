@@ -203,6 +203,7 @@ useEffect(() => {
     location.state?.generatedProjectId ? String(location.state.generatedProjectId) : null
   );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [sessionResumed, setSessionResumed] = useState(false);
 
   // ── APK build state ──────────────────────────────────────────────────────
   type ApkStatus = "idle" | "building" | "finished" | "errored";
@@ -235,6 +236,42 @@ useEffect(() => {
         }
       });
   }, [existingGeneratedProjectId, apkStatus]);
+
+  // Restore full session when reopening a saved generated project.
+  useEffect(() => {
+    if (!existingGeneratedProjectId || generatedFiles.length > 0) return;
+
+    supabase
+      .from("generated_projects")
+      .select("project_name, files, prompt, session_state, apk_url, build_type")
+      .eq("id", existingGeneratedProjectId)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) return;
+
+        if (data.files) {
+          const parsedFiles =
+            typeof data.files === "string" ? JSON.parse(data.files) : data.files;
+          if (Array.isArray(parsedFiles) && parsedFiles.length > 0) {
+            setGeneratedFiles(parsedFiles);
+            setSelectedFile(parsedFiles[0]?.path || "");
+            setCode(parsedFiles[0]?.content || "");
+          }
+        }
+
+        if (data.project_name) setGeneratedProjectName(data.project_name);
+        if (data.prompt) setPrompt(data.prompt);
+        if (data.build_type === "web" || data.build_type === "mobile") {
+          setBuildType(data.build_type);
+        }
+        if (data.apk_url) {
+          setApkUrl(data.apk_url);
+          setApkStatus("finished");
+        }
+
+        setSessionResumed(true);
+      });
+  }, [existingGeneratedProjectId, generatedFiles.length]);
 
   const handleBuildAPK = async () => {
     if (!existingGeneratedProjectId || apkStatus === "building") return;
@@ -326,6 +363,7 @@ useEffect(() => {
           prompt: conversionInstruction,
           type: target,
           existingFiles: generatedFiles,
+          existingProjectId: existingGeneratedProjectId || null,
         }),
       });
 
@@ -627,7 +665,8 @@ const handleSend = async (overridePrompt?: string) => {
       body: JSON.stringify({
         prompt: userPrompt,
         type: resolvedBuildType,
-        existingFiles: generatedFiles.length ? generatedFiles : undefined,
+        existingFiles: generatedFiles.length > 0 ? generatedFiles : undefined,
+        existingProjectId: existingGeneratedProjectId || null,
       }),
     });
 
@@ -667,7 +706,12 @@ const handleSend = async (overridePrompt?: string) => {
       setHasCodeEdits(false);
       setGeneratedProjectName(result.project_name || slugify(userPrompt));
 
-      const projectIdToUse = existingGeneratedProjectId || slugify(userPrompt);
+      if (result.generated_project_id && !existingGeneratedProjectId) {
+        setExistingGeneratedProjectId(result.generated_project_id);
+      }
+
+      const projectIdToUse =
+        existingGeneratedProjectId || result.generated_project_id || slugify(userPrompt);
 
       if (resolvedBuildType === "mobile") {
         setExpoLoading(true);
@@ -1073,6 +1117,14 @@ useEffect(() => {
 
  return (
   <section className="builder-page">
+    {sessionResumed && (
+      <div className="session-resumed-banner">
+        ↩️ Session restored — your previous app is loaded
+        <button type="button" onClick={() => setSessionResumed(false)} aria-label="Dismiss">
+          ×
+        </button>
+      </div>
+    )}
     {showUpgradeModal && (
       <div className="upgrade-modal-overlay" onClick={() => setShowUpgradeModal(false)}>
         <div className="upgrade-modal" onClick={(e) => e.stopPropagation()}>
