@@ -2,13 +2,16 @@
  * gradeAndImprove.js
  *
  * Optional Groq-based per-file grader. Gated behind ENABLE_GRADER=true so it
- * is off by default. Only grades a narrow whitelist (App.js + src/lib/*.js)
- * and only applies a rewrite when the LLM grade is "D".
+ * is off by default. Only grades a narrow whitelist (App.js + src/lib/*.js).
  *
- * Regression guard: before applying any rewrite, we count state-setter calls
- * (the most common breakage from past rewrites was the LLM stripping the
- * `setX(prev => ...)` calls that make buttons actually work). If the rewrite
- * has fewer setter calls than the original, we discard the rewrite.
+ * Grade D: fix broken code (state setters, onPress, imports).
+ * Grade C: improve UI styling while keeping logic identical.
+ * Grade B: minor polish (empty states, activeOpacity, StyleSheet).
+ * Grade A: return unchanged.
+ *
+ * Regression guards (all grades):
+ * - Discard rewrite if state-setter count drops.
+ * - Discard B/C rewrite if onPress handler count drops.
  *
  * Errors per file are isolated — one bad grade never breaks the whole batch.
  */
@@ -17,10 +20,14 @@ const GRADER_MODEL = process.env.GRADER_MODEL || "llama-3.3-70b-versatile";
 
 const GRADE_PROMPT = `Grade this React Native file A, B, C, or D.
 Grade D means: state setters are called incorrectly, onPress handlers are empty, or imports are broken.
-Grade C means: logic works but UI is minimal.
-Grade B or A means: logic and UI are acceptable.
+Grade C means: logic works but UI is minimal or poorly styled.
+Grade B means: logic and UI are acceptable but missing polish (empty states, activeOpacity).
+Grade A means: logic and UI are already good.
 Respond with JSON only: {"grade": "A"|"B"|"C"|"D", "issues": "one sentence", "improved_code": null}
-If the grade is D, set improved_code to a full corrected file as a single string. Otherwise improved_code MUST be null.`;
+If grade is D: set improved_code to a full corrected file fixing broken logic/imports.
+If grade is C: set improved_code to a full file with proper mobile layout (SafeAreaView root, consistent padding, styled buttons with backgroundColor and borderRadius, proper typography). Keep all logic identical — only improve styling.
+If grade is B: set improved_code to a full file with minimal improvements: add ListEmptyComponent to any FlatList that lacks one, add activeOpacity={0.8} to TouchableOpacity elements, ensure StyleSheet.create is used for all styles. Keep all logic identical.
+If grade is A: improved_code MUST be null.`;
 
 // Files we are willing to rewrite. Screens are deliberately excluded because
 // the LLM tends to break screen handlers when "improving" them.
@@ -31,12 +38,15 @@ function isGradeable(filePath) {
   return false;
 }
 
-// Count occurrences of `setX(...)` style state-setter calls. Used as a cheap
-// regression check: if a "fixed" file has fewer setters than the original,
-// the rewrite is almost certainly worse.
 function countStateSetters(source) {
   if (!source || typeof source !== "string") return 0;
   const matches = source.match(/\bset[A-Z][a-zA-Z0-9_]*\s*\(/g);
+  return matches ? matches.length : 0;
+}
+
+function countOnPressHandlers(source) {
+  if (!source || typeof source !== "string") return 0;
+  const matches = source.match(/\bonPress\s*=/g);
   return matches ? matches.length : 0;
 }
 
@@ -45,13 +55,40 @@ function safeParseGraderJson(content) {
   try {
     return JSON.parse(content);
   } catch {
-    // try to extract the first {...} blob
     const m = content.match(/\{[\s\S]*\}/);
     if (m) {
-      try { return JSON.parse(m[0]); } catch { return null; }
+      try {
+        return JSON.parse(m[0]);
+      } catch {
+        return null;
+      }
     }
     return null;
   }
+}
+
+function shouldDiscardRewrite(original, improved, grade) {
+  const beforeSetters = countStateSetters(original);
+  const afterSetters = countStateSetters(improved);
+  if (afterSetters < beforeSetters) {
+    console.warn(
+      `[grader] rewrite discarded — reduced state setters from ${beforeSetters} to ${afterSetters}`
+    );
+    return true;
+  }
+
+  if (grade === "B" || grade === "C") {
+    const beforePress = countOnPressHandlers(original);
+    const afterPress = countOnPressHandlers(improved);
+    if (afterPress < beforePress) {
+      console.warn(
+        `[grader] rewrite discarded — reduced onPress handlers from ${beforePress} to ${afterPress}`
+      );
+      return true;
+    }
+  }
+
+  return false;
 }
 
 async function gradeOne(file, groqClient) {
@@ -59,7 +96,7 @@ async function gradeOne(file, groqClient) {
   try {
     const response = await groqClient.chat.completions.create({
       model: GRADER_MODEL,
-      max_tokens: 150,
+      max_tokens: 8192,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: GRADE_PROMPT },
@@ -71,22 +108,20 @@ async function gradeOne(file, groqClient) {
     const parsed = safeParseGraderJson(raw);
     const grade = parsed?.grade;
 
-    // Only act on D. A/B/C → keep original.
-    if (grade !== "D" || typeof parsed?.improved_code !== "string") {
+    if (!grade || grade === "A") {
+      return { ...file, grade: grade || "?" };
+    }
+
+    if (typeof parsed?.improved_code !== "string" || !parsed.improved_code.trim()) {
       return { ...file, grade: grade || "?" };
     }
 
     const improved = parsed.improved_code;
-    const before = countStateSetters(original);
-    const after = countStateSetters(improved);
-    if (after < before) {
-      console.warn(
-        `[grader] rewrite discarded for ${file.path} — reduced state setters from ${before} to ${after}`
-      );
+    if (shouldDiscardRewrite(original, improved, grade)) {
       return { ...file, grade };
     }
 
-    console.log(`[grader] applied rewrite to ${file.path} (D → improved)`);
+    console.log(`[grader] applied ${grade} rewrite to ${file.path}`);
     return { ...file, content: improved, grade };
   } catch (err) {
     console.warn(`[grader] grading failed for ${file?.path}:`, err?.message || err);
