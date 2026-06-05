@@ -11,6 +11,7 @@ import {
 } from "./webPostProcess.js";
 import requireAuth from "./middleware/requireAuth.js";
 import checkRateLimit from "./middleware/checkRateLimit.js";
+import { logSuspicious } from "./middleware/logSuspicious.js";
 
 const router = express.Router();
 
@@ -160,6 +161,67 @@ const BANNED_MOBILE = [
   "getElementById",
   "querySelector",
 ];
+
+const MAX_PROMPT_LENGTH = 500;
+const BLOCKED_PROMPT_PATTERNS = [
+  /ignore (all |previous |above |prior )?instructions/i,
+  /system prompt/i,
+  /jailbreak/i,
+  /you are now/i,
+  /pretend (you are|to be)/i,
+  /disregard/i,
+  /forget (everything|all|your)/i,
+];
+
+function validateAndSanitisePrompt(prompt, userId) {
+  if (!prompt || typeof prompt !== "string") {
+    return { ok: false, status: 400, error: "INVALID_PROMPT", message: "Prompt is required." };
+  }
+
+  if (prompt.trim().length < 3) {
+    return {
+      ok: false,
+      status: 400,
+      error: "PROMPT_TOO_SHORT",
+      message: "Please describe the app you want to build.",
+    };
+  }
+
+  if (prompt.length > MAX_PROMPT_LENGTH) {
+    return {
+      ok: false,
+      status: 400,
+      error: "PROMPT_TOO_LONG",
+      message: `Prompt must be under ${MAX_PROMPT_LENGTH} characters.`,
+    };
+  }
+
+  const isBlocked = BLOCKED_PROMPT_PATTERNS.some((pattern) => pattern.test(prompt));
+  if (isBlocked) {
+    console.warn(`[security] Blocked prompt injection attempt from user ${userId}`);
+    return {
+      ok: false,
+      status: 400,
+      error: "INVALID_PROMPT",
+      message: "That prompt cannot be processed. Please describe an app you want to build.",
+    };
+  }
+
+  const sanitised = prompt.replace(/<[^>]*>/g, "").replace(/\0/g, "").trim();
+  return { ok: true, sanitised };
+}
+
+function hardenMobileOutput(files) {
+  return files.map((file) => {
+    const cleaned = String(file.content ?? "")
+      .replace(/require\(['"]fs['"]\)/g, "// removed")
+      .replace(/require\(['"]child_process['"]\)/g, "// removed")
+      .replace(/require\(['"]http['"]\)/g, "// removed")
+      .replace(/import.*from\s+['"]fs['"]/g, "// removed")
+      .replace(/import.*from\s+['"]child_process['"]/g, "// removed");
+    return { ...file, content: cleaned };
+  });
+}
 
 function sanitizeMobileFiles(files) {
   return files.map((file) => {
@@ -454,16 +516,20 @@ router.post("/warmup", (_req, res) => {
     .catch(() => {});
 });
 
-router.post("/", requireAuth, checkRateLimit, async (req, res) => {
+router.post("/", requireAuth, logSuspicious, checkRateLimit, async (req, res) => {
   try {
     const { prompt, type: rawType, existingFiles, existingProjectId } = req.body;
 
-    if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
-      return res.status(400).json({ error: "Prompt is required" });
+    const promptCheck = validateAndSanitisePrompt(prompt, req.user?.id);
+    if (!promptCheck.ok) {
+      return res.status(promptCheck.status).json({
+        error: promptCheck.error,
+        message: promptCheck.message,
+      });
     }
 
     const type = rawType === "web" ? "web" : "native";
-    const trimmedPrompt = prompt.trim();
+    const trimmedPrompt = promptCheck.sanitised;
 
     const { enhancedIntent } = enhancePromptForGeneration({
       rawPrompt: trimmedPrompt,
@@ -565,6 +631,7 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
 
     if (type === "native") {
       files = sanitizeMobileFiles(files);
+      files = hardenMobileOutput(files);
 
       if (hasForbiddenNativeCode(files) && usedProvider === "groq") {
         console.warn(
