@@ -71,6 +71,7 @@ export default function RecentDeployed() {
     null | { type: "rename" | "share" | "invite"; project: Project }
   >(null);
   const [inputValue, setInputValue] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
@@ -290,41 +291,84 @@ const deleteProject = async (id: string) => {
                 <span className="rd-modified"> {new Date(project.created_at || Date.now()).toLocaleString()}</span>
 
 
-                <div className="rd-actions">
+                <div
+                  className="rd-actions"
+                  ref={menuOpenId === project.id ? menuRef : null}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ position: "relative" }}
+                >
                   <button
+                    type="button"
                     className="recent-menu-btn"
-                    onClick={() =>
-                      setMenuOpenId(
-                        menuOpenId === project.id ? null : project.id
-                      )
-                    }
+                    aria-expanded={menuOpenId === project.id}
+                    aria-haspopup="menu"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpenId(menuOpenId === project.id ? null : project.id);
+                    }}
                   >
                     ⋯
                   </button>
 
                   {menuOpenId === project.id && (
-                    <div className="recent-menu" ref={menuRef}>
-                      <button onClick={() => openRename(project)}> Rename</button>
+                    <div
+                      className="recent-menu"
+                      role="menu"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ position: "absolute", right: 0, top: "100%", zIndex: 50 }}
+                    >
                       <button
-                        onClick={() =>
-                          setModal({ type: "share", project })
-                        }
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuOpenId(null);
+                          navigate("/builder", {
+                            state: {
+                              generatedProjectId: project.id,
+                              files: project.files || [],
+                              prompt: project.prompt || "",
+                            },
+                          });
+                        }}
                       >
-                         Share
+                        Open
                       </button>
-                      <button
-                        onClick={() =>
-                          setModal({ type: "invite", project })
-                        }
-                      >
-                         Invite
-                      </button>
-                      <button
-                        className="danger"
-                        onClick={() => deleteProject(project.id)}
-                      >
-                         Delete
-                      </button>
+
+                      {confirmDeleteId !== project.id && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="danger"
+                          onClick={() => setConfirmDeleteId(project.id)}
+                        >
+                          Delete
+                        </button>
+                      )}
+
+                      {confirmDeleteId === project.id && (
+                        <div className="inline-confirm">
+                          <div>Are you sure?</div>
+                          <div className="confirm-actions">
+                            <button
+                              onClick={() => {
+                                deleteProject(project.id);
+                                setConfirmDeleteId(null);
+                              }}
+                              className="danger"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => {
+                                setConfirmDeleteId(null);
+                                setMenuOpenId(null);
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
