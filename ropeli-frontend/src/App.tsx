@@ -1,4 +1,5 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Templates from "./pages/Templates";
@@ -17,6 +18,12 @@ import DevelopersPlayground from "./pages/DevelopersPlayground";
 
 
 const App = () => {
+  const RequireAuth = ({ children }: { children: JSX.Element }) => {
+    const { user, loading } = useAuth();
+    if (loading) return null;
+    return user ? children : <Navigate to="/auth" replace />;
+  };
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -25,14 +32,28 @@ const App = () => {
       <Route path="/community" element={<Community />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/integrations" element={<Integrations />} />
-      <Route path="/builder" element={<Builder />} />
+      <Route
+        path="/builder"
+        element={
+          <RequireAuth>
+            <Builder />
+          </RequireAuth>
+        }
+      />
       <Route path="/careers" element={<Careers />} />
       <Route path="/blog" element={<Blog />} />
       <Route path="/docs" element={<Docs />} />
       <Route path="/founders" element={<Founders />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
-      <Route path="/builder/:projectId" element={<Builder />} />
+      <Route
+        path="/builder/:projectId"
+        element={
+          <RequireAuth>
+            <Builder />
+          </RequireAuth>
+        }
+      />
       <Route path="/github" element={<GitHubIntegration />} />
       <Route path="/developers-playground" element={<DevelopersPlayground />} />
     </Routes>
