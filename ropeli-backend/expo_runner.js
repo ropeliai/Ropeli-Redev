@@ -364,6 +364,14 @@ export async function startExpo(projectId, files) {
   const projectDir = path.join(BASE_DIR, safeId);
 
   console.log(`\n=== Starting Expo for ${safeId} ===`);
+  // Kill any lingering ngrok processes before starting fresh
+  try {
+    if (process.platform === "win32") {
+      execSync("taskkill /F /IM ngrok.exe", { stdio: "ignore" });
+    } else {
+      execSync("pkill -f ngrok || true", { stdio: "ignore" });
+    }
+  } catch {}
   stopExpo(safeId);
 
   if (fs.existsSync(projectDir)) {
