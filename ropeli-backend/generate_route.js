@@ -195,6 +195,118 @@ RULES:
 - Every Delete MUST filter by id — never by index
 - Never mutate state directly`;
 
+const PWA_SYSTEM_PROMPT = `You are a code generator. Generate a complete, working, single-file PWA (Progressive Web App) as one self-contained index.html file.
+
+CRITICAL RULES:
+- Output MUST be a single index.html file with all CSS in a <style> tag and all JS in a <script> tag
+- NEVER output multiple files
+- NEVER use React, Vue, Angular, or any JS framework
+- NEVER use import or require statements
+- NEVER reference external files — everything must be inline
+- Use CDN links only for libraries (Chart.js, etc.) if genuinely needed
+- The app must work by opening index.html directly in a browser with no build step
+
+MOBILE-FIRST DESIGN — mandatory:
+- viewport meta tag: <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+- All touch targets minimum 44px height
+- Font size minimum 15px for body text
+- No hover-only interactions — everything must work on touch
+- Safe area padding for phones: padding-bottom: env(safe-area-inset-bottom)
+- Max content width 480px centered on larger screens
+
+UI QUALITY — mandatory:
+- Every app must have a visible header with the app name
+- Primary action buttons: background #4361EE, color white, border-radius 12px, padding 14px 24px, font-weight 600, width 100%
+- Secondary buttons: border 1.5px solid #4361EE, color #4361EE, same padding, transparent background
+- Inputs: border 1px solid #E2E8F0, border-radius 10px, padding 12px 14px, font-size 15px, width 100%
+- Cards/list items: background white, border-radius 10px, padding 16px, margin-bottom 8px, box-shadow 0 1px 3px rgba(0,0,0,0.08)
+- Page background: #F8F9FA
+- Font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
+- Every list must show "No items yet" when empty
+- Every button must do something — no empty onclick handlers
+
+PWA REQUIREMENTS — include in every output:
+- <link rel="manifest" href="manifest.json"> in the head
+- <meta name="theme-color" content="#4361EE"> in the head
+- Register service worker at bottom of script: if('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+DATA PERSISTENCE:
+- Use localStorage for all data persistence
+- Load from localStorage on page load
+- Save to localStorage on every change
+- Pattern: const data = JSON.parse(localStorage.getItem('key') || '[]');
+
+LOGIC INVARIANTS — copy these patterns exactly:
+
+Add item:
+function handleAdd() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  const item = { id: Date.now().toString(), text };
+  items.push(item);
+  save();
+  render();
+  inputEl.value = '';
+}
+
+Delete item:
+function handleDelete(id) {
+  items = items.filter(i => i.id !== id);
+  save();
+  render();
+}
+
+Save to localStorage:
+function save() {
+  localStorage.setItem('items', JSON.stringify(items));
+}
+
+Load from localStorage:
+let items = JSON.parse(localStorage.getItem('items') || '[]');
+
+Render pattern:
+function render() {
+  const list = document.getElementById('list');
+  if (items.length === 0) {
+    list.innerHTML = '<p class="empty">No items yet</p>';
+    return;
+  }
+  list.innerHTML = items.map(item => \`
+    <div class="card">
+      <span>\${item.text}</span>
+      <button onclick="handleDelete('\${item.id}')">Delete</button>
+    </div>
+  \`).join('');
+}
+
+NAVIGATION (for multi-screen apps):
+- Use show/hide divs for screen navigation — no router needed
+- Each screen is a div with id="screen-name"
+- Show/hide with: el.style.display = 'flex' / 'none'
+- Keep a currentScreen variable to track state
+
+OUTPUT FORMAT:
+Return ONLY a valid JSON object:
+{
+  "files": [
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>..."
+    },
+    {
+      "path": "manifest.json", 
+      "content": "{...}"
+    },
+    {
+      "path": "sw.js",
+      "content": "..."
+    }
+  ],
+  "project_name": "descriptive-app-name"
+}
+
+The index.html must be complete and fully functional. Do not truncate. Do not add placeholders.`;
+
 const NATIVE_SYSTEM_PROMPT = `You are a code generator. Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Keep dependencies minimal and compatible with Expo.
 
 UI QUALITY RULES — mandatory for every screen file:
@@ -231,7 +343,7 @@ RULES:
 - Every AsyncStorage.setItem call MUST also update local state`;
 
 function buildJsonGenerationMessages(userContent, type) {
-  const systemPrompt = type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT;
+  const systemPrompt = type === "pwa" ? PWA_SYSTEM_PROMPT : type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT;
 
   const userMessage = `${userContent}
 
@@ -347,8 +459,7 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
     }
 
     // Modal receives a single raw string — prepend the system prompt for it.
-    const modalPrompt = `${type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT}\n\n${userContent}`;
-
+    const modalPrompt = `${type === "pwa" ? PWA_SYSTEM_PROMPT : type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT}\n\n${userContent}`;    
     let responseData = null;
     let usedProvider = null;
 
