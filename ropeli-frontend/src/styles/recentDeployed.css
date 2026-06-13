@@ -92,6 +92,8 @@
     padding: 0.7rem;
     border-radius: 14px;
     align-items: center;
+    position: relative;
+    overflow: visible;
 }
 
 .rd-table-row:hover {
@@ -127,6 +129,12 @@
     position: relative;
     display: flex;
     justify-content: flex-end;
+    overflow: visible;
+    z-index: 1;
+}
+
+.rd-actions:has(.recent-menu) {
+    z-index: 50;
 }
 
 .recent-menu-btn {
@@ -146,9 +154,12 @@
     right: 0;
     top: 36px;
     background: #121212;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 14px;
     min-width: 170px;
-    z-index: 20;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
 }
 
 .recent-menu button {

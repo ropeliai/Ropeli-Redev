@@ -12,15 +12,15 @@ const START_TIMEOUT_MS = 180000;
 /** Expo SDK 54 (matches Expo Go store / client ~54.x); see expo@54 bundledNativeModules.json */
 const SDK_54 = {
   expo: "~54.0.0",
-  "expo-status-bar": "~3.0.8",
-  react: "19.1.0",
-  "react-native": "0.81.4",
-  "@react-native-async-storage/async-storage": "2.2.0",
-  "react-native-safe-area-context": "~5.6.0",
-  "react-native-screens": "~4.16.0",
-  "react-native-gesture-handler": "~2.28.0",
-  "@react-navigation/native": "^7.0.14",
-  "@react-navigation/native-stack": "^7.3.10",
+  "expo-status-bar": "~2.0.1",
+  react: "18.3.2",
+  "react-native": "0.76.9",
+  "@react-native-async-storage/async-storage": "1.23.1",
+  "react-native-safe-area-context": "4.12.0",
+  "react-native-screens": "~4.4.0",
+  "react-native-gesture-handler": "~2.20.2",
+  "@react-navigation/native": "^6.1.18",
+  "@react-navigation/native-stack": "^6.11.0",
 };
 
 /** 1x1 transparent PNG so Metro / icon paths resolve (replace with real art in app). */
@@ -33,7 +33,7 @@ const SPAWN_ENV = {
   ...process.env,
   EXPO_NO_PROMPTS: "1",
   // Non-interactive CLIs (Expo / npm prompts)
-  CI: "1",
+  CI: "false",
   NODE_ENV: "development",
 };
 
