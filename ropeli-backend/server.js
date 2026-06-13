@@ -5,6 +5,10 @@ import paymentRoutes from "./payment.routes.js";
 import generateRoutes from "./generate_route.js";
 import ollamaRoutes from "./ollama_route.js";
 import expoRoutes from "./expo_route.js";
+import { fileURLToPath } from 'url';
+import { join, dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config();
 
@@ -24,6 +28,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/ollama", ollamaRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/expo", expoRoutes);
+app.use('/preview', express.static(join(__dirname, 'previews')));
 
 const PORT = process.env.PORT || 5000;
 
