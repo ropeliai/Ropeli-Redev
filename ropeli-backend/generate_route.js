@@ -4,6 +4,8 @@ import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 import { enhancePromptForGeneration } from "./prompt_enhancer.js";
 import { gradeAndImprove } from "./gradeAndImprove.js";
+import fs from 'fs';
+import path from 'path';
 import {
   postProcessWebFiles,
   getGroqModelForType,
@@ -195,117 +197,52 @@ RULES:
 - Every Delete MUST filter by id — never by index
 - Never mutate state directly`;
 
-const PWA_SYSTEM_PROMPT = `You are a code generator. Generate a complete, working, single-file PWA (Progressive Web App) as one self-contained index.html file.
+const PWA_SYSTEM_PROMPT = `You are an expert mobile UI engineer. Generate a COMPLETE, fully functional single-file PWA. The app must be 100% functional — every button works, every list renders, every empty state shows. Never truncate output. Never skip the render/list logic to save space — that is the most important part.
 
-CRITICAL RULES:
-- Output MUST be a single index.html file with all CSS in a <style> tag and all JS in a <script> tag
-- NEVER output multiple files
-- NEVER use React, Vue, Angular, or any JS framework
-- NEVER use import or require statements
-- NEVER reference external files — everything must be inline
-- Use CDN links only for libraries (Chart.js, etc.) if genuinely needed
-- The app must work by opening index.html directly in a browser with no build step
+OUTPUT: One index.html file. CSS in <style>, JS in <script>. No frameworks, no imports, no build step.
 
-MOBILE-FIRST DESIGN — mandatory:
-- viewport meta tag: <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-- All touch targets minimum 44px height
-- Font size minimum 15px for body text
-- No hover-only interactions — everything must work on touch
-- Safe area padding for phones: padding-bottom: env(safe-area-inset-bottom)
-- Max content width 480px centered on larger screens
+REQUIRED HEAD TAGS:
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#4361EE"><link rel="manifest" href="manifest.json">
 
-UI QUALITY — mandatory:
-- Every app must have a visible header with the app name
-- Primary action buttons: background #4361EE, color white, border-radius 12px, padding 14px 24px, font-weight 600, width 100%
-- Secondary buttons: border 1.5px solid #4361EE, color #4361EE, same padding, transparent background
-- Inputs: border 1px solid #E2E8F0, border-radius 10px, padding 12px 14px, font-size 15px, width 100%
-- Cards/list items: background white, border-radius 10px, padding 16px, margin-bottom 8px, box-shadow 0 1px 3px rgba(0,0,0,0.08)
-- Page background: #F8F9FA
-- Font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
-- Every list must show "No items yet" when empty
-- Every button must do something — no empty onclick handlers
+DESIGN SYSTEM (apply consistently, keep CSS compact):
+body{font-family:-apple-system,sans-serif;background:#F8F9FA;color:#1A1A2E;margin:0}
+.header{background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;padding:48px 20px 20px;font-size:22px;font-weight:700}
+.card{background:#fff;border-radius:16px;padding:16px;margin:8px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.btn{background:#4361EE;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;width:100%;cursor:pointer}
+.btn-del{background:none;border:none;color:#EF4444;font-size:18px;cursor:pointer}
+input{border:1.5px solid #E2E8F0;border-radius:12px;padding:14px;font-size:15px;width:100%;box-sizing:border-box;outline:none}
+input:focus{border-color:#4361EE;box-shadow:0 0 0 3px rgba(67,97,238,.12)}
+.empty{text-align:center;padding:50px 20px;color:#9CA3AF}
+.row{display:flex;justify-content:space-between;align-items:center}
 
-PWA REQUIREMENTS — include in every output:
-- <link rel="manifest" href="manifest.json"> in the head
-- <meta name="theme-color" content="#4361EE"> in the head
-- Register service worker at bottom of script: if('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+MANDATORY APP LOGIC — implement fully, this is the core of the app, do not abbreviate:
+1. State stored in a JS array, persisted to localStorage on every change
+2. A render() function that rebuilds the list HTML from the array — call it on load and after every change
+3. An empty state shown when the array is empty (icon + message)
+4. Add functionality: validate input, push to array, save, render, clear input
+5. Delete functionality: filter array by id, save, render
+6. If the prompt implies toggle/complete/edit features, implement those fully too — same pattern: mutate array, save, render
 
-DATA PERSISTENCE:
-- Use localStorage for all data persistence
-- Load from localStorage on page load
-- Save to localStorage on every change
-- Pattern: const data = JSON.parse(localStorage.getItem('key') || '[]');
-
-LOGIC INVARIANTS — copy these patterns exactly:
-
-Add item:
-function handleAdd() {
-  const text = inputEl.value.trim();
-  if (!text) return;
-  const item = { id: Date.now().toString(), text };
-  items.push(item);
-  save();
-  render();
-  inputEl.value = '';
+EXAMPLE PATTERN (follow exactly, adapt field names to the app):
+let items = JSON.parse(localStorage.getItem('items')||'[]');
+function save(){localStorage.setItem('items',JSON.stringify(items));}
+function render(){
+  const el=document.getElementById('list');
+  if(!items.length){el.innerHTML='<div class="empty">📋<br>Nothing here yet</div>';return;}
+  el.innerHTML=items.map(i=>'<div class="card row"><span>'+i.text+'</span><button class="btn-del" onclick="del(\\''+i.id+'\\')">×</button></div>').join('');
 }
+function add(){const v=document.getElementById('inp').value.trim();if(!v)return;items.push({id:Date.now()+'',text:v});save();render();document.getElementById('inp').value='';}
+function del(id){items=items.filter(i=>i.id!==id);save();render();}
+window.onload=render;
 
-Delete item:
-function handleDelete(id) {
-  items = items.filter(i => i.id !== id);
-  save();
-  render();
-}
+SERVICE WORKER REGISTRATION (include at end of script):
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js');navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='SW_UPDATED'){const b=document.createElement('div');b.textContent='🔄 New version available — tap to refresh';b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#4361EE;color:#fff;text-align:center;padding:12px;font-size:14px;z-index:99999;cursor:pointer';b.onclick=()=>location.reload();document.body.appendChild(b);}});});}
 
-Save to localStorage:
-function save() {
-  localStorage.setItem('items', JSON.stringify(items));
-}
+OUTPUT FORMAT — return ONLY this JSON, nothing else:
+{"files":[{"path":"index.html","content":"..."},{"path":"manifest.json","content":"{\\"name\\":\\"App\\",\\"short_name\\":\\"App\\",\\"start_url\\":\\"./index.html\\",\\"display\\":\\"standalone\\",\\"background_color\\":\\"#F8F9FA\\",\\"theme_color\\":\\"#4361EE\\",\\"icons\\":[{\\"src\\":\\"https://via.placeholder.com/192x192/4361EE/ffffff?text=App\\",\\"sizes\\":\\"192x192\\",\\"type\\":\\"image/png\\"}]}"},{"path":"sw.js","content":"PLACEHOLDER_DO_NOT_GENERATE_THIS_FILE"}],"project_name":"kebab-case-name"}
 
-Load from localStorage:
-let items = JSON.parse(localStorage.getItem('items') || '[]');
-
-Render pattern:
-function render() {
-  const list = document.getElementById('list');
-  if (items.length === 0) {
-    list.innerHTML = '<p class="empty">No items yet</p>';
-    return;
-  }
-  list.innerHTML = items.map(item => \`
-    <div class="card">
-      <span>\${item.text}</span>
-      <button onclick="handleDelete('\${item.id}')">Delete</button>
-    </div>
-  \`).join('');
-}
-
-NAVIGATION (for multi-screen apps):
-- Use show/hide divs for screen navigation — no router needed
-- Each screen is a div with id="screen-name"
-- Show/hide with: el.style.display = 'flex' / 'none'
-- Keep a currentScreen variable to track state
-
-OUTPUT FORMAT:
-Return ONLY a valid JSON object:
-{
-  "files": [
-    {
-      "path": "index.html",
-      "content": "<!DOCTYPE html>..."
-    },
-    {
-      "path": "manifest.json", 
-      "content": "{...}"
-    },
-    {
-      "path": "sw.js",
-      "content": "..."
-    }
-  ],
-  "project_name": "descriptive-app-name"
-}
-
-The index.html must be complete and fully functional. Do not truncate. Do not add placeholders.`;
+IMPORTANT: The server overrides sw.js content automatically — always output exactly "PLACEHOLDER_DO_NOT_GENERATE_THIS_FILE" for sw.js so you do not waste tokens on it.`;
 
 const NATIVE_SYSTEM_PROMPT = `You are a code generator. Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Keep dependencies minimal and compatible with Expo.
 
@@ -385,8 +322,7 @@ async function generateWithGroq(userPrompt, type) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
 
-  let response;
-  try {
+  let response;  try {
     response = await client.chat.completions.create(
       {
         model: getGroqModelForType(type),
@@ -401,6 +337,10 @@ async function generateWithGroq(userPrompt, type) {
       throw new GroqCallError("timeout", `Groq call exceeded ${GROQ_TIMEOUT_MS}ms`);
     }
     const status = err?.status ?? err?.response?.status;
+    if (status === 413) {
+      console.error('[generate] Groq 413 detail:', err?.message || err?.error?.message || 'no detail available');
+      throw new GroqCallError("too_large", "Groq 413 payload too large");
+    }
     if (status === 429) {
       throw new GroqCallError("rate_limited", "Groq rate limited", { retryAfter: 60 });
     }
@@ -429,13 +369,13 @@ router.post("/warmup", (_req, res) => {
 
 router.post("/", requireAuth, checkRateLimit, async (req, res) => {
   try {
-    const { prompt, type: rawType, existingFiles } = req.body;
+    const { prompt, type: rawType, existingFiles, existingProjectId } = req.body;
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return res.status(400).json({ error: "Prompt is required" });
     }
 
-    const type = rawType === "web" ? "web" : "native";
+    const type = rawType === "pwa" ? "pwa" : rawType === "web" ? "web" : "native";
     const trimmedPrompt = prompt.trim();
 
     const { enhancedIntent } = enhancePromptForGeneration({
@@ -450,8 +390,17 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
     // inside buildJsonGenerationMessages (WEB_SYSTEM_PROMPT / NATIVE_SYSTEM_PROMPT).
     let userContent;
     if (existingFiles && Array.isArray(existingFiles) && existingFiles.length > 0) {
+      const COMBINED_LIMIT = 8000;
+      const totalChars = existingFiles.reduce((sum, f) => sum + String(f.content ?? "").length, 0);
+      const perFileCap = totalChars > COMBINED_LIMIT ? 8000 : 50000;
       const filesContext = existingFiles
-        .map((f) => `--- ${f.path} ---\n${(f.content ?? "").slice(0, 50000)}`)
+        .map((f) => {
+          const raw = String(f.content ?? "");
+          const body = raw.length > perFileCap
+            ? raw.slice(0, perFileCap) + "...[truncated for length]"
+            : raw;
+          return `--- ${f.path} ---\n${body}`;
+        })
         .join("\n\n");
       userContent = `Here are the existing files:\n\n${filesContext}\n\nThe user wants to:\n${enhancedIntent}\n\nReturn the complete updated files.`;
     } else {
@@ -491,50 +440,63 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
             message: "AI provider is temporarily unavailable.",
           });
         }
+        if (groqErr.kind === "too_large") {
+          console.warn("[generate] Groq 413 — retrying without existingFiles context...");
+          const freshContent = `User request:\n${enhancedIntent}`;
+          try {
+            responseData = await generateWithGroq(freshContent, type);
+            usedProvider = "groq";
+            console.log("[generate] Groq 413 fallback (no context) succeeded");
+          } catch (retryErr) {
+            console.warn("[generate] Groq 413 fallback also failed:", retryErr.message);
+          }
+        }
       }
 
-      console.warn(
-        "[generate] Groq failed:",
-        groqErr.message,
-        "— trying Modal fallback..."
-      );
-
-      try {
-        const modalResponse = await callModal(modalPrompt);
-        const { success, data } = modalResponse.data;
-        if (success && data && Array.isArray(data.files)) {
-          responseData = { success, data };
-          usedProvider = "modal";
-          console.log("[generate] Modal fallback succeeded");
-        } else {
-          throw new Error("Invalid Modal response structure");
-        }
-      } catch (modalErr) {
-        console.error(
-          "[generate] Modal fallback also failed:",
-          modalErr.message
+      if (!responseData) {
+        console.warn(
+          "[generate] Groq failed:",
+          groqErr.message,
+          "— trying Modal fallback..."
         );
-        // axios timeout shows up as ECONNABORTED / "timeout of Xms exceeded".
-        const isTimeout =
-          modalErr?.code === "ECONNABORTED" ||
-          /timeout/i.test(modalErr?.message || "");
-        if (isTimeout) {
-          return res.status(504).json({
-            error: "GENERATION_TIMEOUT",
-            message: "Generation took too long. Please try again.",
+
+        try {
+          const modalResponse = await callModal(modalPrompt);
+          const { success, data } = modalResponse.data;
+          if (success && data && Array.isArray(data.files)) {
+            responseData = { success, data };
+            usedProvider = "modal";
+            console.log("[generate] Modal fallback succeeded");
+          } else {
+            throw new Error("Invalid Modal response structure");
+          }
+        } catch (modalErr) {
+          console.error(
+            "[generate] Modal fallback also failed:",
+            modalErr.message
+          );
+          // axios timeout shows up as ECONNABORTED / "timeout of Xms exceeded".
+          const isTimeout =
+            modalErr?.code === "ECONNABORTED" ||
+            /timeout/i.test(modalErr?.message || "");
+          if (isTimeout) {
+            return res.status(504).json({
+              error: "GENERATION_TIMEOUT",
+              message: "Generation took too long. Please try again.",
+            });
+          }
+          const status = modalErr?.response?.status;
+          if (typeof status === "number" && status >= 500) {
+            return res.status(503).json({
+              error: "PROVIDER_UNAVAILABLE",
+              message: "AI provider is temporarily unavailable.",
+            });
+          }
+          return res.status(502).json({
+            error: "Generation failed",
+            details: `Groq: ${groqErr.message} | Modal: ${modalErr.message}`,
           });
         }
-        const status = modalErr?.response?.status;
-        if (typeof status === "number" && status >= 500) {
-          return res.status(503).json({
-            error: "PROVIDER_UNAVAILABLE",
-            message: "AI provider is temporarily unavailable.",
-          });
-        }
-        return res.status(502).json({
-          error: "Generation failed",
-          details: `Groq: ${groqErr.message} | Modal: ${modalErr.message}`,
-        });
       }
     }
 
@@ -590,6 +552,52 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
 
     const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
     recordGeneration(req.user?.id);
+    if (type === "pwa") {
+      try {
+        const projectId = existingProjectId || crypto.randomUUID();
+        const EXPO_BASE = process.env.EXPO_BASE_DIR || (process.platform === 'win32' ? 'D:/tmp/expo-projects' : '/var/data/expo-projects');
+        const previewBase = path.join(EXPO_BASE, 'previews', 'projects', projectId);
+        fs.mkdirSync(previewBase, { recursive: true });
+
+        const generationVersion = Date.now();
+        const swTemplate = `const CACHE='ropeli-{{VERSION}}';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html'])).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));});`;
+        const swContent = swTemplate.replace('{{VERSION}}', String(generationVersion));
+
+        for (const file of files) {
+          let content = String(file.content || '');
+          if (file.path === 'index.html') {
+            const isPro = req.user?.plan === 'pro' || req.user?.plan === 'unlimited';
+            if (!isPro) {
+              content = content.replace(
+                '</body>',
+                '<div style="position:fixed;bottom:12px;right:12px;background:rgba(0,0,0,0.7);color:white;font-size:11px;padding:4px 10px;border-radius:6px;z-index:99999;pointer-events:none;font-family:sans-serif;">Built with Ropeli</div></body>'
+              );
+            }
+          }
+          // Always override sw.js with the server-versioned worker so every
+          // regeneration invalidates the installed PWA's old cache.
+          if (file.path === 'sw.js') {
+            content = swContent;
+          }
+          fs.writeFileSync(path.join(previewBase, file.path), content, 'utf8');
+        }
+
+        const preview_url = `/preview/projects/${projectId}/index.html`;
+        return res.json({
+          success: true,
+          project_name,
+          files,
+          provider: usedProvider,
+          preview_url,
+          type: 'pwa',
+        });
+      } catch (pwaErr) {
+        console.error('[pwa] file write error:', pwaErr.message);
+      }
+    }
     res.json({ success: true, project_name, files, provider: usedProvider });
   } catch (error) {
     console.error("[generate] Unexpected error:", error.message);

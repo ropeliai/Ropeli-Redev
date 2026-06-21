@@ -28,7 +28,9 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/ollama", ollamaRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/expo", expoRoutes);
-app.use('/preview', express.static(join(__dirname, 'previews')));
+// Serve previews from the EXPO_BASE_DIR previews folder (configurable)
+const EXPO_BASE_DIR = process.env.EXPO_BASE_DIR || (process.platform === 'win32' ? 'D:/tmp/expo-projects' : '/var/data/expo-projects');
+app.use('/preview', express.static(join(EXPO_BASE_DIR, 'previews')));
 
 const PORT = process.env.PORT || 5000;
 

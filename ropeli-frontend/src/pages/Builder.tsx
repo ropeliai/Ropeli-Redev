@@ -195,7 +195,7 @@ useEffect(() => {
   const [expoQrUrl, setExpoQrUrl] = useState("");
   const [expoLoading, setExpoLoading] = useState(false);
   const [expoMetroReady, setExpoMetroReady] = useState(false);
-  const [buildType, setBuildType] = useState<"mobile" | "web">("mobile");
+  const [buildType, setBuildType] = useState<"mobile" | "web" | "pwa">("pwa");
   const [generationElapsed, setGenerationElapsed] = useState(0);
   const generationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [generatedProjectName, setGeneratedProjectName] = useState("");
@@ -209,6 +209,10 @@ useEffect(() => {
   const [apkUrl, setApkUrl] = useState<string | null>(null);
   const [apkBuildId, setApkBuildId] = useState<string | null>(null);
   const apkPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [pwaPreviewUrl, setPwaPreviewUrl] = useState<string | null>(null);
+  const [showPwaPanel, setShowPwaPanel] = useState<boolean>(false);
+  const [showPwaQr, setShowPwaQr] = useState<boolean>(false);
 
   // Cleanup polling on unmount so we never leak intervals between sessions.
   useEffect(() => {
@@ -288,18 +292,23 @@ useEffect(() => {
   // the user to confirm a conversion and re-run /api/generate with the files
   // as `existingFiles` and the new target type. With no files, this is a
   // plain toggle — identical to the previous setBuildType behaviour.
-  const handleSwitchBuildType = async (target: "mobile" | "web") => {
+  const handleSwitchBuildType = async (target: "mobile" | "web" | "pwa") => {
     if (target === buildType) return;
     if (isGenerating) return;
 
     if (generatedFiles.length === 0) {
       setBuildType(target);
+      if (target === "web") {
+        setShowPwaPanel(false);
+      }
       return;
     }
 
     const ok = window.confirm(
       target === "web"
-        ? "Convert this mobile app into a web app? This will use one of your daily generations."
+        ? "Convert this app into a web app? This will use one of your daily generations."
+        : target === "pwa"
+        ? "Convert this into a mobile PWA? This will use one of your daily generations."
         : "Convert this web app into a mobile app? This will use one of your daily generations."
     );
     if (!ok) return;
@@ -313,8 +322,10 @@ useEffect(() => {
 
     const conversionInstruction =
       target === "web"
-        ? "Convert this React Native / Expo app into a React web app. Use only standard HTML elements (div, button, input, etc.) and inline styles. Remove all react-native and Expo imports. Keep the same features and structure."
-        : "Convert this React web app into an Expo React Native mobile app. Replace HTML elements with React Native components (View, Text, TouchableOpacity, FlatList, etc.). Replace localStorage with AsyncStorage. Keep the same features and structure.";
+        ? "Convert this app into a React web app. Use only standard HTML elements (div, button, input, etc.) and inline styles. Remove all react-native and Expo imports. Keep the same features and structure."
+        : target === "pwa"
+        ? "Convert this into a complete self-contained PWA. Output a single index.html with all CSS in a style tag and all JS in a script tag. No frameworks, no imports, no build step. Use localStorage for persistence. Make it look like a premium mobile app with gradient header, card layout, and styled buttons."
+        : "Convert this web app into an Expo React Native mobile app. Replace HTML elements with React Native components (View, Text, TouchableOpacity, FlatList, etc.). Replace localStorage with AsyncStorage. Keep the same features and structure.";
 
     try {
       const authHeaders = await getAuthHeaders();
@@ -325,6 +336,7 @@ useEffect(() => {
           prompt: conversionInstruction,
           type: target,
           existingFiles: generatedFiles,
+          existingProjectId: existingGeneratedProjectId ?? undefined,
         }),
       });
 
@@ -362,6 +374,11 @@ useEffect(() => {
       setSelectedFile(files[0]?.path || "");
       setCode(files[0]?.content || "");
       setHasCodeEdits(false);
+      if (result.type === 'pwa' && result.preview_url) {
+        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        setPwaPreviewUrl(`${backendUrl}${result.preview_url}`);
+        setShowPwaPanel(true);
+      }
 
       const projectIdToUse = existingGeneratedProjectId || slugify(generatedProjectName || "app");
 
@@ -404,6 +421,8 @@ useEffect(() => {
           content:
             target === "web"
               ? "✅ Converted to a web app. Live preview is ready."
+              : target === "pwa"
+              ? "✅ Converted to a mobile PWA. Scan the QR code to preview."
               : "✅ Converted to a mobile app. Scan the QR code to preview.",
         },
       ]);
@@ -593,8 +612,8 @@ const handleSend = async (overridePrompt?: string) => {
   // Soft auto-detect from prompt text. Applied ONLY on the first generation
   // (no existing files yet) so follow-up prompts can't flip mode unexpectedly.
   // The user's manual toggle always wins when no signal is found.
-  let resolvedBuildType: "mobile" | "web" = buildType;
-  if (generatedFiles.length === 0) {
+  let resolvedBuildType: "mobile" | "web" | "pwa" = buildType;
+  if (generatedFiles.length === 0 && buildType !== "pwa") {
     const detected = detectBuildTypeFromPrompt(userPrompt);
     if (detected && detected !== buildType) {
       resolvedBuildType = detected;
@@ -623,7 +642,8 @@ const handleSend = async (overridePrompt?: string) => {
         prompt: userPrompt,
         type: resolvedBuildType,
         existingFiles: generatedFiles.length ? generatedFiles : undefined,
-      }),
+        existingProjectId: existingGeneratedProjectId ?? undefined,
+        }),
     });
 
     if (response.status === 401) {
@@ -657,6 +677,12 @@ const handleSend = async (overridePrompt?: string) => {
       setCode(files[0]?.content || "");
       setHasCodeEdits(false);
       setGeneratedProjectName(result.project_name || slugify(userPrompt));
+
+      if (result.type === "pwa" && result.preview_url) {
+        const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        setPwaPreviewUrl(`${backendUrl}${result.preview_url}`);
+        setShowPwaPanel(true);
+      }
 
       const projectIdToUse = existingGeneratedProjectId || slugify(userPrompt);
 
@@ -733,7 +759,7 @@ const handleSend = async (overridePrompt?: string) => {
         {
           kind: "text",
           role: "assistant",
-          content: `✅ App generated: ${result.project_name || slugify(userPrompt)}. Scan the QR code to preview.`,
+          content: `✅ App generated: ${result.project_name || slugify(userPrompt)}. Scan the QR code or open the preview link to install on your phone.`,
         },
       ]);
     } else {
@@ -807,6 +833,8 @@ const handleConfigSubmit = async () => {
 /* ===== RUN ON DEVICE (after code edits) ===== */
 const handleRunOnDevice = async () => {
   if (isRunningOnDevice) return;
+  if (buildType === 'pwa') return; // PWA uses preview URL not Expo
+  setIsRunningOnDevice(true);
   setIsRunningOnDevice(true);
   setExpoLoading(true);
   setExpoMetroReady(false);
@@ -1062,6 +1090,7 @@ useEffect(() => {
     </div>
   ) : null;
 
+  
  return (
   <section className="builder-page">
     
@@ -1135,9 +1164,9 @@ useEffect(() => {
       {/* RIGHT */}
       <div className="topbar-right">
         <button
-          onClick={() => handleSwitchBuildType("mobile")}
+          onClick={() => handleSwitchBuildType("pwa")}
           disabled={isGenerating}
-          className={buildType === "mobile" ? "active" : ""}
+          className={buildType === "pwa" ? "active" : ""}
         >
           Mobile
         </button>
@@ -1322,8 +1351,65 @@ useEffect(() => {
     <>
         {activeTab === "preview" && (
   <div className={`preview-panel ${previewSize}`}>
-      <div className={`preview-content ${buildType === "mobile" ? "preview-mobile-layout" : "preview-web-layout"}`}>
-        {buildType === "mobile" ? (
+      <div className={`preview-content ${buildType === "pwa" || buildType === "mobile" ? "preview-mobile-layout" : "preview-web-layout"}`}>
+        {buildType === "pwa" ? (
+          <div className="mobile-qr-preview phone-frame-preview">
+            {pwaPreviewUrl ? (
+              !showPwaQr ? (
+                <>
+                  <div className="phone-frame-inner" style={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: "24px" }}>
+                    <iframe
+                      src={pwaPreviewUrl}
+                      title="PWA Preview"
+                      sandbox="allow-scripts allow-same-origin allow-forms"
+                      style={{ width: "100%", height: "520px", border: "none", borderRadius: "12px", background: "white", display: "block" }}
+                    />
+                  </div>
+                  <div style={{ textAlign: "center", marginTop: "16px" }}>
+                    <a
+                      href={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pwaPreviewUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: "14px", color: "#ffffff", textDecoration: "underline", fontWeight: 500, cursor: "pointer" }}
+                    >
+                      📱 Get QR Code
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <div className="phone-frame-inner">
+                  <div className="qr-card">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=168x168&data=${encodeURIComponent(pwaPreviewUrl)}`}
+                      alt="Scan to install"
+                      style={{ width: "168px", height: "168px", borderRadius: "4px" }}
+                    />
+                  </div>
+                  <p className="qr-helper-text">
+                    Android: tap ⋮ → Add to Home Screen<br />
+                    iPhone: tap Share → Add to Home Screen
+                  </p>
+                  <button
+                    onClick={() => setShowPwaQr(false)}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      color: "rgba(255,255,255,0.7)",
+                      borderRadius: "20px",
+                      padding: "6px 14px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ← Back to preview
+                  </button>
+                </div>
+              )
+            ) : (
+              <p>Run generation to preview your PWA</p>
+            )}
+          </div>
+        ) : buildType === "mobile" ? (
           <div className="mobile-qr-preview phone-frame-preview">
             {expoLoading ? (
               <p>Starting Expo server...</p>
@@ -1543,8 +1629,65 @@ useEffect(() => {
   {mobileView === "preview" && (
     <div className="builder-right">
       <div className={`preview-panel ${previewSize}`}>
-        <div className={`preview-content ${buildType === "mobile" ? "preview-mobile-layout" : "preview-web-layout"}`}>
-          {buildType === "mobile" ? (
+        <div className={`preview-content ${buildType === "pwa" || buildType === "mobile" ? "preview-mobile-layout" : "preview-web-layout"}`}>
+          {buildType === "pwa" ? (
+            <div className="mobile-qr-preview phone-frame-preview">
+              {pwaPreviewUrl ? (
+                !showPwaQr ? (
+                  <>
+                    <div className="phone-frame-inner" style={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: "24px" }}>
+                      <iframe
+                        src={pwaPreviewUrl}
+                        title="PWA Preview"
+                        sandbox="allow-scripts allow-same-origin allow-forms"
+                        style={{ width: "100%", height: "520px", border: "none", borderRadius: "12px", background: "white", display: "block" }}
+                      />
+                    </div>
+                    <div style={{ textAlign: "center", marginTop: "16px" }}>
+                      <a
+                        href={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pwaPreviewUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: "14px", color: "#ffffff", textDecoration: "underline", fontWeight: 500, cursor: "pointer" }}
+                      >
+                        📱 Get QR Code
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <div className="phone-frame-inner">
+                    <div className="qr-card">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=168x168&data=${encodeURIComponent(pwaPreviewUrl)}`}
+                        alt="Scan to install"
+                        style={{ width: "168px", height: "168px", borderRadius: "4px" }}
+                      />
+                    </div>
+                    <p className="qr-helper-text">
+                      Android: tap ⋮ → Add to Home Screen<br />
+                      iPhone: tap Share → Add to Home Screen
+                    </p>
+                    <button
+                      onClick={() => setShowPwaQr(false)}
+                      style={{
+                        background: "transparent",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        color: "rgba(255,255,255,0.7)",
+                        borderRadius: "20px",
+                        padding: "6px 14px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ← Back to preview
+                    </button>
+                  </div>
+                )
+              ) : (
+                <p>Run generation to preview your PWA</p>
+              )}
+            </div>
+          ) : buildType === "mobile" ? (
             <div className="mobile-qr-preview phone-frame-preview">
               {expoLoading ? (
                 <p>Starting Expo server...</p>

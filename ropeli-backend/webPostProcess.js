@@ -17,6 +17,13 @@ const RN_IMPORT_RE =
   /^\s*import\s+[^;]*['"](react-native|expo[^'"]*|@react-navigation[^'"]*)['"]\s*;?\s*$/gm;
 
 export function getGroqModelForType(type) {
+  // Single source of truth: GROQ_MODEL in .env drives ALL generation types
+  // (web, native, pwa). No per-type hardcoded overrides — if a different
+  // model is ever needed for a specific type, set it explicitly via env
+  // (GROQ_MODEL_WEB / GROQ_MODEL_PWA) rather than hardcoding in code.
+  if (type === "pwa" && process.env.GROQ_MODEL_PWA) {
+    return process.env.GROQ_MODEL_PWA;
+  }
   if (type === "web" && process.env.GROQ_MODEL_WEB) {
     return process.env.GROQ_MODEL_WEB;
   }

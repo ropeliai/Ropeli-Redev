@@ -12,7 +12,10 @@ const router = express.Router();
 
 // Mirrors expo_runner's directory resolution so the build endpoint targets
 // the same project dir that Metro is already running against.
-const EXPO_BASE_DIR = process.env.EXPO_BASE_DIR || "/tmp/expo-projects";
+// Use EXPO_BASE_DIR env with sensible platform-specific fallback so previews
+// can be written outside the repo on Windows or Linux render hosts.
+const EXPO_BASE_DIR =
+  process.env.EXPO_BASE_DIR || (process.platform === "win32" ? "D:/tmp/expo-projects" : "/var/data/expo-projects");
 
 function safeProjectId(projectId) {
   return (
@@ -254,3 +257,65 @@ router.get("/build-status/:buildId", requireAuth, async (req, res) => {
 });
 
 export default router;
+
+// New route: write PWA preview files to disk and return preview URL
+router.post("/pwa-preview", requireAuth, async (req, res) => {
+  try {
+    const { files, project_id, plan } = req.body || {};
+    if (!project_id) {
+      return res.status(400).json({ error: "project_id is required" });
+    }
+
+    const safeId = safeProjectId(project_id);
+    const previewsBase = path.join(EXPO_BASE_DIR, "previews");
+    const previewDir = path.join(previewsBase, safeId);
+
+    // Ensure base previews dir and target dir exist
+    if (!fs.existsSync(previewsBase)) {
+      fs.mkdirSync(previewsBase, { recursive: true });
+    }
+    if (!fs.existsSync(previewDir)) {
+      fs.mkdirSync(previewDir, { recursive: true });
+    }
+
+    if (!Array.isArray(files)) {
+      return res.status(400).json({ error: "files must be an array" });
+    }
+
+    for (const file of files) {
+      const relPath = String(file.path || "");
+      const content = String(file.content || "");
+      const outPath = path.join(previewDir, relPath);
+
+      // Ensure directory for file exists
+      const dir = path.dirname(outPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      let finalContent = content;
+      // Inject watermark for free plans into index.html before </body>
+      if (
+        relPath.toLowerCase() === "index.html" &&
+        String(plan || "").toLowerCase() === "free"
+      ) {
+        if (finalContent.includes("</body>")) {
+          finalContent = finalContent.replace(
+            /<\/body>/i,
+            '<div style="position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.6);color:white;padding:6px 8px;border-radius:8px;font-size:12px;z-index:2147483647">Built with Ropeli</div></body>'
+          );
+        } else {
+          finalContent += '<div style="position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,0.6);color:white;padding:6px 8px;border-radius:8px;font-size:12px;z-index:2147483647">Built with Ropeli</div>';
+        }
+      }
+
+      fs.writeFileSync(outPath, finalContent, "utf8");
+    }
+
+    const preview_url = `/preview/previews/${safeId}/index.html`;
+    return res.json({ success: true, preview_url });
+  } catch (err) {
+    console.error("[pwa-preview] error:", err?.message || err);
+    return res.status(500).json({ error: "FAILED", details: err?.message || String(err) });
+  }
+});
