@@ -1357,24 +1357,18 @@ useEffect(() => {
             {pwaPreviewUrl ? (
               !showPwaQr ? (
                 <>
-                  <div className="phone-frame-inner" style={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: "24px" }}>
-                    <iframe
-                      src={pwaPreviewUrl}
-                      title="PWA Preview"
-                      sandbox="allow-scripts allow-same-origin allow-forms"
-                      style={{ width: "100%", height: "520px", border: "none", borderRadius: "12px", background: "white", display: "block" }}
-                    />
-                  </div>
-                  <div style={{ textAlign: "center", marginTop: "16px" }}>
-                    <a
-                      href={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pwaPreviewUrl)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: "14px", color: "#ffffff", textDecoration: "underline", fontWeight: 500, cursor: "pointer" }}
-                    >
-                      📱 Get QR Code
-                    </a>
-                  </div>
+                  <iframe
+                    src={pwaPreviewUrl}
+                    title="PWA Preview"
+                    sandbox="allow-scripts allow-same-origin allow-forms"
+                    style={{ width: "100%", flex: "1 1 0", minHeight: 0, border: "none", borderRadius: "16px", background: "white", display: "block" }}
+                  />
+                  <button
+                    onClick={() => setShowPwaQr(true)}
+                    style={{ marginTop: "12px", fontSize: "13px", color: "#ffffff", textDecoration: "underline", fontWeight: 500, cursor: "pointer", flexShrink: 0, background: "none", border: "none", padding: 0 }}
+                  >
+                    📱 Get QR Code
+                  </button>
                 </>
               ) : (
                 <div className="phone-frame-inner">
@@ -1635,24 +1629,18 @@ useEffect(() => {
               {pwaPreviewUrl ? (
                 !showPwaQr ? (
                   <>
-                    <div className="phone-frame-inner" style={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: "24px" }}>
-                      <iframe
-                        src={pwaPreviewUrl}
-                        title="PWA Preview"
-                        sandbox="allow-scripts allow-same-origin allow-forms"
-                        style={{ width: "100%", height: "520px", border: "none", borderRadius: "12px", background: "white", display: "block" }}
-                      />
-                    </div>
-                    <div style={{ textAlign: "center", marginTop: "16px" }}>
-                      <a
-                        href={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pwaPreviewUrl)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: "14px", color: "#ffffff", textDecoration: "underline", fontWeight: 500, cursor: "pointer" }}
-                      >
-                        📱 Get QR Code
-                      </a>
-                    </div>
+                    <iframe
+                      src={pwaPreviewUrl}
+                      title="PWA Preview"
+                      sandbox="allow-scripts allow-same-origin allow-forms"
+                      style={{ width: "100%", flex: "1 1 0", minHeight: 0, border: "none", borderRadius: "16px", background: "white", display: "block" }}
+                    />
+                    <button
+                      onClick={() => setShowPwaQr(true)}
+                      style={{ marginTop: "12px", fontSize: "13px", color: "#ffffff", textDecoration: "underline", fontWeight: 500, cursor: "pointer", flexShrink: 0, background: "none", border: "none", padding: 0 }}
+                    >
+                      📱 Get QR Code
+                    </button>
                   </>
                 ) : (
                   <div className="phone-frame-inner">

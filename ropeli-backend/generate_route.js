@@ -197,52 +197,38 @@ RULES:
 - Every Delete MUST filter by id — never by index
 - Never mutate state directly`;
 
-const PWA_SYSTEM_PROMPT = `You are an expert mobile UI engineer. Generate a COMPLETE, fully functional single-file PWA. The app must be 100% functional — every button works, every list renders, every empty state shows. Never truncate output. Never skip the render/list logic to save space — that is the most important part.
+const PWA_SYSTEM_PROMPT = `You are an expert mobile UI engineer. Output ONLY a complete, valid HTML document — nothing else. No JSON, no markdown fences, no explanation. Start with <!DOCTYPE html> and end with </html>.
 
-OUTPUT: One index.html file. CSS in <style>, JS in <script>. No frameworks, no imports, no build step.
+The output is a single index.html PWA. All CSS in a <style> tag, all JS in a <script> tag. No frameworks, no imports, no build step.
 
-REQUIRED HEAD TAGS:
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#4361EE"><link rel="manifest" href="manifest.json">
+REQUIRED HEAD TAGS (copy exactly):
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#4361EE">
+<link rel="manifest" href="manifest.json">
 
-DESIGN SYSTEM (apply consistently, keep CSS compact):
+DESIGN SYSTEM:
 body{font-family:-apple-system,sans-serif;background:#F8F9FA;color:#1A1A2E;margin:0}
 .header{background:linear-gradient(135deg,#4361EE,#7B2FBE);color:#fff;padding:48px 20px 20px;font-size:22px;font-weight:700}
 .card{background:#fff;border-radius:16px;padding:16px;margin:8px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .btn{background:#4361EE;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;width:100%;cursor:pointer}
 .btn-del{background:none;border:none;color:#EF4444;font-size:18px;cursor:pointer}
 input{border:1.5px solid #E2E8F0;border-radius:12px;padding:14px;font-size:15px;width:100%;box-sizing:border-box;outline:none}
-input:focus{border-color:#4361EE;box-shadow:0 0 0 3px rgba(67,97,238,.12)}
 .empty{text-align:center;padding:50px 20px;color:#9CA3AF}
 .row{display:flex;justify-content:space-between;align-items:center}
 
-MANDATORY APP LOGIC — implement fully, this is the core of the app, do not abbreviate:
-1. State stored in a JS array, persisted to localStorage on every change
-2. A render() function that rebuilds the list HTML from the array — call it on load and after every change
-3. An empty state shown when the array is empty (icon + message)
-4. Add functionality: validate input, push to array, save, render, clear input
-5. Delete functionality: filter array by id, save, render
-6. If the prompt implies toggle/complete/edit features, implement those fully too — same pattern: mutate array, save, render
+MANDATORY APP LOGIC — implement every point fully:
+1. State in a JS array, persisted to localStorage on every mutation
+2. A render() function that rebuilds the list innerHTML from the array — call on load and after every mutation
+3. Empty state (icon + message) when the array is empty
+4. Add: validate input is non-empty, push object with id=Date.now()+'', save, render, clear input
+5. Delete: filter array by id, save, render
+6. Toggle/edit if the prompt implies it — same pattern: mutate array, save, render
 
-EXAMPLE PATTERN (follow exactly, adapt field names to the app):
-let items = JSON.parse(localStorage.getItem('items')||'[]');
-function save(){localStorage.setItem('items',JSON.stringify(items));}
-function render(){
-  const el=document.getElementById('list');
-  if(!items.length){el.innerHTML='<div class="empty">📋<br>Nothing here yet</div>';return;}
-  el.innerHTML=items.map(i=>'<div class="card row"><span>'+i.text+'</span><button class="btn-del" onclick="del(\\''+i.id+'\\')">×</button></div>').join('');
-}
-function add(){const v=document.getElementById('inp').value.trim();if(!v)return;items.push({id:Date.now()+'',text:v});save();render();document.getElementById('inp').value='';}
-function del(id){items=items.filter(i=>i.id!==id);save();render();}
-window.onload=render;
+SERVICE WORKER (add at the very end of the <script> block):
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}
 
-SERVICE WORKER REGISTRATION (include at end of script):
-if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js');navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='SW_UPDATED'){const b=document.createElement('div');b.textContent='🔄 New version available — tap to refresh';b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#4361EE;color:#fff;text-align:center;padding:12px;font-size:14px;z-index:99999;cursor:pointer';b.onclick=()=>location.reload();document.body.appendChild(b);}});});}
-
-OUTPUT FORMAT — return ONLY this JSON, nothing else:
-{"files":[{"path":"index.html","content":"..."},{"path":"manifest.json","content":"{\\"name\\":\\"App\\",\\"short_name\\":\\"App\\",\\"start_url\\":\\"./index.html\\",\\"display\\":\\"standalone\\",\\"background_color\\":\\"#F8F9FA\\",\\"theme_color\\":\\"#4361EE\\",\\"icons\\":[{\\"src\\":\\"https://via.placeholder.com/192x192/4361EE/ffffff?text=App\\",\\"sizes\\":\\"192x192\\",\\"type\\":\\"image/png\\"}]}"},{"path":"sw.js","content":"PLACEHOLDER_DO_NOT_GENERATE_THIS_FILE"}],"project_name":"kebab-case-name"}
-
-IMPORTANT: The server overrides sw.js content automatically — always output exactly "PLACEHOLDER_DO_NOT_GENERATE_THIS_FILE" for sw.js so you do not waste tokens on it.`;
+Output ONLY the HTML document. Do not wrap it in backticks or add any surrounding text.`;
 
 const NATIVE_SYSTEM_PROMPT = `You are a code generator. Generate an Expo React Native MOBILE app only. Use React Native components (View, Text, TextInput, Button, TouchableOpacity, FlatList, ScrollView) and Expo-compatible libraries only. Do NOT use localStorage, sessionStorage, window, document, ReactDOM, react-router-dom, HTML tags (div/button/input), or any browser-only API. The app must run in Expo Go. For data persistence use AsyncStorage from @react-native-async-storage/async-storage, never localStorage or sessionStorage. Always import AsyncStorage like this: import AsyncStorage from '@react-native-async-storage/async-storage' — never use destructured { AsyncStorage }. Always import React like this: import React, { useState, useEffect } from 'react' at the top of every file. Keep dependencies minimal and compatible with Expo.
 
@@ -356,6 +342,59 @@ async function generateWithGroq(userPrompt, type) {
   return parseFilesJsonResponse(content, "Groq");
 }
 
+async function generatePwaHtml(userPrompt) {
+  const client = getGroq();
+  if (!client) throw new Error("GROQ_API_KEY not set");
+
+  const messages = [
+    { role: "system", content: PWA_SYSTEM_PROMPT },
+    { role: "user", content: `Build this PWA app: ${userPrompt}` },
+  ];
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await client.chat.completions.create(
+      {
+        model: getGroqModelForType("pwa"),
+        max_tokens: 8192,
+        messages,
+        // No response_format — we expect raw HTML, not JSON
+      },
+      { signal: controller.signal }
+    );
+  } catch (err) {
+    if (err?.name === "AbortError" || controller.signal.aborted) {
+      throw new GroqCallError("timeout", `Groq PWA call exceeded ${GROQ_TIMEOUT_MS}ms`);
+    }
+    const status = err?.status ?? err?.response?.status;
+    if (status === 413) {
+      console.error("[generate] Groq PWA 413:", err?.message || "no detail");
+      throw new GroqCallError("too_large", "Groq 413 payload too large");
+    }
+    if (status === 429) {
+      throw new GroqCallError("rate_limited", "Groq rate limited", { retryAfter: 60 });
+    }
+    if (typeof status === "number" && status >= 500) {
+      throw new GroqCallError("upstream", `Groq ${status}`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  let html = response.choices[0]?.message?.content || "";
+  // Strip markdown code fences if the model wrapped the output
+  html = html.replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+
+  if (!html.includes("</html>")) {
+    throw new Error("Groq PWA did not return a complete HTML document");
+  }
+  return html;
+}
+
 router.post("/warmup", (_req, res) => {
   res.status(200).json({ warmed: true });
   axios
@@ -407,8 +446,87 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
       userContent = `User request:\n${enhancedIntent}`;
     }
 
+    // ── PWA: raw HTML path (bypasses JSON generation entirely) ─────────────────
+    if (type === "pwa") {
+      let pwaHtml;
+      try {
+        console.log("[generate] Trying Groq (PWA html-only)...");
+        pwaHtml = await generatePwaHtml(enhancedIntent);
+        console.log("[generate] Groq PWA succeeded");
+      } catch (pwaErr) {
+        if (pwaErr instanceof GroqCallError) {
+          if (pwaErr.kind === "timeout") {
+            return res.status(504).json({ error: "GENERATION_TIMEOUT", message: "Generation took too long. Please try again." });
+          }
+          if (pwaErr.kind === "rate_limited") {
+            return res.status(503).json({ error: "PROVIDER_RATE_LIMITED", message: "AI provider is busy. Please try again in 60 seconds.", retry_after: 60 });
+          }
+          if (pwaErr.kind === "upstream") {
+            return res.status(503).json({ error: "PROVIDER_UNAVAILABLE", message: "AI provider is temporarily unavailable." });
+          }
+        }
+        console.error("[generate] PWA generation failed:", pwaErr.message);
+        return res.status(502).json({ error: "PWA generation failed", details: pwaErr.message });
+      }
+
+      const pwaProjectName = deriveProjectNameFromPrompt(trimmedPrompt);
+      const pwaManifest = JSON.stringify({
+        name: pwaProjectName,
+        short_name: pwaProjectName.split("-")[0] || pwaProjectName,
+        start_url: "./index.html",
+        display: "standalone",
+        background_color: "#F8F9FA",
+        theme_color: "#4361EE",
+        icons: [{ src: "https://via.placeholder.com/192x192/4361EE/ffffff?text=App", sizes: "192x192", type: "image/png" }],
+      });
+
+      recordGeneration(req.user?.id);
+      try {
+        const projectId = existingProjectId || crypto.randomUUID();
+        const EXPO_BASE = process.env.EXPO_BASE_DIR || (process.platform === "win32" ? "D:/tmp/expo-projects" : "/var/data/expo-projects");
+        const previewBase = path.join(EXPO_BASE, "previews", "projects", projectId);
+        fs.mkdirSync(previewBase, { recursive: true });
+
+        const generationVersion = Date.now();
+        const swContent = `const CACHE='ropeli-${generationVersion}';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html'])).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));});`;
+
+        const isPro = req.user?.plan === "pro" || req.user?.plan === "unlimited";
+        let htmlContent = pwaHtml;
+        if (!isPro) {
+          htmlContent = htmlContent.replace(
+            "</body>",
+            '<div style="position:fixed;bottom:12px;right:12px;background:rgba(0,0,0,0.7);color:white;font-size:11px;padding:4px 10px;border-radius:6px;z-index:99999;pointer-events:none;font-family:sans-serif;">Built with Ropeli</div></body>'
+          );
+        }
+
+        fs.writeFileSync(path.join(previewBase, "index.html"), htmlContent, "utf8");
+        fs.writeFileSync(path.join(previewBase, "manifest.json"), pwaManifest, "utf8");
+        fs.writeFileSync(path.join(previewBase, "sw.js"), swContent, "utf8");
+
+        const preview_url = `/preview/projects/${projectId}/index.html`;
+        return res.json({
+          success: true,
+          project_name: pwaProjectName,
+          files: [
+            { path: "index.html", content: pwaHtml },
+            { path: "manifest.json", content: pwaManifest },
+            { path: "sw.js", content: swContent },
+          ],
+          provider: "groq",
+          preview_url,
+          type: "pwa",
+        });
+      } catch (writeErr) {
+        console.error("[pwa] file write error:", writeErr.message);
+        return res.status(500).json({ error: "PWA file write failed", details: writeErr.message });
+      }
+    }
+
     // Modal receives a single raw string — prepend the system prompt for it.
-    const modalPrompt = `${type === "pwa" ? PWA_SYSTEM_PROMPT : type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT}\n\n${userContent}`;    
+    const modalPrompt = `${type === "web" ? WEB_SYSTEM_PROMPT : NATIVE_SYSTEM_PROMPT}\n\n${userContent}`;
     let responseData = null;
     let usedProvider = null;
 
@@ -552,52 +670,6 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
 
     const project_name = deriveProjectNameFromPrompt(trimmedPrompt);
     recordGeneration(req.user?.id);
-    if (type === "pwa") {
-      try {
-        const projectId = existingProjectId || crypto.randomUUID();
-        const EXPO_BASE = process.env.EXPO_BASE_DIR || (process.platform === 'win32' ? 'D:/tmp/expo-projects' : '/var/data/expo-projects');
-        const previewBase = path.join(EXPO_BASE, 'previews', 'projects', projectId);
-        fs.mkdirSync(previewBase, { recursive: true });
-
-        const generationVersion = Date.now();
-        const swTemplate = `const CACHE='ropeli-{{VERSION}}';
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html'])).then(()=>self.skipWaiting()));});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
-self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).then(r=>{if(r&&r.status===200){const cl=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cl));}return r;}).catch(()=>caches.match(e.request)));});`;
-        const swContent = swTemplate.replace('{{VERSION}}', String(generationVersion));
-
-        for (const file of files) {
-          let content = String(file.content || '');
-          if (file.path === 'index.html') {
-            const isPro = req.user?.plan === 'pro' || req.user?.plan === 'unlimited';
-            if (!isPro) {
-              content = content.replace(
-                '</body>',
-                '<div style="position:fixed;bottom:12px;right:12px;background:rgba(0,0,0,0.7);color:white;font-size:11px;padding:4px 10px;border-radius:6px;z-index:99999;pointer-events:none;font-family:sans-serif;">Built with Ropeli</div></body>'
-              );
-            }
-          }
-          // Always override sw.js with the server-versioned worker so every
-          // regeneration invalidates the installed PWA's old cache.
-          if (file.path === 'sw.js') {
-            content = swContent;
-          }
-          fs.writeFileSync(path.join(previewBase, file.path), content, 'utf8');
-        }
-
-        const preview_url = `/preview/projects/${projectId}/index.html`;
-        return res.json({
-          success: true,
-          project_name,
-          files,
-          provider: usedProvider,
-          preview_url,
-          type: 'pwa',
-        });
-      } catch (pwaErr) {
-        console.error('[pwa] file write error:', pwaErr.message);
-      }
-    }
     res.json({ success: true, project_name, files, provider: usedProvider });
   } catch (error) {
     console.error("[generate] Unexpected error:", error.message);
