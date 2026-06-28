@@ -58,7 +58,8 @@ const slugify = (text: string) =>
 // Returns the build type the user *probably* meant, or null when ambiguous.
 // Only used as a soft suggestion on the very first generation. The user's
 // explicit Mobile/Web toggle always takes precedence.
-const detectBuildTypeFromPrompt = (text: string): "mobile" | "web" | null => {
+// Native/Expo is locked off — mobile keywords route to PWA instead.
+const detectBuildTypeFromPrompt = (text: string): "web" | "pwa" | null => {
   const t = text.toLowerCase();
   const webHits = [
     "website",
@@ -87,7 +88,7 @@ const detectBuildTypeFromPrompt = (text: string): "mobile" | "web" | null => {
     "apk",
   ].some((kw) => t.includes(kw));
   if (webHits && !mobileHits) return "web";
-  if (mobileHits && !webHits) return "mobile";
+  if (mobileHits && !webHits) return "pwa"; // mobile keywords → PWA (Expo locked off)
   return null;
 };
 
@@ -619,6 +620,11 @@ const handleSend = async (overridePrompt?: string) => {
       resolvedBuildType = detected;
       setBuildType(detected);
     }
+  }
+  // Safety guard: native/Expo is locked off — always fall back to PWA
+  if (resolvedBuildType === "mobile") {
+    resolvedBuildType = "pwa";
+    setBuildType("pwa");
   }
 
   setMessages((prev) => [
@@ -1313,6 +1319,35 @@ useEffect(() => {
   }}
 />
 
+          {!prompt && !isGenerating && !configLocked && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "4px 2px 8px" }}>
+              {[
+                "Build a habit tracker with streaks",
+                "Build a personal expense tracker",
+                "Build a simple note-taking app",
+                "Build a workout logger",
+                "Build a daily mood journal",
+              ].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setPrompt(t); setConfigLocked(false); }}
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    color: "rgba(255,255,255,0.7)",
+                    borderRadius: "20px",
+                    padding: "5px 12px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+
 
           <div className="builder-prompt-footer">
             <div className="prompt-footer-left">
@@ -1585,6 +1620,35 @@ useEffect(() => {
             }
           }}
         />
+
+        {!prompt && !isGenerating && !configLocked && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "4px 2px 8px" }}>
+            {[
+              "Build a habit tracker with streaks",
+              "Build a personal expense tracker",
+              "Build a simple note-taking app",
+              "Build a workout logger",
+              "Build a daily mood journal",
+            ].map((t) => (
+              <button
+                key={t}
+                onClick={() => { setPrompt(t); setConfigLocked(false); }}
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "rgba(255,255,255,0.7)",
+                  borderRadius: "20px",
+                  padding: "5px 12px",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="builder-prompt-footer">
           <div className="prompt-footer-left">

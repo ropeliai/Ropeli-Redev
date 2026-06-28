@@ -483,9 +483,6 @@ router.post("/", requireAuth, checkRateLimit, async (req, res) => {
       recordGeneration(req.user?.id);
       try {
         const projectId = existingProjectId || crypto.randomUUID();
-        const EXPO_BASE = process.env.EXPO_BASE_DIR || (process.platform === "win32" ? "D:/tmp/expo-projects" : "/var/data/expo-projects");
-        const previewBase = path.join(EXPO_BASE, "previews", "projects", projectId);
-        fs.mkdirSync(previewBase, { recursive: true });
 
         const generationVersion = Date.now();
         const swContent = `const CACHE='ropeli-${generationVersion}';
@@ -502,18 +499,57 @@ self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).then(r=>{if(r&&
           );
         }
 
-        fs.writeFileSync(path.join(previewBase, "index.html"), htmlContent, "utf8");
-        fs.writeFileSync(path.join(previewBase, "manifest.json"), pwaManifest, "utf8");
-        fs.writeFileSync(path.join(previewBase, "sw.js"), swContent, "utf8");
+        let preview_url;
 
-        const preview_url = `/preview/projects/${projectId}/index.html`;
+        if (process.env.SUPABASE_STORAGE_ENABLED === "true") {
+          // ── Supabase Storage path (production) ──────────────────────────────
+          const sb = getSupabaseServiceClient();
+          if (!sb) throw new Error("Supabase service client unavailable");
+
+          const bucket = "pwa-previews";
+          const prefix = `projects/${projectId}`;
+
+          const uploads = [
+            { name: "index.html",    content: htmlContent, mime: "text/html; charset=utf-8" },
+            { name: "manifest.json", content: pwaManifest, mime: "application/manifest+json" },
+            { name: "sw.js",         content: swContent,   mime: "application/javascript" },
+          ];
+
+          for (const { name, content, mime } of uploads) {
+            const { error: upErr } = await sb.storage
+              .from(bucket)
+              .upload(`${prefix}/${name}`, Buffer.from(content, "utf8"), {
+                contentType: mime,
+                upsert: true,
+              });
+            if (upErr) throw new Error(`Storage upload failed for ${name}: ${upErr.message}`);
+          }
+
+          const { data: urlData } = sb.storage
+            .from(bucket)
+            .getPublicUrl(`${prefix}/index.html`);
+          preview_url = urlData.publicUrl;
+          console.log(`[pwa] uploaded to Supabase Storage: ${preview_url}`);
+
+        } else {
+          // ── Local disk path (development / Render with persistent disk) ────
+          const EXPO_BASE = process.env.EXPO_BASE_DIR || (process.platform === "win32" ? "D:/tmp/expo-projects" : "/var/data/expo-projects");
+          const previewBase = path.join(EXPO_BASE, "previews", "projects", projectId);
+          fs.mkdirSync(previewBase, { recursive: true });
+          fs.writeFileSync(path.join(previewBase, "index.html"),    htmlContent, "utf8");
+          fs.writeFileSync(path.join(previewBase, "manifest.json"), pwaManifest, "utf8");
+          fs.writeFileSync(path.join(previewBase, "sw.js"),         swContent,   "utf8");
+          preview_url = `/preview/projects/${projectId}/index.html`;
+          console.log(`[pwa] written to disk: ${preview_url}`);
+        }
+
         return res.json({
           success: true,
           project_name: pwaProjectName,
           files: [
-            { path: "index.html", content: pwaHtml },
+            { path: "index.html",    content: pwaHtml },
             { path: "manifest.json", content: pwaManifest },
-            { path: "sw.js", content: swContent },
+            { path: "sw.js",         content: swContent },
           ],
           provider: "groq",
           preview_url,
