@@ -5,6 +5,10 @@
       "destination": "https://ropeli-redev-pwa.onrender.com/api/:path*"
     },
     {
+      "source": "/preview/:path*",
+      "destination": "https://ropeli-redev-pwa.onrender.com/preview/:path*"
+    },
+    {
       "source": "/:path*",
       "destination": "/index.html"
     }

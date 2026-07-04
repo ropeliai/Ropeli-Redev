@@ -5,6 +5,7 @@ import paymentRoutes from "./payment.routes.js";
 import generateRoutes from "./generate_route.js";
 import ollamaRoutes from "./ollama_route.js";
 import expoRoutes from "./expo_route.js";
+import previewRoutes from "./preview_route.js";
 import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
@@ -28,8 +29,9 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/ollama", ollamaRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/expo", expoRoutes);
-// Serve previews from the EXPO_BASE_DIR previews folder (configurable)
+// Supabase Storage previews need correct Content-Type; disk previews use static fallback
 const EXPO_BASE_DIR = process.env.EXPO_BASE_DIR || (process.platform === 'win32' ? 'D:/tmp/expo-projects' : '/var/data/expo-projects');
+app.use("/preview", previewRoutes);
 app.use('/preview', express.static(join(EXPO_BASE_DIR, 'previews')));
 
 const PORT = process.env.PORT || 5000;

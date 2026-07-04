@@ -376,8 +376,10 @@ useEffect(() => {
       setCode(files[0]?.content || "");
       setHasCodeEdits(false);
       if (result.type === 'pwa' && result.preview_url) {
-        const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        setPwaPreviewUrl(`${backendUrl}${result.preview_url}`);
+        const previewUrl = result.preview_url.startsWith("http")
+          ? result.preview_url
+          : `${import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || ""}${result.preview_url}`;
+        setPwaPreviewUrl(previewUrl);
         setShowPwaPanel(true);
       }
 
@@ -666,7 +668,7 @@ const handleSend = async (overridePrompt?: string) => {
         {
           kind: "text",
           role: "assistant",
-          content: err?.message || "You've used all 20 daily generations. Resets at midnight UTC.",
+          content: err?.message || "You've used all your  daily generations attempts. Resets at midnight UTC.",
         },
       ]);
       return;
@@ -685,8 +687,10 @@ const handleSend = async (overridePrompt?: string) => {
       setGeneratedProjectName(result.project_name || slugify(userPrompt));
 
       if (result.type === "pwa" && result.preview_url) {
-        const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-        setPwaPreviewUrl(`${backendUrl}${result.preview_url}`);
+        const previewUrl = result.preview_url.startsWith("http")
+          ? result.preview_url
+          : `${import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || ""}${result.preview_url}`;
+        setPwaPreviewUrl(previewUrl);
         setShowPwaPanel(true);
       }
 

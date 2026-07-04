@@ -525,11 +525,8 @@ self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).then(r=>{if(r&&
             if (upErr) throw new Error(`Storage upload failed for ${name}: ${upErr.message}`);
           }
 
-          const { data: urlData } = sb.storage
-            .from(bucket)
-            .getPublicUrl(`${prefix}/index.html`);
-          preview_url = urlData.publicUrl;
-          console.log(`[pwa] uploaded to Supabase Storage: ${preview_url}`);
+          preview_url = `/preview/projects/${projectId}/index.html`;
+          console.log(`[pwa] uploaded to Supabase Storage: ${prefix}/`);
 
         } else {
           // ── Local disk path (development / Render with persistent disk) ────
