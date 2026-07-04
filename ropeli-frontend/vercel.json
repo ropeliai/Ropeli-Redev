@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ropeli-backend.onrender.com/api/:path*"
+      "destination": "https://ropeli-redev-pwa.onrender.com/api/:path*"
     },
     {
       "source": "/:path*",
